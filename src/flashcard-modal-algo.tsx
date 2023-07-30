@@ -583,7 +583,8 @@ export class FlashcardModal extends Modal {
                     currSchedintvl_ease_old[1],
                 ]);
             }
-            store.reviewId(cardinfo.itemIds[this.currentCard.siblingIdx], opt);
+            const id = cardinfo.itemIds[this.currentCard.siblingIdx];
+            store.reviewId(id, opt);
         }
 
         for (const sibling of this.currentCard.siblings) {

@@ -17,18 +17,26 @@ function applySettingsUpdate(callback: () => void): void {
 export type FsrsData = fsrsjs.Card;
 
 export class RevLog {
-    id: number;
-    cid: number;
-    r: number;
-    time: number;
-    type: number;
+    // https://github.com/open-spaced-repetition/fsrs-optimizer
+    card_id = -1;
+    review_time = 0;
+    review_rating = 0;
+    review_state = 0;
+    review_duration = 0;
+    tag = "";
 
     constructor() {
         return;
     }
+
+    // https://qastack.cn/programming/43909566/get-keys-of-a-typescript-interface-as-array-of-strings
+    static getKeyNames() {
+        return Object.keys(new RevLog());
+    }
 }
 
 interface FsrsSettings {
+    revlog_tags: string[];
     request_retention: number;
     maximum_interval: number;
     w: number[];
@@ -49,8 +57,9 @@ export class FsrsAlgorithm extends SrsAlgorithm {
 
     filename = "ob_revlog.csv";
     logfilepath: string = null;
-    REVLOG_sep = ", ";
-    REVLOG_TITLE = "id" + this.REVLOG_sep + "cid" + this.REVLOG_sep + "r\n";
+    REVLOG_sep = ",";
+    REVLOG_TITLE = RevLog.getKeyNames().join(this.REVLOG_sep) + "\n";
+    review_duration = 0;
 
     constructor() {
         super();
@@ -60,6 +69,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
 
     defaultSettings(): FsrsSettings {
         return {
+            revlog_tags: ["#review"],
             request_retention: 0.9,
             maximum_interval: 36500,
             w: [
@@ -110,6 +120,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             intvls.push(nextInterval / DateUtils.DAYS_TO_MILLIS);
             // console.debug("due:" + due + ", last: " + lastrv + ", intvl: " + nextInterval);
         });
+        this.review_duration = new Date().getTime();
         return intvls;
     }
     onSelection(item: RepetitionItem, optionStr: string, repeat: boolean): ReviewResult {
@@ -123,6 +134,19 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             this.updateFsrsParams();
             this.initFlag = true;
         }
+
+        let correct = true;
+        if (response == 1) {
+            // Again
+            correct = false;
+        }
+        if (repeat) {
+            return {
+                correct,
+                nextReview: -1,
+            };
+        }
+
         const now = new Date();
         const scheduling_cards = this.fsrs.repeat(data, now);
         // console.log(scheduling_cards);
@@ -139,23 +163,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         //Get the review log after rating `Good`:
         // review_log = scheduling_cards[2].review_log;
 
-        let correct = true;
         const nextInterval = item.data.due.valueOf() - item.data.last_review.valueOf();
-        if (repeat) {
-            if (response == 1) {
-                correct = false;
-            }
-
-            return {
-                correct,
-                nextReview: -1,
-            };
-        }
-
-        if (response == 1) {
-            // Again
-            correct = false;
-        }
 
         this.appendRevlog(now, item, response);
 
@@ -172,27 +180,33 @@ export class FsrsAlgorithm extends SrsAlgorithm {
      * @param rating
      */
     async appendRevlog(now: Date, item: RepetitionItem, rating: number) {
+        if (item.deckName.includes("/")) {
+            if (
+                !this.settings.revlog_tags.some(
+                    (tag: string) => item.deckName === tag || item.deckName.startsWith(tag + "/")
+                )
+            ) {
+                return;
+            }
+        } else if (!this.settings.revlog_tags.includes(item.deckName)) {
+            return;
+        }
         const plugin = this.plugin;
         const adapter = plugin.app.vault.adapter;
         const rlog = new RevLog();
-        rlog.id = now.getTime();
-        rlog.cid = item.ID;
-        rlog.r = rating;
+        rlog.card_id = item.ID;
+        rlog.review_time = now.getTime();
+        rlog.review_rating = rating;
         const carddata = item.data as FsrsData;
-        rlog.time = 0;
-        rlog.type = carddata.state;
+        rlog.review_duration =
+            this.review_duration > 0 ? new Date().getTime() - this.review_duration : 0;
+        this.review_duration = 0;
+        rlog.review_state = carddata.state;
+        rlog.tag = item.deckName;
 
-        let data =
-            rlog.id +
-            this.REVLOG_sep +
-            rlog.cid +
-            this.REVLOG_sep +
-            rlog.r +
-            this.REVLOG_sep +
-            rlog.time +
-            this.REVLOG_sep +
-            rlog.type +
-            "\n";
+        let data = Object.values(rlog).join(this.REVLOG_sep);
+        data += "\n";
+
         if (!(await adapter.exists(this.logfilepath))) {
             data = this.REVLOG_TITLE + data;
         }
@@ -231,31 +245,35 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             this.updateFsrsParams();
             this.initFlag = true;
         }
+
         containerEl.createDiv().innerHTML =
             '用于间隔重复的算法. 更多信息请查阅 <a href="https://github.com/open-spaced-repetition/fsrs.js">FSRS算法</a>.';
+
         new Setting(containerEl)
-            .setName("request_retention")
-            .setDesc("request_retention")
-            .addText((text) =>
-                text
-                    .setPlaceholder("request_retention")
-                    .setValue(this.settings.request_retention.toString())
-                    .onChange((newValue) => {
-                        applySettingsUpdate(async () => {
-                            const numValue: number = Number.parseFloat(newValue);
-                            if (!isNaN(numValue) && numValue > 0) {
-                                if (numValue < 1.0) {
-                                    new Notice(t("EASY_BONUS_MIN_WARNING"));
-                                    text.setValue(this.settings.request_retention.toString());
-                                    return;
-                                }
-                                this.settings.request_retention = this.fsrs.p.request_retention =
-                                    numValue;
-                                update(this.settings);
-                            } else {
-                                new Notice(t("VALID_NUMBER_WARNING"));
-                            }
-                        });
+            .setName(t("REVLOG_TAGS"))
+            .setDesc(t("REVLOG_TAGS_DESC"))
+            .addTextArea((text) =>
+                text.setValue(this.settings.revlog_tags.join(" ")).onChange((value) => {
+                    applySettingsUpdate(async () => {
+                        this.settings.revlog_tags = value.split(/\s+/);
+                        update(this.settings);
+                        // await this.plugin.savePluginData();
+                    });
+                })
+            );
+
+        new Setting(containerEl)
+            .setName(t("REQUEST_RETENTION"))
+            .setDesc(t("REQUEST_RETENTION_DESC"))
+            .addSlider((slider) =>
+                slider
+                    .setLimits(50, 100, 1)
+                    .setValue(this.settings.request_retention * 100)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        this.settings.request_retention = this.fsrs.p.request_retention =
+                            value / 100;
+                        update(this.settings);
                     })
             )
             .addExtraButton((button) => {
@@ -266,6 +284,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         this.settings.request_retention = this.defaultSettings().request_retention;
                         this.fsrs.p.request_retention = this.settings.request_retention;
                         update(this.settings);
+                        this.plugin.settingTab.display();
                     });
             });
 
@@ -285,6 +304,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
 
                             this.settings.maximum_interval = this.fsrs.p.maximum_interval =
                                 numValue;
+                            text.setValue(this.settings.maximum_interval.toString());
                             update(this.settings);
                         } else {
                             new Notice(t("VALID_NUMBER_WARNING"));
@@ -300,17 +320,20 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         this.settings.maximum_interval = this.fsrs.p.maximum_interval =
                             this.defaultSettings().maximum_interval;
                         update(this.settings);
+                        this.plugin.settingTab.display();
                     });
             });
 
         new Setting(containerEl)
             .setName("w")
-            .setDesc("w")
+            // .setDesc("")
             .addText((text) =>
-                text.setValue(JSON.stringify(this.settings.w)).onChange((value) => {
+                text.setValue(this.settings.w.join(", ")).onChange((value) => {
                     applySettingsUpdate(async () => {
                         try {
-                            const numValue: number[] = Object.assign({}, JSON.parse(value));
+                            const numValue: number[] = value.split(/[ ,]+/).map((v) => {
+                                return Number.parseFloat(v);
+                            });
                             if (numValue.length === this.settings.w.length) {
                                 this.settings.w = this.fsrs.p.w = numValue;
                                 update(this.settings);
@@ -331,8 +354,12 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .onClick(async () => {
                         this.settings.w = this.fsrs.p.w = this.defaultSettings().w;
                         update(this.settings);
+                        this.plugin.settingTab.display();
                     });
-            });
+            })
+            .settingEl.querySelector(".setting-item-description").innerHTML =
+            '查阅 <a href= "https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm"> FSRS V4 WIKI </a> 以对各参数进行设置.';
+
         return;
     }
 }

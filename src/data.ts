@@ -97,6 +97,8 @@ export interface RepetitionItem {
     /**
      * @type {any}
      */
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any; // Additional data, determined by the selected algorithm.
 }
 
@@ -177,6 +179,12 @@ const NEW_ITEM: RepetitionItem = {
     timesCorrect: 0,
     errorStreak: 0,
     data: {},
+};
+
+const DEFAULT_NEW_CARDINFO: CardInfo = {
+    lineNo: 0,
+    cardTextHash: "",
+    itemIds: [],
 };
 
 /**
@@ -411,7 +419,16 @@ export class DataStore {
      * @returns {boolean}
      */
     isTrackedCardfile(path: string): boolean {
-        return this.getFileIndex(path) >= 0;
+        const ind = this.getFileIndex(path);
+        let cardLen = 0;
+        if (ind >= 0) {
+            const file = this.getTrackedFileByIndex(ind);
+            if (Object.keys(file).includes("cardItems")) {
+                cardLen = this.getTrackedFileByIndex(ind).cardItems.length;
+            }
+        }
+
+        return cardLen > 0;
     }
 
     /**
@@ -700,11 +717,7 @@ export class DataStore {
                 }
             } else if (child instanceof TFile && child.extension === "md") {
                 if (!this.isTracked(child.path)) {
-                    const { added, removed } = this.trackFile(
-                        child.path,
-                        this.getDefaultDackName(),
-                        false
-                    );
+                    const { added, removed } = this.trackFile(child.path, RPITEMTYPE.NOTE, false);
                     totalAdded += added;
                     totalRemoved += removed;
                 }
@@ -724,7 +737,7 @@ export class DataStore {
      */
     trackFile(
         path: string,
-        tag?: string,
+        type?: RPITEMTYPE | string,
         notice?: boolean
     ): { added: number; removed: number } | null {
         const trackedFile: TrackedFile = {
@@ -732,14 +745,19 @@ export class DataStore {
             items: {},
             tags: [],
         };
-        if (tag != null) {
-            trackedFile.tags = [tag];
-            if (tag === "card") {
+        const itemtype = RPITEMTYPE.NOTE;
+        let dname = this.getDefaultDackName();
+        if (type != null) {
+            trackedFile.tags = [type];
+            if (type === RPITEMTYPE.CARD) {
+                // itemtype = RPITEMTYPE.CARD;
                 trackedFile.cardItems = [];
+            } else if (type !== RPITEMTYPE.NOTE) {
+                dname = type as string;
             }
         }
         this.data.trackedFiles.push(trackedFile);
-        const data = this.updateItems(path, tag, notice);
+        const data = this.updateItems(path, itemtype, dname, notice);
         console.log("Tracked: " + path);
         // this.plugin.updateStatusBar();
         return data;
@@ -751,40 +769,33 @@ export class DataStore {
      * @param note
      * @param lineNo
      * @param cardTextHash
-     * @param count
-     * @param notice
      * @returns {CardInfo} cardInfo of new add.
      */
-    trackFileCard(
-        note: TFile,
-        lineNo: number,
-        cardTextHash: string,
-        count: number,
-        notice?: boolean
-    ): CardInfo {
+    trackFileCard(note: TFile, lineNo: number, cardTextHash: string): CardInfo {
         if (!this.isTrackedCardfile(note.path)) {
             console.log("Attempt to add card in untracked file: " + note.path);
-            this.trackFile(note.path, "card", false);
+            this.trackFile(note.path, RPITEMTYPE.CARD, false);
         }
         const trackedFile = this.getTrackedFile(note.path);
 
-        const newcardItem: CardInfo = { lineNo: lineNo, cardTextHash: cardTextHash, itemIds: [] };
+        // const newcardItem: CardInfo = { lineNo: lineNo, cardTextHash: cardTextHash, itemIds: [] };
+        const newcardItem: CardInfo = deepcopy(DEFAULT_NEW_CARDINFO);
+        newcardItem.lineNo = lineNo;
+        newcardItem.cardTextHash = cardTextHash;
 
         if (!Object.prototype.hasOwnProperty.call(trackedFile, "cardItems")) {
             // didn't have cardItems
             trackedFile.cardItems = [];
         }
 
-        const cind = trackedFile.cardItems.push(newcardItem) - 1;
-        const data = this.updateCardItems(note, trackedFile.cardItems[cind], count, notice);
+        const _cind = trackedFile.cardItems.push(newcardItem) - 1;
+        // const data = this.updateCardItems(note, trackedFile.cardItems[cind], count, deckName,notice);
         trackedFile.cardItems.sort((a, b) => {
             return a.lineNo - b.lineNo;
         });
         this.save();
 
-        console.log(
-            "Tracked: " + note.path + "lineNo:" + lineNo + " Added " + data.added + " new items"
-        );
+        console.log("Tracked: " + note.path + ", lineNo:" + lineNo + 1); // +1 just for better read.
 
         return newcardItem;
     }
@@ -857,17 +868,20 @@ export class DataStore {
      * updateItems.
      *
      * @param {string} path
-     * @param {string} tag? "default" , deckName
+     * @param {string} type? RPITEMTYPE
+     * @param {string} dname? "default" , deckName
      * @param {boolean} notice
      * @returns {{ added: number; removed: number } | null}
      */
     updateItems(
         path: string,
-        tag?: string,
+        type?: RPITEMTYPE,
+        dname?: string,
         notice?: boolean
     ): { added: number; removed: number } | null {
         if (notice == null) notice = true;
-        if (tag == null) tag = this.defaultDeckname;
+        if (type == null) type = RPITEMTYPE.NOTE;
+        if (dname == null) dname = this.getDefaultDackName();
 
         const ind = this.getFileIndex(path);
         if (ind == -1) {
@@ -893,7 +907,10 @@ export class DataStore {
             newItem.data = Object.assign(this.plugin.algorithm.defaultData());
             // newItem.data = Object.assign(this.algorithmdefaultData());
             newItem.fileIndex = ind;
-            newItem.deckName = tag;
+            newItem.itemType = type;
+            newItem.deckName = Object.values(RPITEMTYPE).includes(type)
+                ? this.getDefaultDackName()
+                : type;
             newItem.ID = this.data.items.push(newItem) - 1;
             newItems["file"] = newItem.ID;
             added += 1;
@@ -915,9 +932,9 @@ export class DataStore {
         trackedFile.items = newItems;
         this.save();
 
-        if (notice) {
-            new Notice("Added " + added + " new items, removed " + removed + " items.");
-        }
+        // if (notice) {
+        //     new Notice("Added " + added + " new items, removed " + removed + " items.");
+        // }
         return { added, removed };
     }
 
@@ -925,6 +942,7 @@ export class DataStore {
         note: TFile,
         cardinfo: CardInfo,
         count: number,
+        deckName: string = this.getDefaultDackName(),
         notice?: boolean
     ): { added: number; removed: number } | null {
         if (notice == null) notice = false;
@@ -962,7 +980,9 @@ export class DataStore {
                 newItem.data = Object.assign(this.plugin.algorithm.defaultData());
                 newItem.fileIndex = ind;
                 newItem.itemType = RPITEMTYPE.CARD;
+                newItem.deckName = deckName;
                 const cardId = this.data.items.push(newItem) - 1;
+                newItem.ID = cardId;
                 newitemIds.push(cardId);
                 added += 1;
             }
@@ -981,6 +1001,11 @@ export class DataStore {
                 this.data.items[iid] = null;
                 console.debug("removed", iid);
                 removed += 1;
+            } else {
+                const item = this.data.items[iid];
+                if (item.deckName !== deckName) {
+                    item.deckName = deckName;
+                }
             }
         }
         cardinfo.itemIds = newitemIds;
@@ -1161,6 +1186,21 @@ export class DataStore {
                     removedItems +
                     " items while building queue!"
             );
+        }
+    }
+
+    loadRepeatQueue(rvdecks: { [deckKey: string]: ReviewDeck }) {
+        if (this.repeatQueueSize() > 0) {
+            // const repeatDeckCounts: Record<string, number> = {};
+            this.data.repeatQueue.forEach((id) => {
+                const dname: string = this.getItembyID(id).deckName;
+                this.data.toDayAllQueue[id] = dname;
+                // if (!Object.keys(repeatDeckCounts).includes(dname)) {
+                //     repeatDeckCounts[dname] = 0;
+                // }
+                rvdecks[dname].dueNotesCount++;
+            });
+            // return repeatDeckCounts;
         }
     }
 
@@ -1411,6 +1451,11 @@ export class DataStore {
             }
         } else {
             delete this.data.toDayAllQueue[fileid];
+            if (item.nextReview <= nowToday) {
+                this.data.toDayLatterQueue[fileid] = rdeck.deckName;
+            } else if (item.nextReview > nowToday) {
+                delete this.data.toDayLatterQueue[fileid];
+            }
             Object.keys(this.data.toDayLatterQueue).forEach((fileid) => {
                 const id = Number.parseInt(fileid);
                 if (now - this.data.items[id].nextReview > 0) {
@@ -1421,17 +1466,12 @@ export class DataStore {
                     delete this.data.toDayLatterQueue[id];
                 }
             });
-            if (item.nextReview <= nowToday) {
-                this.data.toDayLatterQueue[fileid] = rdeck.deckName;
-            } else if (item.nextReview > nowToday) {
-                delete this.data.toDayLatterQueue[fileid];
-            }
         }
 
         if (this.isNewAdd(fileid) >= 0) {
             rdeck.newNotes.push(note);
             this.plugin.newNotesCount++;
-            console.debug("syncRCDataToSRrevDeck : addNew", fileid);
+            // console.debug("syncRCDataToSRrevDeck : addNew", fileid);
         } else {
             rdeck.scheduledNotes.push({ note: note, dueUnix: item.nextReview });
             if (item.nextReview <= nowToday) {
@@ -1465,6 +1505,12 @@ export class DataStore {
                 trackedFile.tags.push(rdeck.deckName);
                 this.save();
             }
+        }
+
+        // update item
+        if (item.deckName !== rdeck.deckName) {
+            item.deckName = rdeck.deckName;
+            this.save();
         }
         if (!Object.prototype.hasOwnProperty.call(item, "itemType")) {
             item.itemType = this.isCardItem(fileid) ? RPITEMTYPE.CARD : RPITEMTYPE.NOTE;
@@ -1658,53 +1704,75 @@ export class DataStore {
         }
 
         if (tagtype === "note") {
-            for (const tag of tags) {
-                if (
-                    this.plugin.data.settings.tagsToReview.some(
-                        (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/")
-                    )
-                ) {
-                    shouldIgnore = false;
-                    break;
-                }
+            if (this.getNoteDeckName(tags) !== null) {
+                shouldIgnore = false;
             }
         } else if (tagtype === "card") {
             for (const tag of tags) {
-                if (
-                    this.plugin.data.settings.flashcardTags.some(
-                        (flashcardTag) => tag === flashcardTag || tag.startsWith(flashcardTag + "/")
-                    )
-                ) {
+                if (this.isTagedDeckName(tag)) {
                     shouldIgnore = false;
                     break;
                 }
             }
         } else if (tagtype === "all") {
+            if (this.getNoteDeckName(tags) !== null) {
+                shouldIgnore = false;
+            }
             for (const tag of tags) {
-                if (
-                    this.plugin.data.settings.tagsToReview.some(
-                        (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/")
-                    ) ||
-                    this.plugin.data.settings.flashcardTags.some(
-                        (flashcardTag) => tag === flashcardTag || tag.startsWith(flashcardTag + "/")
-                    )
-                ) {
+                if (this.isTagedDeckName(tag)) {
                     shouldIgnore = false;
                     break;
                 }
             }
         }
 
-        if (shouldIgnore) {
-            return false;
-        }
+        return !shouldIgnore;
+    }
 
-        return true;
+    isTagedNoteDeckName(deckName: string) {
+        let isTaged = false;
+        if (
+            this.plugin.data.settings.tagsToReview.some(
+                (tagToReview) => deckName === tagToReview || deckName.startsWith(tagToReview + "/")
+            )
+        ) {
+            isTaged = true;
+        }
+        return isTaged;
+    }
+
+    isTagedDeckName(deckName: string) {
+        let isTaged = false;
+        if (
+            this.plugin.data.settings.flashcardTags.some(
+                (flashcardTag) =>
+                    deckName === flashcardTag || deckName.startsWith(flashcardTag + "/")
+            )
+        ) {
+            isTaged = true;
+        }
+        return isTaged;
+    }
+
+    getNoteDeckName(tags: string[]) {
+        let deckName = null;
+        for (const tag of tags) {
+            if (
+                this.plugin.data.settings.tagsToReview.some(
+                    (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/")
+                )
+            ) {
+                deckName = tag;
+                break;
+            }
+        }
+        return deckName;
     }
 
     /**
      * syncTrackfileCardSched
      * @param note
+     * @param deckName
      * @param lineNo
      * @param cardTextHash
      * @param count
@@ -1712,6 +1780,7 @@ export class DataStore {
      */
     syncTrackfileCardSched(
         note: TFile,
+        deckName: string,
         lineNo: number,
         cardTextHash: string,
         count: number,
@@ -1723,26 +1792,21 @@ export class DataStore {
 
         let carditem = this.getAndSyncCardInfo(note, lineNo, cardTextHash);
         if (carditem == null) {
-            carditem = this.trackFileCard(note, lineNo, cardTextHash, count);
+            carditem = this.trackFileCard(note, lineNo, cardTextHash);
         }
 
-        if (scheduling.length) {
-            console.debug("syncTrackfileCardSched-note:", note.name, lineNo, count);
-            const schedLen = Math.min(scheduling.length, carditem.itemIds.length);
-
-            for (let i = 0; i < schedLen; i++) {
-                this.setSchedbyId(carditem.itemIds[i], scheduling[i]);
+        if (!this.isTagedDeckName(deckName) && !this.isTagedNoteDeckName(deckName)) {
+            deckName = this.getDefaultDackName();
+        }
+        this.updateCardItems(note, carditem, count, deckName);
+        carditem.itemIds.forEach((id) => {
+            const sched = this.getSchedbyId(id);
+            // ignore new add card
+            if (sched != null) {
+                scheduling.push(sched);
             }
-        } else {
-            this.updateCardItems(note, carditem, count);
-            carditem.itemIds.forEach((id) => {
-                const sched = this.getSchedbyId(id);
-                // ignore new add card
-                if (sched != null) {
-                    scheduling.push(sched);
-                }
-            });
-        }
+        });
+
         return scheduling;
     }
 }

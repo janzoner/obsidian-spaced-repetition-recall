@@ -92,6 +92,7 @@ export interface SRSettings {
     repeatItems: boolean;
     trackedNoteToDecks: boolean;
     algorithm: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     algorithmSettings: any;
 }
 
@@ -148,7 +149,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
     dataLocation: DataLocation.PluginFolder,
     customFolder: "",
     maxNewPerDay: 20,
-    repeatItems: true,
+    repeatItems: false,
     trackedNoteToDecks: false,
     algorithm: Object.keys(algorithms)[0],
     algorithmSettings: { algorithm: Object.values(algorithms)[0].settings },
@@ -714,7 +715,9 @@ export class SRSettingTab extends PluginSettingTab {
                                 plugin.algorithm = algorithms[plugin.data.settings.algorithm];
                                 plugin.algorithm.updateSettings(
                                     plugin,
-                                    plugin.data.settings.algorithmSettings
+                                    plugin.data.settings.algorithmSettings[
+                                        plugin.data.settings.algorithm
+                                    ]
                                 );
                                 plugin.savePluginData();
                                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -741,10 +744,11 @@ export class SRSettingTab extends PluginSettingTab {
 
         // Add algorithm specific settings
         // containerEl.createEl("h3").innerText = "Trackfile Algorithm Settings";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         plugin.algorithm.displaySettings(containerEl, (settings: any) => {
             plugin.data.settings.algorithmSettings[plugin.data.settings.algorithm] = settings;
             plugin.savePluginData();
-            this.display();
+            // this.display(); // 容易导致失去输入焦点
         });
     }
 
@@ -822,10 +826,10 @@ export class SRSettingTab extends PluginSettingTab {
             const btnTextEl = new Setting(containerEl)
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
-                .setName(t(opt.toUpperCase()))
+                .setName(t("FLASHCARD_" + opt.toUpperCase() + "_LABEL"))
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
-                .setDesc(t(opt.toUpperCase() + "_DESC"));
+                .setDesc(t("FLASHCARD_" + opt.toUpperCase() + "_DESC"));
             btnTextEl.addText((text) =>
                 text.setValue(btnText[algo][ind]).onChange((value) => {
                     applySettingsUpdate(async () => {

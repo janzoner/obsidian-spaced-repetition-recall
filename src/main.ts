@@ -91,6 +91,7 @@ export default class SRPlugin extends Plugin {
     public commands: Commands;
     public algorithm: SrsAlgorithm;
     public reviewNoteFloatBar: reviewNoteResponseModal;
+    public settingTab: SRSettingTab;
 
     async onload(): Promise<void> {
         await this.loadPluginData();
@@ -209,10 +210,7 @@ export default class SRPlugin extends Plugin {
                                 item.setIcon("plus-with-circle");
                                 item.setTitle("Track Note");
                                 item.onClick((_evt) => {
-                                    this.store.trackFile(
-                                        fileish.path,
-                                        this.store.getDefaultDackName()
-                                    );
+                                    this.store.trackFile(fileish.path);
                                 });
                             });
                         }
@@ -324,7 +322,8 @@ export default class SRPlugin extends Plugin {
             },
         });
 
-        this.addSettingTab(new SRSettingTab(this.app, this));
+        this.settingTab = new SRSettingTab(this.app, this);
+        this.addSettingTab(this.settingTab);
 
         this.app.workspace.onLayoutReady(() => {
             this.initView();
@@ -542,7 +541,7 @@ export default class SRPlugin extends Plugin {
             console.log(`SR: ${t("EASES")}`, this.easeByPath);
             console.log(`SR: ${t("DECKS")}`, this.deckTree);
             console.log(`SR: NOTE ${t("DECKS")}`, this.reviewDecks);
-            console.log(`SR: this.dueDatesNotes`, this.dueDatesNotes);
+            console.log("SR: this.dueDatesNotes", this.dueDatesNotes);
         }
 
         for (const deckKey in this.reviewDecks) {
@@ -966,6 +965,10 @@ export default class SRPlugin extends Plugin {
 
             return;
         }
+
+        // add repeat items to review.
+        this.store.loadRepeatQueue(this.reviewDecks);
+
         const queue = this.store.data.toDayAllQueue;
         const len = Object.keys(queue).length;
         this.dueNotesCount_real = len;
@@ -1022,10 +1025,15 @@ export default class SRPlugin extends Plugin {
                 this.data.settings.trackedNoteToDecks &&
                 (this.store.isTaged(note, "note") || this.store.isTrackedCardfile(note.path))
             ) {
-                deckPath = note.path.split("/");
-                deckPath.pop(); // remove filename
-                if (deckPath.length === 0) {
-                    deckPath = ["/"];
+                let deckName = this.store.getNoteDeckName(tags);
+                if (deckName == null) {
+                    deckName = this.store.getDefaultDackName();
+                    deckPath = deckName.split("/");
+                } else {
+                    deckPath = deckName.substring(1).split("/");
+                }
+                if (!this.store.isTracked(note.path)) {
+                    this.store.trackFile(note.path, deckName);
                 }
             }
         }
@@ -1203,6 +1211,7 @@ export default class SRPlugin extends Plugin {
                 }
                 this.store.syncTrackfileCardSched(
                     note,
+                    "#" + deckPath[0],
                     lineNo,
                     cardTextHash,
                     siblingMatches.length,
@@ -1354,7 +1363,7 @@ export default class SRPlugin extends Plugin {
                     `---\n${schedulingInfo[1]}` + `${schedulingInfo[5]}---`
                 );
             } else {
-                fileText = fileText.replace(SCHEDULING_INFO_REGEX, ``);
+                fileText = fileText.replace(SCHEDULING_INFO_REGEX, "");
             }
             await this.app.vault.modify(note, fileText);
         }
@@ -1400,9 +1409,23 @@ export default class SRPlugin extends Plugin {
         let rdname = this.lastSelectedReviewDeck;
         let ndeck: ReviewDeck;
         let ncount = 0;
+        const queue = this.store.data.toDayAllQueue;
 
         if (this.lastSelectedReviewDeck != null && Object.keys(this.reviewDecks).includes(rdname)) {
             ndeck = this.reviewDecks[rdname];
+            let deckQueueCount = 0;
+            Object.values(queue).forEach((value) => {
+                if (value === rdname) {
+                    deckQueueCount++;
+                }
+            });
+            deckQueueCount -= ndeck.newNotes.length;
+            ndeck.dueNotesCount =
+                deckQueueCount > ndeck.dueNotesCount
+                    ? deckQueueCount > ndeck.scheduledNotes.length
+                        ? ndeck.scheduledNotes.length
+                        : deckQueueCount
+                    : ndeck.dueNotesCount;
             ncount = ndeck.dueNotesCount + ndeck.newNotes.length;
             if (ncount > 0) {
                 return this.lastSelectedReviewDeck;
@@ -1412,6 +1435,19 @@ export default class SRPlugin extends Plugin {
         do {
             rdname = reviewDeckNames[Math.round(Math.random() * (reviewDeckNames.length - 1))];
             ndeck = this.reviewDecks[rdname];
+            let deckQueueCount = 0;
+            Object.values(queue).forEach((value) => {
+                if (value === rdname) {
+                    deckQueueCount++;
+                }
+            });
+            deckQueueCount -= ndeck.newNotes.length;
+            ndeck.dueNotesCount =
+                deckQueueCount > ndeck.dueNotesCount
+                    ? deckQueueCount > ndeck.scheduledNotes.length
+                        ? ndeck.scheduledNotes.length
+                        : deckQueueCount
+                    : ndeck.dueNotesCount;
             ncount = ndeck.dueNotesCount + ndeck.newNotes.length;
 
             ind = reviewDeckNames.lastIndexOf(rdname);
@@ -1425,7 +1461,8 @@ export default class SRPlugin extends Plugin {
         let isDue = false;
         const queue = this.store.data.toDayAllQueue;
         const queueLatter = this.store.data.toDayLatterQueue;
-        const len = Object.keys(queue).length;
+        const idQueue = Object.keys(queue);
+        const len = idQueue.length;
         this.dueNotesCount_real = len;
 
         if (len === 0) {
@@ -1445,18 +1482,25 @@ export default class SRPlugin extends Plugin {
                 }
             }
         } else {
-            const indArr = Array.from(new Array(NotesCount).keys());
+            const deckIdqueue: number[] = [];
+            Object.values(queue).forEach((v, ind) => {
+                if (v === deck.deckName) {
+                    deckIdqueue.push(Number.parseInt(idQueue[ind]));
+                }
+            });
+            const indArr = Array.from(new Array(deckIdqueue.length).keys());
+
             do {
-                index = indArr[Math.round(Math.random() * (indArr.length - 1))];
-                const note = deck.scheduledNotes[index].note;
-                const fileid = this.store.getFileId(note.path);
-                if (
-                    Object.prototype.hasOwnProperty.call(queue, fileid) ||
-                    !Object.prototype.hasOwnProperty.call(queueLatter, fileid)
-                ) {
+                const qindex = indArr[Math.round(Math.random() * (indArr.length - 1))];
+                const item = this.store.getItembyID(deckIdqueue[qindex]);
+                const path = this.store.getFilePath(item);
+                index = deck.scheduledNotes.findIndex((v, _ind) => {
+                    if (v.note.path === path) return true;
+                });
+                if (index >= 0) {
                     isDue = true;
                 }
-                indArr.splice(indArr.indexOf(index), 1);
+                indArr.splice(indArr.indexOf(qindex), 1);
             } while (!isDue && indArr.length > 0);
         }
         if (!isDue) {
@@ -1498,7 +1542,7 @@ export default class SRPlugin extends Plugin {
                         if (
                             (this.data.settings.trackedNoteToDecks &&
                                 this.store.isTaged(file, "all")) ||
-                            (this.data.settings.trackedNoteToDecks &&
+                            (!this.data.settings.trackedNoteToDecks &&
                                 this.store.isTaged(file, "card"))
                         ) {
                             await this.store.syncNoteCardsIndex(file);
