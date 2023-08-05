@@ -9,7 +9,7 @@ import { CardType, ReviewResponse } from "./scheduling";
 import { parse } from "./parser";
 import { cyrb53 } from "./utils";
 import deepcopy from "deepcopy";
-import { isArray } from "chart.js/dist/helpers/helpers.core";
+import { isArray } from "src/utils_recall";
 
 const ROOT_DATA_PATH = "./tracked_files.json";
 const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";

@@ -81,3 +81,20 @@ export class MiscUtils {
         }
     }
 }
+
+// https://github.com/chartjs/Chart.js/blob/master/src/helpers/helpers.core.ts
+/**
+ * Returns true if `value` is an array (including typed arrays), else returns false.
+ * @param value - The value to test.
+ * @function
+ */
+export function isArray<T = unknown>(value: unknown): value is T[] {
+    if (Array.isArray && Array.isArray(value)) {
+        return true;
+    }
+    const type = Object.prototype.toString.call(value);
+    if (type.slice(0, 7) === "[object" && type.slice(-6) === "Array]") {
+        return true;
+    }
+    return false;
+}
