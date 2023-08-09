@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   chart.js:
     specifier: ^4.3.0
@@ -9,6 +13,9 @@ dependencies:
     version: 1.0.2
 
 devDependencies:
+  '@popperjs/core':
+    specifier: ^2.11.6
+    version: 2.11.6
   '@types/jest':
     specifier: ^29.5.1
     version: 29.5.1
@@ -48,12 +55,18 @@ devDependencies:
   chai:
     specifier: ^4.3.7
     version: 4.3.7
+  deepcopy:
+    specifier: ^2.1.0
+    version: 2.1.0
   esbuild:
     specifier: ~0.17.18
     version: 0.17.18
   eslint:
     specifier: ^8.40.0
     version: 8.40.0
+  fsrs.js:
+    specifier: ^1.1.0
+    version: 1.1.0
   jest:
     specifier: ^29.5.0
     version: 29.5.0(@types/node@20.1.1)
@@ -1004,6 +1017,10 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@popperjs/core@2.11.6:
+    resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
+    dev: true
 
   /@puppeteer/browsers@1.0.1(typescript@5.0.4):
     resolution: {integrity: sha512-9wkYhON9zBgtjYRE3FcokGCfjG25zjzNAYmsHpiWitRZ/4DeT3v125/fCUU66SaPJ4nUsxGNPgpS1TOcQ+8StA==}
@@ -2447,6 +2464,12 @@ packages:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
     dev: true
 
+  /deepcopy@2.1.0:
+    resolution: {integrity: sha512-8cZeTb1ZKC3bdSCP6XOM1IsTczIO73fdqtwa2B0N15eAz7gmyhQo+mc5gnFuulsgN3vIQYmTgbmQVKalH1dKvQ==}
+    dependencies:
+      type-detect: 4.0.8
+    dev: true
+
   /deepmerge-ts@5.1.0:
     resolution: {integrity: sha512-eS8dRJOckyo9maw9Tu5O5RUi/4inFLrnoLkBe3cPfDMx3WZioXtmOew4TXQaxq7Rhl4xjDtR7c6x8nNTxOvbFw==}
     engines: {node: '>=16.0.0'}
@@ -3098,6 +3121,13 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /fsrs.js@1.1.0:
+    resolution: {integrity: sha512-DEihBx081nENpNjrSvCopPVi9Ilh+u+ELYOKQmshfSz+DgC/B0hxFFMQnqy2ibWAm9zjyR/bWvaz86xEA4MIcA==}
+    engines: {node: '>=10'}
+    dependencies:
+      deepcopy: 2.1.0
+    dev: true
 
   /function-bind@1.1.1:
     resolution: {integrity: sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A==}
