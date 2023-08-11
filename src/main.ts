@@ -1493,12 +1493,16 @@ export default class SRPlugin extends Plugin {
             do {
                 const qindex = indArr[Math.round(Math.random() * (indArr.length - 1))];
                 const item = this.store.getItembyID(deckIdqueue[qindex]);
-                const path = this.store.getFilePath(item);
-                index = deck.scheduledNotes.findIndex((v, _ind) => {
-                    if (v.note.path === path) return true;
-                });
-                if (index >= 0) {
-                    isDue = true;
+                if (item != null) {
+                    const path = this.store.getFilePath(item);
+                    if (path != null) {
+                        index = deck.scheduledNotes.findIndex((v, _ind) => {
+                            if (v.note.path === path) return true;
+                        });
+                        if (index >= 0) {
+                            isDue = true;
+                        }
+                    }
                 }
                 indArr.splice(indArr.indexOf(qindex), 1);
             } while (!isDue && indArr.length > 0);
