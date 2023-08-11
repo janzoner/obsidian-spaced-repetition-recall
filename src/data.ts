@@ -1111,8 +1111,9 @@ export class DataStore {
 
         if (now.getDate() != new Date(this.data.lastQueue).getDate()) {
             this.data.newAdded = 0;
+            this.clearQueue();
         }
-        data.cardQueue = [];
+        // data.cardQueue = [];
 
         let oldAdd = 0;
         let newAdd = 0;
