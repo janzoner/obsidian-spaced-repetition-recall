@@ -8,6 +8,8 @@ import {
     TFile,
     TextAreaComponent,
     setIcon,
+    WorkspaceLeaf,
+    MarkdownView,
 } from "obsidian";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import h from "vhtml";
@@ -164,6 +166,7 @@ export class FlashcardModal extends Modal {
     public responseDiv: HTMLElement;
     public resetButton: HTMLButtonElement;
     public editButton: HTMLElement;
+    public openNoteFileButton: HTMLElement;
     public contextView: HTMLElement;
     public currentCard: Card;
     public currentCardIdx: number;
@@ -300,6 +303,37 @@ export class FlashcardModal extends Modal {
         backButton.addEventListener("click", () => {
             this.plugin.data.historyDeck = "";
             this.decksList();
+        });
+
+        this.openNoteFileButton = flashCardMenu.createEl("button");
+        this.openNoteFileButton.addClass("sr-flashcard-menu-item");
+        setIcon(this.openNoteFileButton, "file-edit");
+        this.openNoteFileButton.setAttribute("aria-label", t("OPEN_NOTE"));
+        this.openNoteFileButton.addEventListener("click", async () => {
+            const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.getLeaf();
+            await activeLeaf.openFile(this.currentCard.note);
+
+            const activeView: MarkdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+            if (activeView) {
+                activeView.editor.setCursor({
+                    line: this.currentCard.lineNo,
+                    ch: 0,
+                });
+                activeView.editor.scrollIntoView({
+                    from: {
+                        line: this.currentCard.lineNo,
+                        ch: 0,
+                    },
+                    to: {
+                        line: this.currentCard.lineNo,
+                        ch: 0,
+                    },
+                });
+            }
+
+            this.currentDeck.deleteFlashcardAtIndex(this.currentCardIdx, this.currentCard.isDue);
+            this.burySiblingCards(false);
+            this.currentDeck.nextCard(this);
         });
 
         this.editButton = flashCardMenu.createEl("button");
