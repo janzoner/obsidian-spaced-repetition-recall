@@ -192,6 +192,9 @@ export class SRSettingTab extends PluginSettingTab {
         containerEl.createDiv().innerHTML = t("CHECK_WIKI", {
             wiki_url: "https://www.stephenmwangi.com/obsidian-spaced-repetition/",
         });
+        const issue_url =
+            "https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues";
+        containerEl.createDiv().innerHTML = `有空时可以看看 <a href= ${issue_url} > issue </a> .`;
 
         // trackfile_setting
         // https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
