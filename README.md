@@ -22,10 +22,10 @@ This is a modified version of [obsidian-spaced-repetition](https://github.com/st
 -   when using fsrs, output `ob-revlog.csv`, to optimize the algorithm parameters using [optimizer](https://github.com/open-spaced-repetition/fsrs-optimizer) for better review;
 
 ## Maintainers Wanted
+
 Since I am not a programmer, I don't know much about typescript programming, so I can only do some bug fixes and small feature updates. I can only do some bug fixes and small feature updates, but it is difficult to realize some of the proposed features. Welcome to join us if you are interested in this plugin, and work together to maintain and update this plugin.
 
 You can join us by submitting an issue or PR directly.
-
 
 ## How to install the plugin
 
