@@ -57,7 +57,7 @@ export class ReviewQueueListView extends ItemView {
                 deckKey,
                 deckCollapsed,
                 false,
-                deck
+                deck,
             ).getElementsByClassName("nav-folder-children")[0] as HTMLElement;
 
             if (deck.newNotes.length > 0) {
@@ -66,7 +66,7 @@ export class ReviewQueueListView extends ItemView {
                     t("NEW"),
                     !deck.activeFolders.has(t("NEW")),
                     deckCollapsed,
-                    deck
+                    deck,
                 );
 
                 for (const newFile of deck.newNotes) {
@@ -86,7 +86,7 @@ export class ReviewQueueListView extends ItemView {
                         fileIsOpen,
                         !deck.activeFolders.has(t("NEW")),
                         deck,
-                        this.plugin
+                        this.plugin,
                     );
                 }
             }
@@ -155,7 +155,7 @@ export class ReviewQueueListView extends ItemView {
                         fileIsOpen,
                         !deck.activeFolders.has(folderTitle),
                         deck,
-                        this.plugin
+                        this.plugin,
                     );
                 }
             }
@@ -171,13 +171,13 @@ export class ReviewQueueListView extends ItemView {
         folderTitle: string,
         collapsed: boolean,
         hidden: boolean,
-        deck: ReviewDeck
+        deck: ReviewDeck,
     ): HTMLElement {
         const folderEl: HTMLDivElement = parentEl.createDiv("nav-folder");
         const folderTitleEl: HTMLDivElement = folderEl.createDiv("nav-folder-title");
         const childrenEl: HTMLDivElement = folderEl.createDiv("nav-folder-children");
         const collapseIconEl: HTMLDivElement = folderTitleEl.createDiv(
-            "nav-folder-collapse-indicator collapse-icon"
+            "nav-folder-collapse-indicator collapse-icon",
         );
 
         collapseIconEl.innerHTML = COLLAPSE_ICON;
@@ -215,7 +215,7 @@ export class ReviewQueueListView extends ItemView {
         fileElActive: boolean,
         hidden: boolean,
         deck: ReviewDeck,
-        plugin: SRPlugin
+        plugin: SRPlugin,
     ): void {
         const navFileEl: HTMLElement = folderEl
             .getElementsByClassName("nav-folder-children")[0]
@@ -245,7 +245,7 @@ export class ReviewQueueListView extends ItemView {
 
                 return false;
             },
-            false
+            false,
         );
 
         navFileTitle.addEventListener(
@@ -260,7 +260,7 @@ export class ReviewQueueListView extends ItemView {
                 });
                 return false;
             },
-            false
+            false,
         );
     }
 
