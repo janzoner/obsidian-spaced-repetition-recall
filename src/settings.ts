@@ -94,6 +94,8 @@ export interface SRSettings {
     algorithm: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     algorithmSettings: any;
+
+    previousRelease: string;
 }
 
 export const DEFAULT_SETTINGS: SRSettings = {
@@ -153,6 +155,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
     trackedNoteToDecks: false,
     algorithm: Object.keys(algorithms)[0],
     algorithmSettings: { algorithm: Object.values(algorithms)[0].settings },
+    previousRelease: "0.0.0.0",
 };
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts

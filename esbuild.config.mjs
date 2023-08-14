@@ -6,6 +6,7 @@ const prod = process.argv[2] === "production";
 
 const context = await esbuild.context({
     entryPoints: ["src/main.ts"],
+    loader: {".md":"text"},
     bundle: true,
     external: ["obsidian", "electron", ...builtins],
     format: "cjs",

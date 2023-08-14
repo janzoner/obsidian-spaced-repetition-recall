@@ -32,6 +32,7 @@ export class MiscUtils {
      * @param obj
      * @param source
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static assignOnly(obj: any, source: any): any {
         const newObj = Object.assign(obj);
         if (source != undefined) {
@@ -51,6 +52,7 @@ export class MiscUtils {
      * @param obj
      * @param source
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static assignObjFully(obj: any, source: any): any {
         const newObj = Object.assign(obj, JSON.parse(JSON.stringify(source)));
         return newObj;
@@ -74,6 +76,7 @@ export class MiscUtils {
      *
      * @param {any[]} array
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static shuffle(array: any[]) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -98,3 +101,30 @@ export function isArray<T = unknown>(value: unknown): value is T[] {
     }
     return false;
 }
+
+// https://github.com/zsviczian/obsidian-excalidraw-plugin/
+export const isVersionNewerThanOther = (version: string, otherVersion: string): boolean => {
+    const v = version.match(/(\d+)\.(\d+)\.(\d+?)\.?(\d+)?/);
+    const o = otherVersion.match(/(\d+)\.(\d+)\.(\d+?)\.?(\d+)?/);
+
+    return Boolean(
+        v &&
+            v.length >= 4 &&
+            o &&
+            o.length >= 4 &&
+            !(isNaN(parseInt(v[1])) || isNaN(parseInt(v[2])) || isNaN(parseInt(v[3]))) &&
+            !(isNaN(parseInt(o[1])) || isNaN(parseInt(o[2])) || isNaN(parseInt(o[3]))) &&
+            (parseInt(v[1]) > parseInt(o[1]) ||
+                (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) > parseInt(o[2])) ||
+                (parseInt(v[1]) >= parseInt(o[1]) &&
+                    parseInt(v[2]) >= parseInt(o[2]) &&
+                    parseInt(v[3]) > parseInt(o[3])) ||
+                (v.length > 4 && o.length === 4) ||
+                (v.length > 4 && o.length > 4 && parseInt(v[4]) > parseInt(o[4])))
+    );
+};
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export const errorlog = (data: {}) => {
+    console.error({ plugin: "Spaced-rep-recall:", ...data });
+};

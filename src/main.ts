@@ -33,7 +33,8 @@ import Commands from "./commands";
 import SrsAlgorithm from "./algorithms";
 import { algorithms } from "src/settings";
 import { reviewNoteResponseModal } from "./modals/reviewresponse-modal";
-import { DateUtils } from "./utils_recall";
+import { DateUtils, isVersionNewerThanOther } from "./utils_recall";
+import { ReleaseNotes } from "./modals/ReleaseNotes";
 
 interface PluginData {
     settings: SRSettings;
@@ -97,6 +98,12 @@ export default class SRPlugin extends Plugin {
         await this.loadPluginData();
 
         appIcon();
+
+        const PLUGIN_VERSION = this.manifest.version;
+        const obsidianJustInstalled = this.data.settings.previousRelease === "0.0.0";
+        if (isVersionNewerThanOther(PLUGIN_VERSION, this.data.settings.previousRelease)) {
+            new ReleaseNotes(this.app, this, obsidianJustInstalled ? null : PLUGIN_VERSION).open();
+        }
 
         this.algorithm = algorithms[this.data.settings.algorithm];
         this.algorithm.updateSettings(
