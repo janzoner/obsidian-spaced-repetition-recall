@@ -41,8 +41,21 @@ Check the [docs](https://www.stephenmwangi.com/obsidian-spaced-repetition/) for 
 
 ## Thanks
 
+I develop this plugin as a hobby, spending my free time doing this. If you find it valuable, then please say THANK YOU or buy me a coffee...
+
+<div class="ex-coffee-div" align = "center">
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_alipay.png?v=3" height=45></a>
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_wechat.png?v=3" height=45></a>
+</div>
+
+or buy original plugin author(@st3v3nmw) a coffee...
+<a href='https://ko-fi.com/M4M44DEN6' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi3.png?v=2' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
+---
+
 Thank you to everyone who has created a plugin that inspired me and I took code from.
 
 -   first, thanks to [@st3v3nmw's obsidian-spaced-repetition](https://github.com/st3v3nmw/obsidian-spaced-repetition) and [@martin-jw recall plugin](https://github.com/martin-jw/obsidian-recall)
 -   floatbar(thanks to [@chetachi's cMenu](https://github.com/chetachiezikeuzor/cMenu-Plugin))
 -   [Fsrs Algorithm](https://github.com/open-spaced-repetition/fsrs.js)
+-   ReleaseNotes(thanks to [@Zsolt Viczian Excalidraw](https://zsolt.blog))

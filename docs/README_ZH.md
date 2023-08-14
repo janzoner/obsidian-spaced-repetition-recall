@@ -1,8 +1,6 @@
 本插件是魔改自[obsidian-spaced-repetition](https://github.com/st3v3nmw/obsidian-spaced-repetition) 和 [recall plugin](https://github.com/martin-jw/obsidian-recall)
 就是 SR 的复习时间信息可以单独保存，不修改原笔记文件内容，以及添加其他功能。
 
-# Flashcard-Based and Note-Based Spaced Repetition Plugin
-
 ## Features
 
 -   [@st3v3nmw's ReadMe](https://github.com/st3v3nmw/obsidian-spaced-repetition#readme)
@@ -43,14 +41,27 @@ github: https://github.com/open-spaced-repetition/obsidian-spaced-repetition-rec
 
 或：
 
-1. Download main.js, manifest.json, styles.css from the latest release (see [releases](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/releases/))
-2. Create a new folder in `Vault-name/.obsidian/plugins` and put the downloaded files in there
-3. Reload your plugins and enable the plugin
+1. 从[最新发布](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/releases/)中下载 main.js, manifest.json, styles.css；
+2. 在 `Vault-name/.obsidian/plugins` 中新建个文件夹`obsidian-spaced-repetition-recall`, 把刚下的文件放入新建的文件夹中；
+3. 重启Obsidan 开启插件，就可以使用了。
 
 ## Thanks
+
+业余时间折腾的，如果对你有所帮助，可以请我喝瓶饮料呀~
+
+<div class="ex-coffee-div" align = "center">
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_alipay.png?v=3" height=45></a>
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_wechat.png?v=3" height=45></a>
+</div>
+
+或者，请原插件作者(@st3v3nmw)喝杯咖啡
+<a href='https://ko-fi.com/M4M44DEN6' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi3.png?v=2' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
+---
 
 Thank you to everyone who has created a plugin that inspired me and I took code from.
 
 -   first, thanks to [@st3v3nmw's obsidian-spaced-repetition](https://github.com/st3v3nmw/obsidian-spaced-repetition) and [@martin-jw recall plugin](https://github.com/martin-jw/obsidian-recall)
 -   floatbar(thanks to [@chetachi's cMenu](https://github.com/chetachiezikeuzor/cMenu-Plugin))
 -   [Fsrs Algorithm](https://github.com/open-spaced-repetition/fsrs.js)
+-   ReleaseNotes(thanks to [@Zsolt Viczian Excalidraw](https://zsolt.blog))

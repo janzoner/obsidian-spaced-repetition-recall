@@ -120,7 +120,7 @@ export const isVersionNewerThanOther = (version: string, otherVersion: string): 
                     parseInt(v[2]) >= parseInt(o[2]) &&
                     parseInt(v[3]) > parseInt(o[3])) ||
                 (v.length > 4 && o.length === 4) ||
-                (v.length > 4 && o.length > 4 && parseInt(v[4]) > parseInt(o[4])))
+                (v.length > 4 && o.length > 4 && parseInt(v[4]) > parseInt(o[4]))),
     );
 };
 

@@ -2,8 +2,15 @@
 import { App, MarkdownRenderer, Modal, Notice, moment, request } from "obsidian";
 import { errorlog, isVersionNewerThanOther } from "src/utils_recall";
 import ExcalidrawPlugin from "../main";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import README from "README.md";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import README_ZH from "docs/README_ZH.md";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import RELEASE_changelog from "CHANGELOG.md";
 
 // const fmd = fs.readFileSync("CHANGELOG.md", "utf8");
@@ -65,16 +72,16 @@ export class ReleaseNotes extends Modal {
         prevRelease = this.version === prevRelease ? "0.0.0" : prevRelease;
         // const message = this.version ? notes.join("\n\n---\n") : FIRST_RUN;
         let message = this.version
-        ? Object.values(latestRelease)
-            .filter((value: string) => {
-                const ver = value.match(/(?:##\s+\[)([\d\w.]{6,})(?:\s|\])/m)[0];
-                return isVersionNewerThanOther(ver,prevRelease);
-            })
-            // .map((key: string) => `${key==="Intro" ? "" : `# ${key}\n`}${RELEASE_NOTES[key]}`)
-            .slice(0, 10)
-            .join("\n\n---\n")
-        : FIRST_RUN;
-        message = this.version? FIRST_RUN + message: message;
+            ? Object.values(latestRelease)
+                  .filter((value: string) => {
+                      const ver = value.match(/(?:##\s+\[)([\d\w.]{6,})(?:\s|\])/m)[0];
+                      return isVersionNewerThanOther(ver, prevRelease);
+                  })
+                  // .map((key: string) => `${key==="Intro" ? "" : `# ${key}\n`}${RELEASE_NOTES[key]}`)
+                  .slice(0, 10)
+                  .join("\n\n---\n")
+            : FIRST_RUN;
+        message = this.version ? FIRST_RUN + message : message;
         await MarkdownRenderer.renderMarkdown(message, this.contentEl, "", this.plugin);
 
         this.contentEl.createEl("p", { text: "" }, (el) => {
@@ -99,7 +106,7 @@ export class ReleaseNotes extends Modal {
                 return JSON.parse(
                     await request({
                         url: url,
-                    })
+                    }),
                 );
             };
 
@@ -118,7 +125,7 @@ export class ReleaseNotes extends Modal {
 
             if (isVersionNewerThanOther(latestVersion, PLUGIN_VERSION)) {
                 new Notice(
-                    `A newer version of 间隔重复 is available in BRAT Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is ${latestVersion}`
+                    `A newer version of 间隔重复 is available in BRAT Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is ${latestVersion}`,
                 );
             }
         } catch (e) {
