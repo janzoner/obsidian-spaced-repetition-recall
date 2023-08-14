@@ -8,6 +8,8 @@ on:
 env:
     PLUGIN_NAME: obsidian-spaced-repetition
 
+permissions: write-all
+
 jobs:
     release:
         runs-on: ubuntu-latest
