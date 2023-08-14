@@ -563,7 +563,7 @@ export class FlashcardModal extends Modal {
             store.setSchedbyId(
                 cardinfo.itemIds[this.currentCard.siblingIdx],
                 [0, due.valueOf(), interval, ease],
-                correct
+                correct,
             );
         }
 

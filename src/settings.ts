@@ -640,7 +640,7 @@ export class SRSettingTab extends PluginSettingTab {
                         plugin.store.moveStoreLocation();
                         await plugin.savePluginData();
                         this.display();
-                    })
+                    }),
             );
     }
 
@@ -669,7 +669,7 @@ export class SRSettingTab extends PluginSettingTab {
 
                         plugin.data.settings.maxNewPerDay = newPerDay;
                         plugin.savePluginData();
-                    })
+                    }),
             );
     }
 
@@ -704,7 +704,7 @@ export class SRSettingTab extends PluginSettingTab {
                             if (confirmed) {
                                 const result = this.algorithmSwitchData(
                                     oldAlgo,
-                                    newValue as algorithmNames
+                                    newValue as algorithmNames,
                                 );
                                 if (!result) {
                                     dropdown.setValue(plugin.data.settings.algorithm);
@@ -717,7 +717,7 @@ export class SRSettingTab extends PluginSettingTab {
                                     plugin,
                                     plugin.data.settings.algorithmSettings[
                                         plugin.data.settings.algorithm
-                                    ]
+                                    ],
                                 );
                                 plugin.savePluginData();
                                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -836,7 +836,7 @@ export class SRSettingTab extends PluginSettingTab {
                         btnText[algo][ind] = value;
                         await this.plugin.savePluginData();
                     });
-                })
+                }),
             );
             btnTextEl.addExtraButton((button) => {
                 button
@@ -873,7 +873,7 @@ export class SRSettingTab extends PluginSettingTab {
                             const data = item.data as AnkiData;
                             const due = new Date(item.nextReview);
                             const lastview = new Date(
-                                item.nextReview - data.lastInterval * DateUtils.DAYS_TO_MILLIS
+                                item.nextReview - data.lastInterval * DateUtils.DAYS_TO_MILLIS,
                             );
                             const reps = item.timesReviewed;
                             const card = algorithms[algorithmNames.Fsrs].defaultData();

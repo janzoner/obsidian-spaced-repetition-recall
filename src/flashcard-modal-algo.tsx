@@ -82,7 +82,7 @@ export class FlashcardEditModal extends Modal {
     private createButton(
         container: HTMLElement,
         text: string,
-        callback: (evt: MouseEvent) => void
+        callback: (evt: MouseEvent) => void,
     ) {
         const btn = new ButtonComponent(container);
         btn.setButtonText(text).onClick(callback);
@@ -95,7 +95,7 @@ export class FlashcardEditModal extends Modal {
         this.createButton(
             buttonBarContainer,
             t("SAVE"),
-            this.submitClickCallback
+            this.submitClickCallback,
         ).setCta().buttonEl.style.marginRight = "0";
         this.createButton(buttonBarContainer, t("CANCEL"), this.cancelClickCallback);
     }
@@ -245,7 +245,7 @@ export class FlashcardModal extends Modal {
 
     decksList(): void {
         const aimDeck = this.plugin.deckTree.subdecks.filter(
-            (deck) => deck.deckName === this.plugin.data.historyDeck
+            (deck) => deck.deckName === this.plugin.data.historyDeck,
         );
         if (this.plugin.data.historyDeck && aimDeck.length > 0) {
             const deck = aimDeck[0];
@@ -408,7 +408,7 @@ export class FlashcardModal extends Modal {
         }
         this.responseDiv.setAttribute(
             "style",
-            `grid-template-columns: ${"1fr ".repeat(btnCols - 1)}`
+            `grid-template-columns: ${"1fr ".repeat(btnCols - 1)}`,
         );
 
         this.options.slice(1).forEach((opt, ind) => {
@@ -416,7 +416,7 @@ export class FlashcardModal extends Modal {
             this.responseBtns.push(document.createElement("button"));
             this.responseBtns[tindex].setAttribute(
                 "id",
-                "sr-" + this.options[tindex].toLowerCase() + "-btn"
+                "sr-" + this.options[tindex].toLowerCase() + "-btn",
             );
             this.responseBtns[tindex].setAttribute("class", "ResponseFloatBarCommandItem");
             this.responseBtns[tindex].setText(this.plugin.data.settings.flashcardHardText);
@@ -486,7 +486,7 @@ export class FlashcardModal extends Modal {
             if (opt == this.options[this.options.length - 1]) {
                 this.currentDeck.deleteFlashcardAtIndex(
                     this.currentCardIdx,
-                    this.currentCard.isDue
+                    this.currentCard.isDue,
                 );
             }
             this.currentDeck.nextCard(this);
@@ -511,14 +511,14 @@ export class FlashcardModal extends Modal {
                     this.currentCard.ease,
                     this.currentCard.delayBeforeReview,
                     this.plugin.data.settings,
-                    this.plugin.dueDatesFlashcards
+                    this.plugin.dueDatesFlashcards,
                 );
             } else {
                 let initial_ease: number = this.plugin.data.settings.baseEase;
                 if (
                     Object.prototype.hasOwnProperty.call(
                         this.plugin.easeByPath,
-                        this.currentCard.note.path
+                        this.currentCard.note.path,
                     )
                 ) {
                     initial_ease = Math.round(this.plugin.easeByPath[this.currentCard.note.path]);
@@ -533,7 +533,7 @@ export class FlashcardModal extends Modal {
                     initial_ease,
                     0,
                     this.plugin.data.settings,
-                    this.plugin.dueDatesFlashcards
+                    this.plugin.dueDatesFlashcards,
                 );
             }
 
@@ -649,12 +649,12 @@ export class FlashcardModal extends Modal {
             if (dueIdx !== -1) {
                 this.currentDeck.deleteFlashcardAtIndex(
                     dueIdx,
-                    this.currentDeck.dueFlashcards[dueIdx].isDue
+                    this.currentDeck.dueFlashcards[dueIdx].isDue,
                 );
             } else if (newIdx !== -1) {
                 this.currentDeck.deleteFlashcardAtIndex(
                     newIdx,
-                    this.currentDeck.newFlashcards[newIdx].isDue
+                    this.currentDeck.newFlashcards[newIdx].isDue,
                 );
             }
         }
@@ -671,7 +671,7 @@ export class FlashcardModal extends Modal {
     async renderMarkdownWrapper(
         markdownString: string,
         containerEl: HTMLElement,
-        recursiveDepth = 0
+        recursiveDepth = 0,
     ): Promise<void> {
         if (recursiveDepth > 4) return;
 
@@ -679,7 +679,7 @@ export class FlashcardModal extends Modal {
             markdownString,
             containerEl,
             this.currentCard.note.path,
-            this.plugin
+            this.plugin,
         );
 
         containerEl.findAll(".internal-embed").forEach((el) => {
@@ -706,7 +706,7 @@ export class FlashcardModal extends Modal {
         const file = matched.groups.file || this.currentCard.note.path;
         const target = this.plugin.app.metadataCache.getFirstLinkpathDest(
             file,
-            this.currentCard.note.path
+            this.currentCard.note.path,
         );
         return {
             text: matched[0],
@@ -738,9 +738,9 @@ export class FlashcardModal extends Modal {
                             ((ev.target as HTMLElement).style.minWidth =
                                 (ev.target as HTMLElement).style.minWidth === "100%"
                                     ? null
-                                    : "100%")
+                                    : "100%"),
                     );
-                }
+                },
             );
             el.addClasses(["image-embed", "is-loaded"]);
         } else if (
@@ -757,7 +757,7 @@ export class FlashcardModal extends Modal {
                 },
                 (audio) => {
                     if (el.hasAttribute("alt")) audio.setAttribute("alt", el.getAttribute("alt"));
-                }
+                },
             );
             el.addClasses(["media-embed", "is-loaded"]);
         } else {
@@ -774,7 +774,7 @@ export class FlashcardModal extends Modal {
             blockId: string;
             target: TFile;
         },
-        recursiveDepth: number
+        recursiveDepth: number,
     ) {
         const cache = this.app.metadataCache.getCache(link.target.path);
         const text = await this.app.vault.cachedRead(link.target);
@@ -782,7 +782,7 @@ export class FlashcardModal extends Modal {
         if (link.heading) {
             const clean = (s: string) => s.replace(/[\W\s]/g, "");
             const headingIndex = cache.headings?.findIndex(
-                (h) => clean(h.heading) === clean(link.heading)
+                (h) => clean(h.heading) === clean(link.heading),
             );
             const heading = cache.headings[headingIndex];
 
@@ -923,7 +923,7 @@ export class Deck {
         const deckView: HTMLElement = containerEl.createDiv("tree-item");
 
         const deckViewSelf: HTMLElement = deckView.createDiv(
-            "tree-item-self tag-pane-tag is-clickable"
+            "tree-item-self tag-pane-tag is-clickable",
         );
         const shouldBeInitiallyExpanded: boolean =
             modal.plugin.data.settings.initiallyExpandAllSubdecksInTree;
@@ -1015,7 +1015,7 @@ export class Deck {
         modal.responseDiv.style.display = "none";
         modal.resetButton.disabled = true;
         modal.titleEl.setText(
-            `${this.deckName}: ${this.dueFlashcardsCount + this.newFlashcardsCount}`
+            `${this.deckName}: ${this.dueFlashcardsCount + this.newFlashcardsCount}`,
         );
 
         modal.answerBtn.style.display = "initial";
@@ -1061,7 +1061,7 @@ export class Deck {
             if (
                 Object.prototype.hasOwnProperty.call(
                     modal.plugin.easeByPath,
-                    modal.currentCard.note.path
+                    modal.currentCard.note.path,
                 )
             ) {
                 ease = modal.plugin.easeByPath[modal.currentCard.note.path];
@@ -1089,7 +1089,7 @@ export class Deck {
         } else if (Platform.isMobile) {
             for (let i = 1; i < modal.responseBtns.length; i++) {
                 modal.responseBtns[i].setText(
-                    textInterval(Math.round(intervals[i] * 100) / 100, true)
+                    textInterval(Math.round(intervals[i] * 100) / 100, true),
                 );
             }
             // modal.hardBtn.setText(textInterval(hardInterval, true));
@@ -1098,7 +1098,7 @@ export class Deck {
         } else {
             for (let i = 1; i < modal.responseBtns.length; i++) {
                 modal.responseBtns[i].setText(
-                    `${btnTexts[i]} - ${textInterval(Math.round(intervals[i] * 100) / 100, false)}`
+                    `${btnTexts[i]} - ${textInterval(Math.round(intervals[i] * 100) / 100, false)}`,
                 );
             }
             /* modal.hardBtn.setText(

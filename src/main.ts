@@ -101,7 +101,7 @@ export default class SRPlugin extends Plugin {
         this.algorithm = algorithms[this.data.settings.algorithm];
         this.algorithm.updateSettings(
             this,
-            this.data.settings.algorithmSettings[this.data.settings.algorithm]
+            this.data.settings.algorithmSettings[this.data.settings.algorithm],
         );
 
         this.store.buildQueue();
@@ -118,7 +118,7 @@ export default class SRPlugin extends Plugin {
         if (this.data.settings.dataLocation != DataLocation.SaveOnNoteFile) {
             // save tracked_files.json
             this.registerInterval(
-                window.setInterval(() => (this.sync(), this.store.save()), 5 * 60 * 1000)
+                window.setInterval(() => (this.sync(), this.store.save()), 5 * 60 * 1000),
             );
         }
 
@@ -215,7 +215,7 @@ export default class SRPlugin extends Plugin {
                             });
                         }
                     }
-                })
+                }),
             );
         }
 
@@ -384,7 +384,7 @@ export default class SRPlugin extends Plugin {
             if (
                 this.data.settings.noteFoldersToIgnore.some((folder) =>
                     // note.path.startsWith(folder)
-                    note.path.contains(folder)
+                    note.path.contains(folder),
                 )
             ) {
                 continue;
@@ -586,7 +586,7 @@ export default class SRPlugin extends Plugin {
             if (
                 this.data.settings.tagsToReview.some(
                     (tagToReview) =>
-                        tag === (matchedNoteTag = tagToReview) || tag.startsWith(tagToReview + "/")
+                        tag === (matchedNoteTag = tagToReview) || tag.startsWith(tagToReview + "/"),
                 )
             ) {
                 shouldIgnore = false;
@@ -765,7 +765,7 @@ export default class SRPlugin extends Plugin {
             if (
                 this.data.settings.tagsToReview.some(
                     (tagToReview) =>
-                        tag === (matchedNoteTag = tagToReview) || tag.startsWith(tagToReview + "/")
+                        tag === (matchedNoteTag = tagToReview) || tag.startsWith(tagToReview + "/"),
                 )
             ) {
                 shouldIgnore = false;
@@ -893,7 +893,7 @@ export default class SRPlugin extends Plugin {
             ) {
                 console.debug(
                     "interval diff:should be - (",
-                    this.shortestInterval - item.nextReview
+                    this.shortestInterval - item.nextReview,
                 );
                 this.shortestInterval = item.nextReview;
             }
@@ -991,7 +991,7 @@ export default class SRPlugin extends Plugin {
             t("STATUS_BAR", {
                 dueNotesCount: this.dueNotesCount_real,
                 dueFlashcardsCount: this.deckTree.dueFlashcardsCount,
-            })
+            }),
         );
 
         this.reviewNoteFloatBar.selfDestruct();
@@ -1215,7 +1215,7 @@ export default class SRPlugin extends Plugin {
                     lineNo,
                     cardTextHash,
                     siblingMatches.length,
-                    scheduling
+                    scheduling,
                 );
             }
             const context: string = settings.showContextInCards
@@ -1360,7 +1360,7 @@ export default class SRPlugin extends Plugin {
             if (schedulingInfo[1].length || schedulingInfo[5].length) {
                 fileText = fileText.replace(
                     SCHEDULING_INFO_REGEX,
-                    `---\n${schedulingInfo[1]}` + `${schedulingInfo[5]}---`
+                    `---\n${schedulingInfo[1]}` + `${schedulingInfo[5]}---`,
                 );
             } else {
                 fileText = fileText.replace(SCHEDULING_INFO_REGEX, "");
@@ -1398,7 +1398,7 @@ export default class SRPlugin extends Plugin {
             t("STATUS_BAR", {
                 dueNotesCount: this.dueNotesCount_real,
                 dueFlashcardsCount: this.deckTree.dueFlashcardsCount,
-            })
+            }),
         );
     }
 
@@ -1527,13 +1527,13 @@ export default class SRPlugin extends Plugin {
         this.registerEvent(
             this.app.vault.on("rename", (file, old) => {
                 this.store.renameTrackedFile(old, file.path);
-            })
+            }),
         );
 
         this.registerEvent(
             this.app.vault.on("delete", (file) => {
                 this.store.untrackFile(file.path);
-            })
+            }),
         );
 
         this.registerEvent(
@@ -1553,7 +1553,7 @@ export default class SRPlugin extends Plugin {
                         }
                     }
                 }
-            })
+            }),
         );
     }
 }

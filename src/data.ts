@@ -268,7 +268,7 @@ export class DataStore {
                     new Notice("Unable to delete old data file, please delete it manually.");
                     console.log(e);
                     return true;
-                }
+                },
             );
         } catch (e) {
             new Notice("Unable to move data file!");
@@ -292,7 +292,7 @@ export class DataStore {
                     console.log("Reading tracked files...");
                     this.data = Object.assign(
                         Object.assign({}, DEFAULT_SRS_DATA),
-                        JSON.parse(data)
+                        JSON.parse(data),
                     );
                 }
             } else {
@@ -739,7 +739,7 @@ export class DataStore {
     trackFile(
         path: string,
         type?: RPITEMTYPE | string,
-        notice?: boolean
+        notice?: boolean,
     ): { added: number; removed: number } | null {
         const trackedFile: TrackedFile = {
             path: path,
@@ -829,7 +829,7 @@ export class DataStore {
             // it's taged file, can't untrack by this.
             console.log(path + " is taged file, can't untrack by this.");
             new Notice(
-                "it is taged file, can't untrack by this. You can delete the #review tag in note file."
+                "it is taged file, can't untrack by this. You can delete the #review tag in note file.",
             );
             return;
         }
@@ -878,7 +878,7 @@ export class DataStore {
         path: string,
         type?: RPITEMTYPE,
         dname?: string,
-        notice?: boolean
+        notice?: boolean,
     ): { added: number; removed: number } | null {
         if (notice == null) notice = true;
         if (type == null) type = RPITEMTYPE.NOTE;
@@ -945,7 +945,7 @@ export class DataStore {
         cardinfo: CardInfo,
         count: number,
         deckName: string = this.getDefaultDackName(),
-        notice?: boolean
+        notice?: boolean,
     ): { added: number; removed: number } | null {
         if (notice == null) notice = false;
         const len = cardinfo.itemIds.length;
@@ -1020,7 +1020,7 @@ export class DataStore {
                 added +
                 " new card items, removed " +
                 removed +
-                " card items."
+                " card items.",
         );
         if (notice) {
             new Notice(
@@ -1031,7 +1031,7 @@ export class DataStore {
                     added +
                     " new card items, removed " +
                     removed +
-                    " card items."
+                    " card items.",
             );
         }
         return { added, removed };
@@ -1175,7 +1175,7 @@ export class DataStore {
                         }
                     });
                 }
-            })
+            }),
         );
 
         this.data.lastQueue = now.getTime();
@@ -1184,14 +1184,14 @@ export class DataStore {
         // }
 
         console.log(
-            "Added " + (oldAdd + newAdd) + " notes to review queue, with " + newAdd + " new!"
+            "Added " + (oldAdd + newAdd) + " notes to review queue, with " + newAdd + " new!",
         );
         console.log(
             "Added " +
                 (oldAdd_card + newAdd_card) +
                 " cards to review queue, with " +
                 newAdd_card +
-                " new!"
+                " new!",
         );
 
         if (untrackedFiles > 0) {
@@ -1200,7 +1200,7 @@ export class DataStore {
                     untrackedFiles +
                     " files with a total of " +
                     removedItems +
-                    " items while building queue!"
+                    " items while building queue!",
             );
         }
     }
@@ -1380,7 +1380,7 @@ export class DataStore {
                 removedNulltFiles +
                 " nullTrackedfile(s), removed " +
                 removedNullItems +
-                " nullitem(s)."
+                " nullitem(s).",
         );
         return;
     }
@@ -1417,7 +1417,7 @@ export class DataStore {
             for (const tag of trackedFile.tags) {
                 if (
                     this.plugin.data.settings.tagsToReview.some(
-                        (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/")
+                        (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/"),
                     )
                 ) {
                     shouldIgnore = true;
@@ -1675,7 +1675,7 @@ export class DataStore {
             settings.multilineReversedCardSeparator,
             settings.convertHighlightsToClozes,
             settings.convertBoldTextToClozes,
-            settings.convertCurlyBracketsToClozes
+            settings.convertCurlyBracketsToClozes,
         );
 
         for (const parsedCard of parsedCards) {
@@ -1741,7 +1741,7 @@ export class DataStore {
         const tags = getAllTags(fileCachedData) || [];
         if (
             this.plugin.data.settings.noteFoldersToIgnore.some((folder) =>
-                note.path.startsWith(folder)
+                note.path.startsWith(folder),
             )
         ) {
             return false;
@@ -1777,7 +1777,7 @@ export class DataStore {
         let isTaged = false;
         if (
             this.plugin.data.settings.tagsToReview.some(
-                (tagToReview) => deckName === tagToReview || deckName.startsWith(tagToReview + "/")
+                (tagToReview) => deckName === tagToReview || deckName.startsWith(tagToReview + "/"),
             )
         ) {
             isTaged = true;
@@ -1790,7 +1790,7 @@ export class DataStore {
         if (
             this.plugin.data.settings.flashcardTags.some(
                 (flashcardTag) =>
-                    deckName === flashcardTag || deckName.startsWith(flashcardTag + "/")
+                    deckName === flashcardTag || deckName.startsWith(flashcardTag + "/"),
             )
         ) {
             isTaged = true;
@@ -1802,7 +1802,7 @@ export class DataStore {
         for (const tag of tags) {
             if (
                 this.plugin.data.settings.tagsToReview.some(
-                    (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/")
+                    (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/"),
                 )
             ) {
                 return tag;
@@ -1826,7 +1826,7 @@ export class DataStore {
         lineNo: number,
         cardTextHash: string,
         count: number,
-        scheduling?: RegExpMatchArray[]
+        scheduling?: RegExpMatchArray[],
     ): RegExpMatchArray[] | null {
         if (scheduling == null) {
             scheduling = [];

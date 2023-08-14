@@ -138,7 +138,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
 
                         this.settings.startingEase = ease;
                         update(this.settings);
-                    })
+                    }),
             );
 
         new Setting(containerEl)
@@ -158,13 +158,13 @@ export class AnkiAlgorithm extends SrsAlgorithm {
 
                         this.settings.easyBonus = bonus;
                         update(this.settings);
-                    })
+                    }),
             );
 
         new Setting(containerEl)
             .setName("Lapse Interval Modifier")
             .setDesc(
-                "A factor to modify the review interval with when an item is reviewed as wrong."
+                "A factor to modify the review interval with when an item is reviewed as wrong.",
             )
             .addText((text) =>
                 text
@@ -180,13 +180,13 @@ export class AnkiAlgorithm extends SrsAlgorithm {
 
                         this.settings.lapseInterval = lapse;
                         update(this.settings);
-                    })
+                    }),
             );
 
         new Setting(containerEl)
             .setName("Graduating Interval")
             .setDesc(
-                "The interval (in days) to the next review after reviewing a new item as 'Good'."
+                "The interval (in days) to the next review after reviewing a new item as 'Good'.",
             )
             .addText((text) =>
                 text
@@ -202,13 +202,13 @@ export class AnkiAlgorithm extends SrsAlgorithm {
 
                         this.settings.graduatingInterval = interval;
                         update(this.settings);
-                    })
+                    }),
             );
 
         new Setting(containerEl)
             .setName("Easy Interval")
             .setDesc(
-                "The interval (in days) to the next review after reviewing a new item as 'Easy'."
+                "The interval (in days) to the next review after reviewing a new item as 'Easy'.",
             )
             .addText((text) =>
                 text
@@ -224,7 +224,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
 
                         this.settings.easyInterval = interval;
                         update(this.settings);
-                    })
+                    }),
             );
     }
 }

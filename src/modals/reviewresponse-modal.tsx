@@ -87,7 +87,7 @@ export class reviewNoteResponseModal {
         showIntvlBtn.setAttribute("class", "ResponseFloatBarCommandItem");
         showIntvlBtn.setAttribute(
             "aria-label",
-            "时间间隔显隐,\n建议：复习类不显示，渐进总结/增量写作显示"
+            "时间间隔显隐,\n建议：复习类不显示，渐进总结/增量写作显示",
         );
         // showIntvlBtn.setText("Show");
         setIcon(showIntvlBtn, "alarm-clock");
@@ -158,7 +158,7 @@ export class reviewNoteResponseModal {
                     ? textInterval(Number.parseFloat(responseInterval[index].toFixed(5)), true)
                     : `${text} - ${textInterval(
                           Number.parseFloat(responseInterval[index].toFixed(5)),
-                          false
+                          false,
                       )}`;
         }
         return text;
@@ -179,7 +179,7 @@ export class reviewNoteResponseModal {
                         ? textInterval(responseInterval[1], true)
                         : `${settings.flashcardHardText} - ${textInterval(
                               responseInterval[1],
-                              false
+                              false,
                           )}`,
                 icon: "bold-glyph",
             },
@@ -194,7 +194,7 @@ export class reviewNoteResponseModal {
                         ? textInterval(responseInterval[2], true)
                         : `${settings.flashcardGoodText} - ${textInterval(
                               responseInterval[2],
-                              false
+                              false,
                           )}`,
                 icon: "remix-GobletLine",
             },
@@ -209,7 +209,7 @@ export class reviewNoteResponseModal {
                         ? textInterval(responseInterval[3], true)
                         : `${settings.flashcardEasyText} - ${textInterval(
                               responseInterval[3],
-                              false
+                              false,
                           )}`,
                 icon: "remix-EmotionHappyLine",
             },
@@ -220,7 +220,7 @@ export class reviewNoteResponseModal {
             if (bar.containerEl) {
                 bar.containerEl.setAttribute(
                     "style",
-                    `grid-template-columns: ${"1fr ".repeat(menuCommands.length + 1)}`
+                    `grid-template-columns: ${"1fr ".repeat(menuCommands.length + 1)}`,
                 );
                 /* //left: ${0}%; bottom: ${
                 4.25
@@ -268,7 +268,7 @@ export class reviewNoteResponseModal {
             //after review
             const timmer = setInterval(() => {
                 const reviewNoteResponseModalBar = document.getElementById(
-                    "reviewNoteResponseModalBar"
+                    "reviewNoteResponseModalBar",
                 );
                 const Markdown = app.workspace.getActiveViewOfType(MarkdownView);
                 if (reviewNoteResponseModalBar) {
@@ -287,14 +287,14 @@ export class reviewNoteResponseModal {
                 if (responseInterval != null) {
                     menuCommands.forEach((item) => {
                         const btn = document.getElementById(
-                            "sr-" + item.name.toLowerCase() + "-btn"
+                            "sr-" + item.name.toLowerCase() + "-btn",
                         );
                         btn.setText(item.text);
                     });
                 } else {
                     menuCommands.forEach((item) => {
                         const btn = document.getElementById(
-                            "sr-" + item.name.toLowerCase() + "-btn"
+                            "sr-" + item.name.toLowerCase() + "-btn",
                         );
                         btn.setText(item.name);
                     });

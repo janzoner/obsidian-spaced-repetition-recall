@@ -185,7 +185,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                 if (
                     !this.settings.revlog_tags.some(
                         (tag: string) =>
-                            item.deckName === tag || item.deckName.startsWith(tag + "/")
+                            item.deckName === tag || item.deckName.startsWith(tag + "/"),
                     )
                 ) {
                     return;
@@ -265,7 +265,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         update(this.settings);
                         // await this.plugin.savePluginData();
                     });
-                })
+                }),
             );
 
         new Setting(containerEl)
@@ -280,7 +280,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         this.settings.request_retention = this.fsrs.p.request_retention =
                             value / 100;
                         update(this.settings);
-                    })
+                    }),
             )
             .addExtraButton((button) => {
                 button
@@ -316,7 +316,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                             new Notice(t("VALID_NUMBER_WARNING"));
                         }
                     });
-                })
+                }),
             )
             .addExtraButton((button) => {
                 button
@@ -351,7 +351,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         new Notice(t("VALID_NUMBER_WARNING"));
                         text.setValue(this.settings.w.toString());
                     });
-                })
+                }),
             )
             .addExtraButton((button) => {
                 button

@@ -36,7 +36,7 @@ export function schedule(
     ease: number,
     delayBeforeReview: number,
     settingsObj: SRSettings,
-    dueDates?: Record<number, number>
+    dueDates?: Record<number, number>,
 ): Record<string, number> {
     delayBeforeReview = Math.max(0, Math.floor(delayBeforeReview / (24 * 3600 * 1000)));
 
@@ -50,7 +50,7 @@ export function schedule(
         ease = Math.max(130, ease - 20);
         interval = Math.max(
             1,
-            (interval + delayBeforeReview / 4) * settingsObj.lapsesIntervalChange
+            (interval + delayBeforeReview / 4) * settingsObj.lapsesIntervalChange,
         );
     }
 
@@ -135,7 +135,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                 dataCopy.ease * 100,
                 delayBeforeReview,
                 this.settings,
-                dueDates
+                dueDates,
             );
             const nextInterval = schedObj.interval;
             intvls.push(nextInterval);
@@ -166,7 +166,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
             data.ease * 100,
             delayBeforeReview,
             this.settings,
-            this.plugin.dueDatesNotes
+            this.plugin.dueDatesNotes,
         );
 
         const nextReview = schedObj.interval;
@@ -216,7 +216,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                             new Notice(t("VALID_NUMBER_WARNING"));
                         }
                     });
-                })
+                }),
             )
             .addExtraButton((button) => {
                 button
@@ -240,7 +240,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .onChange(async (value: number) => {
                         this.settings.lapsesIntervalChange = value / 100;
                         update(this.settings);
-                    })
+                    }),
             )
             .addExtraButton((button) => {
                 button
@@ -273,7 +273,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                             new Notice(t("VALID_NUMBER_WARNING"));
                         }
                     });
-                })
+                }),
             )
             .addExtraButton((button) => {
                 button
@@ -306,7 +306,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                             new Notice(t("VALID_NUMBER_WARNING"));
                         }
                     });
-                })
+                }),
             )
             .addExtraButton((button) => {
                 button
@@ -330,7 +330,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .onChange(async (value: number) => {
                         this.settings.maxLinkFactor = value / 100;
                         update(this.settings);
-                    })
+                    }),
             )
             .addExtraButton((button) => {
                 button

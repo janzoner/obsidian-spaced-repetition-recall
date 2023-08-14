@@ -129,7 +129,7 @@ export class ReviewQueueListView extends ItemView {
                                 folderTitle,
                                 !deck.activeFolders.has(folderTitle),
                                 deckCollapsed,
-                                deck
+                                deck,
                             );
                             schedFolderElDict[folderTitle] = schedFolderEl;
                         } else {
@@ -240,7 +240,7 @@ export class ReviewQueueListView extends ItemView {
                 const item = plugin.store.data.items[fid];
                 plugin.reviewNoteFloatBar.algoDisplay(
                     true,
-                    plugin.algorithm.calcAllOptsIntervals(item)
+                    plugin.algorithm.calcAllOptsIntervals(item),
                 );
 
                 return false;

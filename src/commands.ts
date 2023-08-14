@@ -98,7 +98,7 @@ export default class Commands {
                 const item = plugin.store.data.items[fid];
                 plugin.reviewNoteFloatBar.algoDisplay(
                     true,
-                    plugin.algorithm.calcAllOptsIntervals(item)
+                    plugin.algorithm.calcAllOptsIntervals(item),
                 );
                 // plugin.reviewNoteFloatBar.algoDisplay(true, plugin.store.calcReviewInterval(fid));
             }
