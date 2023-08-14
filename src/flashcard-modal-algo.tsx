@@ -312,6 +312,7 @@ export class FlashcardModal extends Modal {
         this.openNoteFileButton.addEventListener("click", async () => {
             const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.getLeaf();
             await activeLeaf.openFile(this.currentCard.note);
+            this.app.workspace.setActiveLeaf(activeLeaf);
 
             const activeView: MarkdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
             if (activeView) {
@@ -321,7 +322,7 @@ export class FlashcardModal extends Modal {
                 });
                 activeView.editor.scrollIntoView({
                     from: {
-                        line: this.currentCard.lineNo,
+                        line: this.currentCard.lineNo + 20,
                         ch: 0,
                     },
                     to: {
