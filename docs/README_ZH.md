@@ -55,6 +55,7 @@ github: https://github.com/open-spaced-repetition/obsidian-spaced-repetition-rec
 </div>
 
 或者，请原插件作者(@st3v3nmw)喝杯咖啡
+
 <a href='https://ko-fi.com/M4M44DEN6' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi3.png?v=2' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
 ---
