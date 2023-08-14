@@ -939,7 +939,7 @@ export class SRSettingTab extends PluginSettingTab {
 
         const text = document.createElement("p");
         // text.textContent = t("COFFEE");
-        text.textContent = "业余时间折腾的，如果手头宽余，可以请我喝瓶饮料呀~";
+        text.textContent = "业余时间折腾的，如果对你有所帮助，可以请我喝瓶饮料呀~";
         div.appendChild(text);
 
         let anchor = document.createElement("a");
