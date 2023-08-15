@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { App, MarkdownRenderer, Modal, Notice, moment, request } from "obsidian";
 import { errorlog, isVersionNewerThanOther } from "src/utils_recall";
-import ExcalidrawPlugin from "../main";
+import SRPlugin from "../main";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -33,11 +33,11 @@ let PLUGIN_VERSION: string;
 
 // https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/src/dialogs/ReleaseNotes.ts
 export class ReleaseNotes extends Modal {
-    private plugin: ExcalidrawPlugin;
+    private plugin: SRPlugin;
     private version: string;
     // contentEl: any;
 
-    constructor(app: App, plugin: ExcalidrawPlugin, version: string) {
+    constructor(app: App, plugin: SRPlugin, version: string) {
         super(app);
         this.plugin = plugin;
         this.version = version;
