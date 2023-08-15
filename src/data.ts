@@ -669,13 +669,17 @@ export class DataStore {
      * @param {boolean} recursive
      */
     untrackFilesInFolder(folder: TFolder, recursive?: boolean) {
-        if (recursive == null) recursive = true;
+        let firstCalled = false;
+        if (recursive == null) {
+            recursive = true;
+            firstCalled = true;
+        }
 
         let totalRemoved = 0;
         folder.children.forEach((child) => {
             if (child instanceof TFolder) {
                 if (recursive) {
-                    this.untrackFilesInFolder(child, recursive);
+                    totalRemoved += this.untrackFilesInFolder(child, recursive);
                 }
             } else if (child instanceof TFile) {
                 if (this.isTracked(child.path)) {
@@ -684,6 +688,10 @@ export class DataStore {
                 }
             }
         });
+        if (firstCalled) {
+            console.log("在文件夹 %s 下，共删除%d个文件", folder.path, totalRemoved);
+        }
+        return totalRemoved;
     }
 
     /**
@@ -814,7 +822,7 @@ export class DataStore {
         const index = this.getFileIndex(path);
 
         if (index == -1) {
-            return;
+            return 0;
         }
 
         const trackedFile = this.data.trackedFiles[index];
@@ -824,14 +832,15 @@ export class DataStore {
             file != null &&
             "tags" in trackedFile &&
             trackedFile.tags.length > 0 &&
-            trackedFile.tags.last() !== this.getDefaultDackName()
+            trackedFile.tags.last() !== this.getDefaultDackName() &&
+            trackedFile.tags.last() !== RPITEMTYPE.NOTE
         ) {
             // it's taged file, can't untrack by this.
             console.log(path + " is taged file, can't untrack by this.");
             new Notice(
                 "it is taged file, can't untrack by this. You can delete the #review tag in note file.",
             );
-            return;
+            return 0;
         }
 
         const numItems = Object.keys(trackedFile.items).length;
@@ -863,6 +872,7 @@ export class DataStore {
         this.save();
         // this.plugin.updateStatusBar();
         console.log("Untracked: " + path + nulrstr);
+        return 1;
     }
 
     /**
