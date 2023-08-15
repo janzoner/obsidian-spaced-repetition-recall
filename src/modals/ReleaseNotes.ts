@@ -11,7 +11,7 @@ import README from "README.md";
 import README_ZH from "docs/README_ZH.md";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import RELEASE_changelog from "CHANGELOG.md";
+import RELEASE_changelog from "docs/changelog.md";
 
 // const fmd = fs.readFileSync("CHANGELOG.md", "utf8");
 console.debug(README);
@@ -23,13 +23,13 @@ let readme: string[];
 let readme_tks: string[];
 if (local === "zh-cn" || local === "zh-tw") {
     README_LOC = README_ZH;
-    readme = README_LOC.match(/^(.|\n)*(?=\n## 下载)/gm);
-    readme_tks = README_LOC.match(/^(## Thanks(?:.|\n)*)$/gm);
+    readme = README_LOC.match(/^(.|\r?\n)*(?=\r?\n## 下载)/gm);
+    readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
 } else {
-    readme = README_LOC.match(/^(.|\n)*(?=\n## How)/gm);
-    readme_tks = README_LOC.match(/^(## Thanks(?:.|\n)*)$/gm);
+    readme = README_LOC.match(/^(.|\r?\n)*(?=\r?\n## How)/gm);
+    readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
 }
-const latestRelease = RELEASE_changelog.match(/## \[(?:.|\n)*?(?=\n## \[)/gm);
+const latestRelease = RELEASE_changelog.match(/## \[(?:.|\r?\n)*?(?=\r?\n## \[)/gm);
 let PLUGIN_VERSION: string;
 
 // https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/src/dialogs/ReleaseNotes.ts
