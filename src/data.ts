@@ -1131,9 +1131,9 @@ export class DataStore {
                         if (!exists) {
                             if (file != null) {
                                 console.debug("untrackfile by buildqueue:", file);
-                                new Notice("untrackfile by buildqueue:" + file);
-                                removedItems += this.untrackFile(file.path, false);
-                                // item = null;
+                                // new Notice("untrackfile by buildqueue:" + file);
+                                // removedItems += this.untrackFile(file.path, false);
+                                // // item = null;
                                 untrackedFiles += 1;
                             }
                         } else if (file.items.file !== id) {
