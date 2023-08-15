@@ -14,11 +14,9 @@ import README_ZH from "docs/README_ZH.md";
 import RELEASE_changelog from "docs/changelog.md";
 
 // const fmd = fs.readFileSync("CHANGELOG.md", "utf8");
-console.debug(README);
-console.debug(RELEASE_changelog);
 
 const local = moment.locale();
-let README_LOC = README;
+let README_LOC: string;
 let readme: string[];
 let readme_tks: string[];
 if (local === "zh-cn" || local === "zh-tw") {
@@ -26,6 +24,7 @@ if (local === "zh-cn" || local === "zh-tw") {
     readme = README_LOC.match(/^(.|\r?\n)*(?=\r?\n## 下载)/gm);
     readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
 } else {
+    README_LOC = README;
     readme = README_LOC.match(/^(.|\r?\n)*(?=\r?\n## How)/gm);
     readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
 }
