@@ -1144,6 +1144,7 @@ export class DataStore {
                                 // new Notice("untrackfile by buildqueue:" + file);
                                 // removedItems += this.untrackFile(file.path, false);
                                 // // item = null;
+                                removedItems += 1;
                                 untrackedFiles += 1;
                             }
                         } else if (file.items.file !== id) {
@@ -1205,7 +1206,7 @@ export class DataStore {
         );
 
         if (untrackedFiles > 0) {
-            new Notice(
+            console.log(
                 "Recall: Untracked " +
                     untrackedFiles +
                     " files with a total of " +
