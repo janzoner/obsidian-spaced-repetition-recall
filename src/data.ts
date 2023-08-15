@@ -10,6 +10,7 @@ import { parse } from "./parser";
 import { cyrb53 } from "./utils";
 import deepcopy from "deepcopy";
 import { isArray } from "src/utils_recall";
+import { stringify } from "querystring";
 
 const ROOT_DATA_PATH = "./tracked_files.json";
 const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";
@@ -689,7 +690,9 @@ export class DataStore {
             }
         });
         if (firstCalled) {
-            console.log("在文件夹 %s 下，共删除%d个文件", folder.path, totalRemoved);
+            const msg = `在文件夹 ${folder.path} 下，共有 ${totalRemoved} 个文件不再跟踪重复了`;
+            new Notice(msg);
+            console.log(msg);
         }
         return totalRemoved;
     }
