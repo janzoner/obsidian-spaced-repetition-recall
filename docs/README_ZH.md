@@ -47,11 +47,11 @@ github: https://github.com/open-spaced-repetition/obsidian-spaced-repetition-rec
 
 ## Thanks
 
-业余时间折腾的，如果对你有所帮助，可以请我喝瓶饮料呀~
+业余时间折腾的，如果对你有所帮助，可以请我喝瓶饮料或奶茶呀~
 
 <div class="ex-coffee-div" align = "center">
-<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_alipay.png?v=3" height=45></a>
-<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_wechat.png?v=3" height=45></a>
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_alipay.png?v=3" height=120></a>
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_wechat.png?v=3" height=120></a>
 </div>
 
 或者，请原插件作者(@st3v3nmw)喝杯咖啡

@@ -44,8 +44,8 @@ Check the [docs](https://www.stephenmwangi.com/obsidian-spaced-repetition/) for 
 I develop this plugin as a hobby, spending my free time doing this. If you find it valuable, then please say THANK YOU or buy me a coffee...
 
 <div class="ex-coffee-div" align = "center">
-<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_alipay.png?v=3" height=45></a>
-<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_wechat.png?v=3" height=45></a>
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_alipay.png?v=3" height=120></a>
+<a ><img src="https://github.com/Newdea/newdea/blob/main/.github/funding/QR_wechat.png?v=3" height=120></a>
 </div>
 
 or buy original plugin author(@st3v3nmw) a coffee...
