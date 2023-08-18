@@ -1,6 +1,6 @@
 import SRPlugin from "./main";
 import { DateUtils } from "./utils_recall";
-import { DataLocation, SRSettings } from "./settings";
+import { DataLocation, SRSettings, algorithmNames } from "./settings";
 
 import { TFile, TFolder, Notice, getAllTags } from "obsidian";
 
@@ -10,7 +10,7 @@ import { parse } from "./parser";
 import { cyrb53 } from "./utils";
 import deepcopy from "deepcopy";
 import { isArray } from "src/utils_recall";
-import { stringify } from "querystring";
+import { FsrsData } from "./algorithms/fsrs";
 
 const ROOT_DATA_PATH = "./tracked_files.json";
 const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";
@@ -1627,10 +1627,27 @@ export class DataStore {
      */
     getSchedbyId(id: number): RegExpMatchArray {
         const item: RepetitionItem = this.data.items[id];
-        if (item == null || item.nextReview === 0 || item.timesReviewed === 0) return null; // new card doesn't need schedinfo
-        const ease = item.data.ease * 100;
-        const interval = item.data.lastInterval;
-        // const interval = item.data.iteration;
+        if (
+            item == null ||
+            item.nextReview === 0 ||
+            item.nextReview === null ||
+            item.timesReviewed === 0
+        ) {
+            return null; // new card doesn't need schedinfo
+        }
+        let ease: number;
+        let interval: number;
+        if (this.plugin.data.settings.algorithm !== algorithmNames.Fsrs) {
+            ease = item.data.ease * 100;
+            interval = item.data.lastInterval;
+            // const interval = item.data.iteration;
+        } else {
+            item.data as FsrsData;
+            interval = item.data.scheduled_days;
+            // ease just used for StatsChart, not review scheduling.
+            ease = item.data.state;
+        }
+
         const due = window.moment(item.nextReview);
         const dueString: string = due.format("YYYY-MM-DD");
         return ["due-interval-ease00", dueString, interval, ease] as RegExpMatchArray;
