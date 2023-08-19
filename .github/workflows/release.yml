@@ -6,7 +6,7 @@ on:
             - "*"
 
 env:
-    PLUGIN_NAME: obsidian-spaced-repetition
+    PLUGIN_NAME: obsidian-spaced-repetition-recall
 
 permissions: write-all
 
