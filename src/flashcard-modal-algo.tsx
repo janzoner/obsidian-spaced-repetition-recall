@@ -310,26 +310,27 @@ export class FlashcardModal extends Modal {
         setIcon(this.openNoteFileButton, "file-edit");
         this.openNoteFileButton.setAttribute("aria-label", t("OPEN_NOTE"));
         this.openNoteFileButton.addEventListener("click", async () => {
-            const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.getLeaf();
+            const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.getLeaf("tab");
             await activeLeaf.openFile(this.currentCard.note);
-            this.app.workspace.setActiveLeaf(activeLeaf);
-
-            const activeView: MarkdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-            if (activeView) {
-                activeView.editor.setCursor({
+            if (activeLeaf.view instanceof MarkdownView) {
+                const activeView = activeLeaf.view;
+                const pos = {
                     line: this.currentCard.lineNo,
                     ch: 0,
-                });
-                activeView.editor.scrollIntoView({
-                    from: {
-                        line: this.currentCard.lineNo + 20,
-                        ch: 0,
-                    },
-                    to: {
-                        line: this.currentCard.lineNo,
-                        ch: 0,
-                    },
-                });
+                };
+                // const posEnd = {}
+                activeView.editor.setCursor(pos);
+                if (activeView.getMode() === "preview") {
+                    activeView.currentMode.applyScroll(pos.line);
+                } else {
+                    activeView.editor.scrollIntoView(
+                        {
+                            from: pos,
+                            to: pos,
+                        },
+                        true,
+                    );
+                }
             }
 
             this.currentDeck.deleteFlashcardAtIndex(this.currentCardIdx, this.currentCard.isDue);

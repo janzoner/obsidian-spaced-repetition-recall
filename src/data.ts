@@ -250,11 +250,23 @@ export class DataStore {
      */
     moveStoreLocation(): boolean {
         const adapter = this.plugin.app.vault.adapter;
+        const plugin = this.plugin;
 
         const newPath = this.getStorePath();
         if (newPath === this.dataPath) {
             return false;
         }
+        let exist = false;
+        plugin.store.verify(newPath).then((v) => {
+            exist = v;
+            if (exist) {
+                const adapter = this.plugin.app.vault.adapter;
+                const suffix = "-" + new Date().toISOString().replace(/[:.]/g, "");
+                adapter.rename(newPath, newPath + suffix).then(() => {
+                    console.debug("orginal file: " + newPath + " renamed to: " + newPath + suffix);
+                });
+            }
+        });
 
         try {
             this.save();
@@ -1140,16 +1152,25 @@ export class DataStore {
             this.data.items.map(async (item, id) => {
                 if (item != null) {
                     const file = this.getFileForItem(item);
-                    return this.verify(file).then((exists) => {
+                    return this.verify(file.path).then((exists) => {
                         if (!exists) {
                             if (file != null) {
-                                console.debug("untrackfile by buildqueue:", file);
-                                // new Notice("untrackfile by buildqueue:" + file);
-                                // removedItems += this.untrackFile(file.path, false);
-                                // // item = null;
-                                removedItems += 1;
-                                untrackedFiles += 1;
+                                // in case file moved away.
+                                const newfile = this.findMovedFile(file.path);
+                                if (newfile !== null) {
+                                    file.path = newfile.path;
+                                    exists = true;
+                                    console.debug("a file has been moved: " + newfile.path);
+                                }
                             }
+                        }
+                        if (!exists) {
+                            console.debug("untrackfile by buildqueue:", file);
+                            // new Notice("untrackfile by buildqueue:" + file);
+                            // removedItems += this.untrackFile(file.path, false);
+                            // // item = null;
+                            removedItems += 1;
+                            untrackedFiles += 1;
                         } else if (file.items.file !== id) {
                             if (item.timesReviewed == 0) {
                                 // This is a new item.
@@ -1237,28 +1258,15 @@ export class DataStore {
     /**
      * Verify that the file of this item still exists.
      *
-     * @param {TrackedFile} file
+     * @param {string}path
      */
-    async verify(file: TrackedFile): Promise<boolean> {
+    async verify(path: string): Promise<boolean> {
         const adapter = this.plugin.app.vault.adapter;
-        if (file != null) {
-            const result = await adapter.exists(file.path).catch((_reason) => {
-                console.error("Unable to verify file: ", file.path);
-                // return false;
+        if (path != null) {
+            return await adapter.exists(path).catch((_reason) => {
+                console.error("Unable to verify file: ", path);
+                return false;
             });
-            if (!result) {
-                // in case file moved away.
-                const newfile = this.findMovedFile(file.path);
-                if (newfile !== null) {
-                    file.path = newfile.path;
-                    console.debug("a file has been moved: " + newfile.path);
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
         }
         return false;
     }
