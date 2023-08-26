@@ -1,3 +1,5 @@
+import { cyrb53 } from "./utils";
+
 export class DateUtils {
     static addTime(date: Date, time: number): Date {
         return new Date(date.getTime() + time);
@@ -20,6 +22,16 @@ export class BlockUtils {
         }
 
         return hash;
+    }
+
+    static getTxtHash(cardText: string) {
+        const headerReg = /.<!--SR:/gm;
+        const hRegex = headerReg.exec(cardText); // .lastIndexOf(sep+"<!--SR:");
+        if (hRegex != null) {
+            cardText = cardText.substring(0, hRegex.index);
+        }
+        const cardTextHash: string = cyrb53(cardText);
+        return cardTextHash;
     }
 }
 
@@ -82,6 +94,11 @@ export class MiscUtils {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
+    }
+
+    static fixed(value: number, point: number) {
+        const p: number = Math.pow(10, point);
+        return Math.round(value * p) / p;
     }
 }
 

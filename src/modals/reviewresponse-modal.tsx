@@ -45,7 +45,7 @@ export class reviewNoteResponseModal {
             return;
         }
         const buttonClick = (s: string) => {
-            const openFile: TFile | null = app.workspace.getActiveFile();
+            const openFile: TFile | null = plugin.app.workspace.getActiveFile();
             if (openFile && openFile.extension === "md") {
                 // const fid = plugin.store.getFileId(openFile.path);
                 // plugin.store.reviewId(fid, s);

@@ -1,16 +1,24 @@
 import SRPlugin from "./main";
-import { DateUtils } from "./utils_recall";
-import { DataLocation, SRSettings, algorithmNames } from "./settings";
+import { BlockUtils, DateUtils } from "./utils_recall";
+import { DataLocation, SRSettings, algorithmNames, algorithms } from "./settings";
 
-import { TFile, TFolder, Notice, getAllTags } from "obsidian";
+import { TFile, TFolder, Notice, getAllTags, FrontMatterCache } from "obsidian";
 
 import { ReviewDeck } from "src/review-deck";
 import { CardType, ReviewResponse } from "./scheduling";
 import { parse } from "./parser";
-import { cyrb53 } from "./utils";
+import { escapeRegexString } from "./utils";
 import deepcopy from "deepcopy";
 import { isArray } from "src/utils_recall";
 import { FsrsData } from "./algorithms/fsrs";
+import { AnkiData } from "./algorithms/anki";
+import { Rating } from "fsrs.js";
+import {
+    LEGACY_SCHEDULING_EXTRACTOR,
+    MULTI_SCHEDULING_EXTRACTOR,
+    SCHEDULING_INFO_REGEX,
+    YAML_FRONT_MATTER_REGEX,
+} from "./constants";
 
 const ROOT_DATA_PATH = "./tracked_files.json";
 const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";
@@ -49,6 +57,10 @@ interface SrsData {
      * @type {number}
      */
     lastQueue: number;
+    /**
+     * @type {number}
+     */
+    mtime: number;
     /**
      * @type {0}
      */
@@ -101,7 +113,7 @@ export interface RepetitionItem {
      */
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any; // Additional data, determined by the selected algorithm.
+    data: unknown; // Additional data, determined by the selected algorithm.
 }
 
 /**
@@ -168,6 +180,7 @@ const DEFAULT_SRS_DATA: SrsData = {
     items: [],
     trackedFiles: [],
     lastQueue: 0,
+    mtime: 0,
     newAdded: 0,
 };
 
@@ -207,6 +220,11 @@ export class DataStore {
     dataPath: string;
 
     /**
+     * ms
+     * @type {number}
+     */
+    EndofToday: number;
+    /**
      * @type {string}
      */
     private defaultDeckname = "default";
@@ -219,6 +237,7 @@ export class DataStore {
     constructor(plugin: SRPlugin) {
         this.plugin = plugin;
         this.dataPath = this.getStorePath();
+        this.EndofToday = this._EndofToday();
     }
 
     /**
@@ -227,15 +246,18 @@ export class DataStore {
      * @returns {string}
      */
     getStorePath(): string {
+        const dir = this.plugin.manifest.dir;
         const dataLocation = this.plugin.data.settings.dataLocation;
         if (dataLocation == DataLocation.PluginFolder) {
-            return PLUGIN_DATA_PATH;
+            // return PLUGIN_DATA_PATH;
+            return dir + ROOT_DATA_PATH.substring(1);
         } else if (dataLocation == DataLocation.RootFolder) {
             return ROOT_DATA_PATH;
         } else if (dataLocation == DataLocation.SpecifiedFolder) {
             return this.plugin.data.settings.customFolder;
         } else if (dataLocation == DataLocation.SaveOnNoteFile) {
-            return PLUGIN_DATA_PATH;
+            // return PLUGIN_DATA_PATH;
+            return dir + ROOT_DATA_PATH.substring(1);
         }
     }
 
@@ -307,6 +329,7 @@ export class DataStore {
                         Object.assign({}, DEFAULT_SRS_DATA),
                         JSON.parse(data),
                     );
+                    this.data.mtime = await this.getmtime();
                 }
             } else {
                 console.log("Tracked files not found! Creating new file...");
@@ -317,21 +340,55 @@ export class DataStore {
     }
 
     /**
+     * re load if tracked_files.json updated by other device.
+     */
+    reLoad() {
+        // const now: Date = new Date().getTime();
+        this.getmtime().then((mtime) => {
+            if (mtime - this.data.mtime > 10) {
+                this.load();
+            }
+        });
+    }
+
+    /**
      * save.
      */
     async save(path = this.dataPath) {
         await this.plugin.app.vault.adapter.write(path, JSON.stringify(this.data)).catch((e) => {
             new Notice("Unable to save data file!");
             console.log(e);
+            return;
         });
     }
 
     /**
-     * Returns total number of items tracked by the SRS.
+     * get file modified time. should only set to data.mtime when load.
+     * @param path
+     * @returns
      */
+    async getmtime(path = this.dataPath) {
+        const adapter = this.plugin.app.vault.adapter;
+        const stat = await adapter.stat(path.normalize());
+        if (stat != null) {
+            return stat.mtime;
+        } else {
+            return 0;
+        }
+    }
+
+    private _EndofToday() {
+        // end of today
+        const offsetMinutes = new Date().getTimezoneOffset();
+        const nowToday =
+            Math.ceil(Date.now() / DateUtils.DAYS_TO_MILLIS) * DateUtils.DAYS_TO_MILLIS +
+            offsetMinutes * 60 * 1000 -
+            1;
+        return nowToday;
+    }
+
     /**
-     * items.
-     *
+     * Returns total number of items tracked by the SRS.
      * @returns {number}
      */
     items(): number {
@@ -480,22 +537,37 @@ export class DataStore {
      * @param id Item id, can get by:
      * findex = this.store.getFileIndex(note.path);
      * id = this.data.trackedFiles[findex].items["file"]
-     * @returns id | -1
+     * @returns boolean
      */
-    isNewAdd(id: number) {
-        if (id < 0) {
-            console.log("[wrong file ID]: file %d not tracked. ", id);
-            return -1;
+    isNewAdd(id: number): boolean {
+        try {
+            if (this.data.items[id]["nextReview"] > 0) {
+                return false;
+            } else if (
+                this.data.items[id]["nextReview"] === 0 ||
+                this.data.items[id]["timesReviewed"] === 0
+            ) {
+                // This is a new item.
+                return true;
+            } else {
+                return false;
+            }
+        } catch (error) {
+            return false;
         }
-        if (this.data.items[id] == null) {
-            console.log("[wrong file ID]: file %d had been  untracked. ", id);
-            return -2;
+    }
+
+    isDue(id: number) {
+        try {
+            if (this.data.items[id]["nextReview"] > 0 || this.data.items[id]["timesReviewed"] > 0) {
+                // This is a new item.
+                return true;
+            } else {
+                return false;
+            }
+        } catch (error) {
+            return false;
         }
-        if (this.data.items[id]["nextReview"] == 0 || this.data.items[id]["timesReviewed"] == 0) {
-            // This is a new item.
-            return id;
-        }
-        return -1;
     }
 
     isCardItem(id: number) {
@@ -796,9 +868,13 @@ export class DataStore {
      * @returns {CardInfo} cardInfo of new add.
      */
     trackFileCard(note: TFile, lineNo: number, cardTextHash: string): CardInfo {
-        if (!this.isTrackedCardfile(note.path)) {
+        if (!this.isTracked(note.path)) {
             console.log("Attempt to add card in untracked file: " + note.path);
             this.trackFile(note.path, RPITEMTYPE.CARD, false);
+        }
+        const carditem = this.getAndSyncCardInfo(note, lineNo, cardTextHash);
+        if (carditem != null) {
+            return carditem;
         }
         const trackedFile = this.getTrackedFile(note.path);
 
@@ -817,7 +893,7 @@ export class DataStore {
         trackedFile.cardItems.sort((a, b) => {
             return a.lineNo - b.lineNo;
         });
-        this.save();
+        // this.save();
 
         console.log("Tracked: " + note.path + ", lineNo:" + lineNo + 1); // +1 just for better read.
 
@@ -864,7 +940,6 @@ export class DataStore {
             const ind = trackedFile.items[key];
             if (this.isQueued(ind)) {
                 this.data.queue.remove(ind);
-                delete this.data.toDayAllQueue[ind];
             }
             if (this.isInRepeatQueue(ind)) {
                 this.data.repeatQueue.remove(ind);
@@ -1034,8 +1109,9 @@ export class DataStore {
                 this.updateItemDeckName(iid, deckName);
             }
         }
+        newitemIds.sort((a: number, b: number) => a - b);
         cardinfo.itemIds = newitemIds;
-        this.save();
+        // this.save();
 
         console.log(
             trackedFile.path +
@@ -1062,6 +1138,11 @@ export class DataStore {
         return { added, removed };
     }
 
+    /**
+     * updateItemDeckName, if different, uupdate. Else do none thing.
+     * @param id
+     * @param deckName
+     */
     updateItemDeckName(id: number, deckName: string) {
         const item = this.data.items[id];
         if (item.deckName !== deckName) {
@@ -1088,12 +1169,29 @@ export class DataStore {
                     : RPITEMTYPE.CARD;
 
             this.data.items[id] = newItem;
-            this.save();
+            // this.save();
             console.debug("update item[%d]:", id, item);
             return;
         }
         if (item == null) {
             console.debug("update item[${id}] lack fileIndex");
+        }
+    }
+
+    /**
+     * updateItem AlgorithmData.
+     * @param id
+     * @param key
+     * @param value
+     */
+    updateItemAlgorithmData(id: number, key: string, value: unknown) {
+        try {
+            const data = this.data.items[id].data as AnkiData | FsrsData;
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            data[key] = value;
+        } catch (error) {
+            console.log(error);
         }
     }
 
@@ -1138,7 +1236,6 @@ export class DataStore {
             this.data.newAdded = 0;
             this.clearQueue();
         }
-        // data.cardQueue = [];
 
         let oldAdd = 0;
         let newAdd = 0;
@@ -1152,12 +1249,13 @@ export class DataStore {
             this.data.items.map(async (item, id) => {
                 if (item != null) {
                     const file = this.getFileForItem(item);
+                    if (file?.path == undefined) return;
                     return this.verify(file.path).then((exists) => {
                         if (!exists) {
                             if (file != null) {
                                 // in case file moved away.
                                 const newfile = this.findMovedFile(file.path);
-                                if (newfile !== null) {
+                                if (newfile != null) {
                                     file.path = newfile.path;
                                     exists = true;
                                     console.debug("a file has been moved: " + newfile.path);
@@ -1172,10 +1270,10 @@ export class DataStore {
                             removedItems += 1;
                             untrackedFiles += 1;
                         } else if (file.items.file !== id) {
+                            // card Queue
                             if (item.timesReviewed == 0) {
                                 // This is a new item.
                                 if (maxNew == -1 || data.newAdded < maxNew) {
-                                    // item.nextReview = now.getTime();
                                     data.newAdded += 1;
                                     data.cardQueue.push(id);
                                     newAdd_card += 1;
@@ -1190,11 +1288,11 @@ export class DataStore {
                                 }
                             }
                         } else {
+                            // note Queue
                             if (item.timesReviewed == 0) {
                                 // This is a new item.
-                                if (maxNew == -1 || data.newAdded < maxNew) {
-                                    // item.nextReview = now.getTime();   // it doesn't matter.
-                                    data.newAdded += 1;
+                                if (!this.isQueued(id) && (maxNew == -1 || newAdd < maxNew)) {
+                                    // data.newAdded += 1;
                                     data.queue.push(id);
                                     newAdd += 1;
                                 }
@@ -1218,26 +1316,26 @@ export class DataStore {
         //     MiscUtils.shuffle(data.queue);
         // }
 
-        console.log(
-            "Added " + (oldAdd + newAdd) + " notes to review queue, with " + newAdd + " new!",
-        );
-        console.log(
-            "Added " +
-                (oldAdd_card + newAdd_card) +
-                " cards to review queue, with " +
-                newAdd_card +
-                " new!",
-        );
+        // console.log(
+        //     "Added " + (oldAdd + newAdd) + " notes to review queue, with " + newAdd + " new!",
+        // );
+        // console.log(
+        //     "Added " +
+        //         (oldAdd_card + newAdd_card) +
+        //         " cards to review queue, with " +
+        //         newAdd_card +
+        //         " new!",
+        // );
 
-        if (untrackedFiles > 0) {
-            console.log(
-                "Recall: Untracked " +
-                    untrackedFiles +
-                    " files with a total of " +
-                    removedItems +
-                    " items while building queue!",
-            );
-        }
+        // if (untrackedFiles > 0) {
+        //     console.log(
+        //         "Recall: Untracked " +
+        //             untrackedFiles +
+        //             " files with a total of " +
+        //             removedItems +
+        //             " items while building queue!",
+        //     );
+        // }
     }
 
     loadRepeatQueue(rvdecks: { [deckKey: string]: ReviewDeck }) {
@@ -1245,11 +1343,12 @@ export class DataStore {
             // const repeatDeckCounts: Record<string, number> = {};
             this.data.repeatQueue.forEach((id) => {
                 const dname: string = this.getItembyID(id).deckName;
-                this.data.toDayAllQueue[id] = dname;
+                // this.data.toDayAllQueue[id] = dname;
                 // if (!Object.keys(repeatDeckCounts).includes(dname)) {
                 //     repeatDeckCounts[dname] = 0;
                 // }
                 rvdecks[dname].dueNotesCount++;
+                this.plugin.dueNotesCount++;
             });
             // return repeatDeckCounts;
         }
@@ -1271,8 +1370,7 @@ export class DataStore {
         return false;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    clearQueue(queue: any = null) {
+    clearQueue(queue: unknown = null) {
         if (queue == null) {
             this.data.queue = [];
             this.data.repeatQueue = [];
@@ -1394,7 +1492,7 @@ export class DataStore {
         }
 
         // console.debug("after delete nullitems:", items);
-
+        this.clearQueue();
         this.save();
 
         console.log(
@@ -1434,7 +1532,7 @@ export class DataStore {
             let shouldIgnore = false;
             if (!Object.prototype.hasOwnProperty.call(trackedFile, "tags")) {
                 trackedFile["tags"] = [this.getDefaultDackName()];
-                this.save();
+                // this.save();
             }
             for (const tag of trackedFile.tags) {
                 if (
@@ -1457,7 +1555,7 @@ export class DataStore {
                 continue;
             } // already add to other tagDeck.
 
-            if (this.isNewAdd(this.data.queue[i]) >= 0) {
+            if (this.isNewAdd(this.data.queue[i])) {
                 rdeck.newNotes.push(file);
                 this.plugin.newNotesCount++;
                 console.debug("syncRCsrsDataToSRreviewDecks: newadd");
@@ -1470,7 +1568,7 @@ export class DataStore {
                 }
             }
 
-            const [, due, _interval, ease] = this.getReviewNoteHeaderData(path);
+            const [, due, _interval, ease] = this.getItemSched(item);
             if (Object.prototype.hasOwnProperty.call(this.plugin.easeByPath, path)) {
                 this.plugin.easeByPath[path] = (this.plugin.easeByPath[path] + ease) / 2;
             } else {
@@ -1497,69 +1595,41 @@ export class DataStore {
         const trackedFile = this.getTrackedFile(note.path);
         const ind = this.getFileIndex(note.path);
         let now_number: number = now;
-        const nowToday: number =
-            Math.ceil(Date.now() / DateUtils.DAYS_TO_MILLIS) * DateUtils.DAYS_TO_MILLIS;
+        const nowToday: number = this.EndofToday;
 
         if (item == null) {
             this.updateItemById(fileid, ind);
             console.debug("syncRCDataToSRrevDeck update item:", item);
         }
         if (now == null) {
-            //it's inside plugin.sync();
             now_number = nowToday;
-            const currNow = Date.now();
-            if (
-                nowToday - item.nextReview > 0 &&
-                (this.data.toDayLatterQueue[fileid] == undefined || currNow - item.nextReview > 0)
-            ) {
-                this.data.toDayAllQueue[fileid] = rdeck.deckName;
-                delete this.data.toDayLatterQueue[fileid];
-            } else if (nowToday - item.nextReview < 0) {
-                // just in case some unknow errors.
-                delete this.data.toDayAllQueue[fileid];
-            }
         } else {
-            delete this.data.toDayAllQueue[fileid];
-            if (item.nextReview <= nowToday) {
-                this.data.toDayLatterQueue[fileid] = rdeck.deckName;
-            } else if (item.nextReview > nowToday) {
-                delete this.data.toDayLatterQueue[fileid];
-            }
+            delete this.data.toDayLatterQueue[fileid];
+
             Object.keys(this.data.toDayLatterQueue).forEach((fileid) => {
                 const id = Number.parseInt(fileid);
                 if (now - this.data.items[id].nextReview > 0) {
-                    if (!Object.prototype.hasOwnProperty.call(this.data.toDayAllQueue, id)) {
-                        const dname = (this.data.toDayAllQueue[id] = this.data.items[id].deckName);
-                        this.plugin.reviewDecks[dname].dueNotesCount++;
-                    }
+                    const dname = this.data.items[id].deckName;
+                    this.plugin.reviewDecks[dname].dueNotesCount++;
                     delete this.data.toDayLatterQueue[id];
                 }
             });
         }
 
-        if (this.isNewAdd(fileid) >= 0) {
+        if (this.isNewAdd(fileid)) {
             rdeck.newNotes.push(note);
             this.plugin.newNotesCount++;
             // console.debug("syncRCDataToSRrevDeck : addNew", fileid);
         } else {
             rdeck.scheduledNotes.push({ note: note, dueUnix: item.nextReview });
-            if (item.nextReview <= nowToday) {
+            if (item.nextReview <= now_number) {
                 rdeck.dueNotesCount++;
                 this.plugin.dueNotesCount++;
             }
 
-            // update pulgin data
-            const [, due, _interval, ease] = this.getReviewNoteHeaderData(note.path);
-            if (now != null) {
-                // this.plugin.easeByPath just update in plugin.sync(), shouldn't update in pulgin.singNoteSyncQueue()
-                if (Object.prototype.hasOwnProperty.call(this.plugin.easeByPath, note.path)) {
-                    this.plugin.easeByPath[note.path] =
-                        (this.plugin.easeByPath[note.path] + ease) / 2;
-                } else {
-                    this.plugin.easeByPath[note.path] = ease;
-                }
-            }
-            const nDays: number = Math.ceil((due - now_number) / (24 * 3600 * 1000));
+            const nDays: number = Math.ceil(
+                (item.nextReview - now_number) / DateUtils.DAYS_TO_MILLIS,
+            );
             if (!Object.prototype.hasOwnProperty.call(this.plugin.dueDatesNotes, nDays)) {
                 this.plugin.dueDatesNotes[nDays] = 0;
             }
@@ -1568,11 +1638,11 @@ export class DataStore {
         // update this.trackFile
         if (!Object.prototype.hasOwnProperty.call(trackedFile, "tags")) {
             trackedFile["tags"] = [rdeck.deckName];
-            this.save();
+            // this.save();
         } else {
             if (!trackedFile.tags.includes(rdeck.deckName)) {
                 trackedFile.tags.push(rdeck.deckName);
-                this.save();
+                // this.save();
             }
         }
 
@@ -1580,7 +1650,7 @@ export class DataStore {
         this.updateItemDeckName(fileid, rdeck.deckName);
         if (!Object.prototype.hasOwnProperty.call(item, "itemType")) {
             item.itemType = this.isCardItem(fileid) ? RPITEMTYPE.CARD : RPITEMTYPE.NOTE;
-            this.save();
+            // this.save();
         }
 
         return;
@@ -1609,29 +1679,52 @@ export class DataStore {
         this.setSchedbyId(fileId, sched, correct);
     }
 
+    getItemSched(item: RepetitionItem) {
+        try {
+            const data = item.data as AnkiData;
+            const ease = data.ease;
+            const interval = data.lastInterval;
+            // const interval = item.data.iteration;
+            const due = item.nextReview;
+            const sched = [item.ID, due, interval, ease];
+            console.debug("getItemSched:", sched);
+            return sched;
+        } catch (error) {
+            console.log("getItemSched:", error);
+            return null;
+        }
+    }
+
     /**
-     *  get ReviewNote dataItems to HeaderData
-     *  getSchedbyId
-     * @param path
+     *  get ReviewNote frontmatter Data from notefile.
+     *
+     * @param frontmatter
      * @returns number[] | [0, due, interval, ease];
      */
-    getReviewNoteHeaderData(path: string): number[] {
-        const item: RepetitionItem = this.getItemsOfFile(path)[0];
-        if (item == null) {
-            console.log("getReviewNoteHeaderData --> note: %s doesn't have item: ", path, item);
-            return;
+    getReviewNoteHeaderData(frontmatter: FrontMatterCache): number[] {
+        // file has scheduling information
+        if (
+            Object.prototype.hasOwnProperty.call(frontmatter, "sr-due") &&
+            Object.prototype.hasOwnProperty.call(frontmatter, "sr-interval") &&
+            Object.prototype.hasOwnProperty.call(frontmatter, "sr-ease")
+        ) {
+            const dueUnix: number = window
+                .moment(frontmatter["sr-due"], ["YYYY-MM-DD", "DD-MM-YYYY", "ddd MMM DD YYYY"])
+                .valueOf();
+            const interval: number = frontmatter["sr-interval"] as number;
+            const ease: number = frontmatter["sr-ease"] as number;
+            const sched = [null, dueUnix, interval, ease];
+            return sched;
+        } else {
+            console.log("getReviewNoteHeaderData --> note: %s doesn't have sr frontmatter. ");
+            return null;
         }
-        const ease = item.data.ease * 100;
-        const interval = item.data.lastInterval;
-        // const interval = item.data.iteration;
-        const due = item.nextReview;
-        return [0, due, interval, ease];
     }
 
     /**
      * @description: getSchedbyId , give returns to scheduling
      * @param {number} id
-     * @return {[]}  ["due-interval-ease00", due, interval, ease] | null for new
+     * @return {[]}  ["due-interval-ease00", dueString, interval, ease] | null for new
      */
     getSchedbyId(id: number): RegExpMatchArray {
         const item: RepetitionItem = this.data.items[id];
@@ -1643,24 +1736,33 @@ export class DataStore {
         ) {
             return null; // new card doesn't need schedinfo
         }
+
         let ease: number;
         let interval: number;
         if (this.plugin.data.settings.algorithm !== algorithmNames.Fsrs) {
-            ease = item.data.ease * 100;
-            interval = item.data.lastInterval;
+            const data: AnkiData = item.data as AnkiData;
+            ease = data.ease;
+            interval = data.lastInterval;
             // const interval = item.data.iteration;
         } else {
-            item.data as FsrsData;
-            interval = item.data.scheduled_days;
+            const data = item.data as FsrsData;
+            interval = data.scheduled_days;
             // ease just used for StatsChart, not review scheduling.
-            ease = item.data.state;
+            ease = data.state;
         }
 
         const due = window.moment(item.nextReview);
         const dueString: string = due.format("YYYY-MM-DD");
-        return ["due-interval-ease00", dueString, interval, ease] as RegExpMatchArray;
+        return [id, dueString, interval, ease] as unknown as RegExpMatchArray;
     }
 
+    /**
+     * setSchedbyId: set sched into items[id]
+     * @param id
+     * @param sched RegExpMatchArray
+     * @param correct user response
+     * @returns
+     */
     setSchedbyId(id: number, sched: RegExpMatchArray | number[] | string[], correct?: boolean) {
         const item: RepetitionItem = this.data.items[id];
         if (item == null) {
@@ -1668,14 +1770,17 @@ export class DataStore {
             // this.updateItemById(id);     //not work well yet.
             return;
         }
+        sched[0] = id;
+        // console.debug("setSchedbyId:", sched);
+        const data: AnkiData = item.data as AnkiData;
         item.nextReview =
             typeof sched[1] == "number"
-                ? sched[1]
+                ? Number(sched[1])
                 : window
                       .moment(sched[1], ["YYYY-MM-DD", "DD-MM-YYYY", "ddd MMM DD YYYY"])
                       .valueOf();
-        item.data.lastInterval = sched[2] as number;
-        item.data.ease = (sched[3] as number) / 100;
+        data.lastInterval = Number(sched[2]);
+        data.ease = Number(sched[3]);
 
         if (correct != null) {
             item.timesReviewed += 1;
@@ -1694,9 +1799,14 @@ export class DataStore {
      * @param note
      * @returns
      */
-    async syncNoteCardsIndex(note: TFile): Promise<number> {
-        if (!this.isTaged(note, "card") && !this.isTrackedCardfile(note.path)) {
-            return;
+    async syncNoteCardsIndex(
+        note: TFile,
+        callback?: (cardText: string, cardinfo: CardInfo) => void,
+    ): Promise<number> {
+        if (callback == null) {
+            if (!this.isTaged(note, RPITEMTYPE.CARD) && !this.isTrackedCardfile(note.path)) {
+                return;
+            }
         }
 
         const trackedFile = this.getTrackedFile(note.path);
@@ -1718,6 +1828,7 @@ export class DataStore {
         );
 
         for (const parsedCard of parsedCards) {
+            // deckPath = noteDeckPath;
             const lineNo: number = parsedCard[2];
             let cardText: string = parsedCard[1];
 
@@ -1733,13 +1844,21 @@ export class DataStore {
                     .replace("#", "")
                     .split("/");
                 if (cardDeckPath) {
+                    // deckPath = cardDeckPath;
                     cardText = cardText.replaceAll(tagInCardRegEx, "");
                 }
             }
 
-            const cardTextHash: string = cyrb53(cardText);
+            const cardTextHash: string = BlockUtils.getTxtHash(cardText);
 
             const cardinfo = this.getAndSyncCardInfo(note, lineNo, cardTextHash);
+            if (callback != null) {
+                callback(cardText, {
+                    lineNo: lineNo,
+                    cardTextHash: cardTextHash,
+                    itemIds: cardinfo?.itemIds,
+                });
+            }
             lines.push(lineNo);
             cardHashList[lineNo] = cardTextHash;
             if (cardinfo == null) {
@@ -1750,7 +1869,10 @@ export class DataStore {
         // console.debug("cardHashList: ", cardHashList);
 
         // sync by total parsedCards.length
-        const carditems = trackedFile.cardItems;
+        const carditems = trackedFile?.cardItems;
+        if (carditems == null) {
+            return;
+        }
         if (lines.length === carditems.length && negIndFlag) {
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i] !== carditems[i].lineNo) {
@@ -1771,72 +1893,82 @@ export class DataStore {
      */
     isTaged(note: TFile, tagtype?: string) {
         if (tagtype == null) {
-            tagtype = "note";
+            tagtype = RPITEMTYPE.NOTE;
         }
         // on tracked notfile changed.
-        const fileCachedData = app.metadataCache.getFileCache(note) || {};
-        let shouldIgnore = true;
+        const fileCachedData = this.plugin.app.metadataCache.getFileCache(note) || {};
 
         const tags = getAllTags(fileCachedData) || [];
         if (
             this.plugin.data.settings.noteFoldersToIgnore.some((folder) =>
-                note.path.startsWith(folder),
+                note.path.contains(folder),
             )
         ) {
             return false;
         }
 
-        if (tagtype === "note") {
-            if (this.getNoteDeckName(tags) !== null) {
-                shouldIgnore = false;
+        if (tagtype === RPITEMTYPE.NOTE) {
+            if (this.getNoteDeckName(tags) != null) {
+                return true;
             }
-        } else if (tagtype === "card") {
+        } else if (tagtype === RPITEMTYPE.CARD) {
             for (const tag of tags) {
                 if (this.isTagedDeckName(tag)) {
-                    shouldIgnore = false;
-                    break;
+                    return true;
                 }
             }
-        } else if (tagtype === "all") {
-            if (this.getNoteDeckName(tags) !== null) {
-                shouldIgnore = false;
+        } else {
+            if (this.getNoteDeckName(tags) != null) {
+                return true;
             }
             for (const tag of tags) {
                 if (this.isTagedDeckName(tag)) {
-                    shouldIgnore = false;
-                    break;
+                    return true;
                 }
             }
         }
 
-        return !shouldIgnore;
+        return false;
     }
 
+    /**
+     * if deckName of a note is in tagsToReview, return true.
+     * @param deckName
+     * @returns boolean
+     */
     isTagedNoteDeckName(deckName: string) {
-        let isTaged = false;
         if (
             this.plugin.data.settings.tagsToReview.some(
                 (tagToReview) => deckName === tagToReview || deckName.startsWith(tagToReview + "/"),
             )
         ) {
-            isTaged = true;
+            return true;
         }
-        return isTaged;
+        return false;
     }
 
-    isTagedDeckName(deckName: string) {
-        let isTaged = false;
+    /**
+     * isTagedDeckName, if deckName is in flashcardTags, return true.
+     * @param deckName
+     * @returns
+     */
+    isTagedDeckName(deckName: string): boolean {
         if (
             this.plugin.data.settings.flashcardTags.some(
                 (flashcardTag) =>
                     deckName === flashcardTag || deckName.startsWith(flashcardTag + "/"),
             )
         ) {
-            isTaged = true;
+            return true;
         }
-        return isTaged;
+        return false;
     }
 
+    /**
+     * select a tag in tags, which is also in tagsToReview. If not, return null.
+     * @param tags
+     * @returns
+     */
     getNoteDeckName(tags: string[]): string | null {
         for (const tag of tags) {
             if (
@@ -1859,7 +1991,7 @@ export class DataStore {
      * @param count
      * @param scheduling RegExpMatchArray[]
      */
-    syncTrackfileCardSched(
+    getTrackfileCardSched(
         note: TFile,
         deckName: string,
         lineNo: number,
@@ -1872,22 +2004,497 @@ export class DataStore {
         }
 
         let carditem = this.getAndSyncCardInfo(note, lineNo, cardTextHash);
-        if (carditem == null) {
+        if (carditem != null) {
+            carditem.itemIds.forEach((id) => {
+                const sched = this.getSchedbyId(id);
+                // ignore new add card
+                if (sched != null) {
+                    scheduling.push(sched);
+                }
+            });
+        } else {
             carditem = this.trackFileCard(note, lineNo, cardTextHash);
         }
-
         if (!this.isTagedDeckName(deckName) && !this.isTagedNoteDeckName(deckName)) {
             deckName = this.getDefaultDackName();
         }
         this.updateCardItems(note, carditem, count, deckName);
-        carditem.itemIds.forEach((id) => {
-            const sched = this.getSchedbyId(id);
-            // ignore new add card
-            if (sched != null) {
-                scheduling.push(sched);
-            }
-        });
-
         return scheduling;
+    }
+
+    setTrackfileCardSched(
+        note: TFile,
+        deckName: string,
+        lineNo: number,
+        cardTextHash: string,
+        count: number,
+        scheduling?: RegExpMatchArray[],
+    ): CardInfo {
+        if (scheduling == null || scheduling.length == 0) {
+            return;
+        }
+
+        const carditem = this.trackFileCard(note, lineNo, cardTextHash);
+
+        // if (!this.isTagedDeckName(deckName) && !this.isTagedNoteDeckName(deckName)) {
+        //     deckName = this.getDefaultDackName();
+        // }
+        this.updateCardItems(note, carditem, count, deckName);
+
+        carditem.itemIds.forEach((id: number, index) => {
+            this.setSchedbyId(id, scheduling[index], true);
+        });
+        return carditem;
+    }
+
+    /**
+     * algorithmSwitchData
+     * @param fromAlgo
+     * @param toAlgo
+     * @returns Promise<boolean> return true if switchData success.
+     */
+    async algorithmSwitchData(fromAlgo: algorithmNames, toAlgo: algorithmNames): Promise<boolean> {
+        const plugin = this.plugin;
+        const items = plugin.store.data.items;
+
+        const old_path = plugin.store.dataPath;
+
+        await plugin.store.save(old_path + ".bak");
+        plugin.store.pruneData();
+        const fromTo = "(from " + fromAlgo + " to: " + toAlgo;
+        try {
+            if (
+                fromAlgo === algorithmNames.Anki ||
+                fromAlgo === algorithmNames.Default ||
+                fromAlgo === algorithmNames.SM2
+            ) {
+                if (toAlgo === algorithmNames.Fsrs) {
+                    const options = this.plugin.algorithm.srsOptions();
+                    const fsrs = algorithms[algorithmNames.Fsrs];
+                    fsrs.updateSettings(
+                        plugin,
+                        plugin.data.settings.algorithmSettings[algorithmNames.Fsrs],
+                    );
+                    const initItvl = fsrs.settings.w[4];
+                    items.forEach((item) => {
+                        if (item != null && item.data != null) {
+                            const reps = item.timesReviewed;
+                            let card = fsrs.defaultData() as FsrsData;
+                            if (reps > 0) {
+                                const data = item.data as AnkiData;
+                                const due = new Date(item.nextReview);
+                                const interval = data.lastInterval;
+                                const lastview = new Date(
+                                    item.nextReview - data.lastInterval * DateUtils.DAYS_TO_MILLIS,
+                                );
+
+                                let opt: string;
+                                item.data = card;
+                                if (interval > initItvl * 3) {
+                                    // card.state = State.Learning;
+                                    // in case the param is to big.
+                                    opt = options[Rating.Easy - 1];
+                                    fsrs.onSelection(item, opt, false);
+                                }
+                                if (interval > initItvl) {
+                                    opt = options[Rating.Easy - 1];
+                                    fsrs.onSelection(item, opt, false);
+                                }
+                                opt = options[Rating.Good - 1];
+                                fsrs.onSelection(item, opt, false);
+
+                                // item.data = deepcopy(card);
+                                const tempitem = this.getItembyID(item.ID);
+                                card = tempitem.data as FsrsData;
+
+                                card.due = due;
+                                card.scheduled_days = interval;
+                                card.reps = reps;
+                                card.last_review = lastview;
+                            } else {
+                                item.data = card;
+                            }
+                            // item.data = deepcopy(card);
+                            if (
+                                card.difficulty === 0 ||
+                                card.difficulty == null ||
+                                card.stability === 0 ||
+                                card.stability == null
+                            ) {
+                                if (reps > 0) {
+                                    const show = [item.ID, card, reps];
+                                    console.warn(
+                                        "data switch: d, s" +
+                                            card.difficulty +
+                                            ", " +
+                                            card.stability,
+                                    );
+                                    console.warn(...show);
+                                }
+                            }
+                        }
+                    });
+                } else if (
+                    (fromAlgo === algorithmNames.Anki || fromAlgo === algorithmNames.SM2) &&
+                    toAlgo === algorithmNames.Default
+                ) {
+                    items.forEach((item) => {
+                        if (item != null && item.data != null) {
+                            const data: AnkiData = item.data as AnkiData;
+                            data.ease *= 100;
+                            if (data.lastInterval === 0) {
+                                data.lastInterval = 1;
+                            } else {
+                                data.lastInterval *= 1;
+                            }
+                        }
+                    });
+                } else if (
+                    fromAlgo === algorithmNames.Default &&
+                    (toAlgo === algorithmNames.Anki || toAlgo === algorithmNames.SM2)
+                ) {
+                    items.forEach((item) => {
+                        if (item != null && item.data != null) {
+                            const data = item.data as AnkiData;
+                            data.ease /= 100;
+                        }
+                    });
+                } else if (
+                    (fromAlgo === algorithmNames.Anki && toAlgo === algorithmNames.SM2) ||
+                    (toAlgo === algorithmNames.Anki && fromAlgo === algorithmNames.SM2)
+                ) {
+                    console.log("use same data, don't have to convert.");
+                } else {
+                    const msg =
+                        "algorithmSwithchData logic is not implement in this case" +
+                        fromTo +
+                        ", please issue it.";
+                    new Notice(msg);
+                    console.error(msg);
+                    throw new Error(msg);
+                }
+            } else if (
+                fromAlgo === algorithmNames.Fsrs &&
+                (toAlgo === algorithmNames.Anki || toAlgo === algorithmNames.SM2)
+            ) {
+                algorithms[algorithmNames.Anki].updateSettings(
+                    plugin,
+                    plugin.data.settings.algorithmSettings[algorithmNames.Anki],
+                );
+                items.forEach((item) => {
+                    const data = item.data as FsrsData;
+                    const lastitval = data.scheduled_days;
+                    const iter = data.reps;
+                    const newdata = algorithms[algorithmNames.Anki].defaultData() as AnkiData;
+                    newdata.lastInterval =
+                        lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
+                    newdata.iteration = iter;
+                    item.data = deepcopy(newdata);
+                });
+            } else if (fromAlgo === algorithmNames.Fsrs && toAlgo === algorithmNames.Default) {
+                algorithms[algorithmNames.Default].updateSettings(
+                    plugin,
+                    plugin.data.settings.algorithmSettings[algorithmNames.Default],
+                );
+                items.forEach((item) => {
+                    const data = item.data as FsrsData;
+                    const lastitval = data.scheduled_days;
+                    const iter = data.reps;
+                    const newdata = algorithms[algorithmNames.Default].defaultData() as AnkiData;
+                    newdata.lastInterval =
+                        lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
+                    newdata.iteration = iter;
+                    item.data = deepcopy(newdata);
+                });
+            } else {
+                const msg =
+                    "algorithmSwithchData logic is not implement in this case " +
+                    fromTo +
+                    "please issue it.";
+                new Notice(msg);
+                console.error(msg);
+                throw new Error(msg);
+            }
+            const msg = fromTo + "转换完成，因算法参数不同，会导致后续复习间隔调整";
+            new Notice(msg);
+            console.debug(msg);
+            return true;
+        } catch (error) {
+            await plugin.store.load(old_path + ".bak");
+            new Notice(error + fromTo + "转换失败，已恢复旧算法及数据");
+            console.log(error);
+            return false;
+        }
+    }
+
+    /**
+     * converteNoteSchedToTrackfile
+     *
+     */
+    async converteNoteSchedToTrackfile() {
+        const plugin = this.plugin;
+        const store = plugin.store;
+
+        // if (plugin.syncLock) {
+        //     return;
+        // }
+        plugin.syncLock = true;
+
+        await store.load();
+        // const algo = plugin.algorithm;
+        // const opts = algo.srsOptions();
+        const notes: TFile[] = plugin.app.vault.getMarkdownFiles();
+        for (const note of notes) {
+            if (
+                plugin.data.settings.noteFoldersToIgnore.some((folder) =>
+                    note.path.contains(folder),
+                )
+            ) {
+                continue;
+            }
+
+            const deckPath: string[] = plugin.findDeckPath(note);
+            if (deckPath.length !== 0) {
+                // await plugin.findFlashcardsInNote(note, deckPath, false, false);
+                let fileText: string = await plugin.app.vault.read(note);
+                let fileChanged = false;
+                await this.syncNoteCardsIndex(note, (cardText, cardinfo) => {
+                    let scheduling: RegExpMatchArray[] = [
+                        ...cardText.matchAll(MULTI_SCHEDULING_EXTRACTOR),
+                    ];
+                    if (scheduling.length === 0)
+                        scheduling = [...cardText.matchAll(LEGACY_SCHEDULING_EXTRACTOR)];
+                    if (scheduling.length > 0) {
+                        this.setTrackfileCardSched(
+                            note,
+                            "#" + deckPath[0],
+                            cardinfo.lineNo,
+                            cardinfo.cardTextHash,
+                            scheduling.length,
+                            scheduling,
+                        );
+                        // console.debug(cardinfo.lineNo, scheduling);
+
+                        const newCardText = this.updateCardSchedXml(cardText);
+                        const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
+                        fileText = fileText.replace(replacementRegex, () => newCardText);
+                        fileChanged = true;
+                    }
+                }).then(async () => {
+                    if (fileChanged) {
+                        await plugin.app.vault.modify(note, fileText);
+                    }
+                });
+            }
+
+            const fileCachedData = plugin.app.metadataCache.getFileCache(note) || {};
+
+            const frontmatter: FrontMatterCache | Record<string, unknown> =
+                fileCachedData.frontmatter || {};
+            const tags = getAllTags(fileCachedData) || [];
+
+            const deckname = this.getNoteDeckName(tags);
+            if (deckname != null) {
+                const sched = this.getReviewNoteHeaderData(frontmatter);
+                if (sched != null) {
+                    // console.debug("converteNoteSchedToTrackfile find:", note.path);
+                    if (!store.isTracked(note.path)) {
+                        store.trackFile(note.path, deckname);
+                    }
+                    const id = store.getFileId(note.path);
+                    // store.reviewId(id, opts[1]);
+
+                    this.setSchedbyId(id, sched, true);
+                    await this.updateNoteSchedFrontHeader(note);
+                }
+            }
+        }
+
+        this.save();
+        plugin.syncLock = false;
+        const msg = "converteNoteSchedToTrackfile success!";
+        new Notice(msg);
+        console.log(msg);
+    }
+
+    /**
+     *converteTrackfileToNoteSched
+     */
+    async converteTrackfileToNoteSched() {
+        const plugin = this.plugin;
+        const store = plugin.store;
+
+        plugin.syncLock = true;
+
+        const tracked_files = this.data.trackedFiles;
+        for (const tkfile of tracked_files) {
+            if (tkfile == null) {
+                continue;
+            }
+            if (
+                plugin.data.settings.noteFoldersToIgnore.some((folder) =>
+                    tkfile.path.contains(folder),
+                )
+            ) {
+                continue;
+            }
+
+            let exists = await this.verify(tkfile.path);
+            if (!exists) {
+                // in case file moved away.
+                const newfile = this.findMovedFile(tkfile.path);
+                if (newfile != null) {
+                    tkfile.path = newfile.path;
+                    exists = true;
+                    console.debug("a file has been moved: " + newfile.path);
+                }
+            }
+            if (exists) {
+                const id = tkfile.items["file"];
+                const note = this.plugin.app.vault.getAbstractFileByPath(tkfile.path) as TFile;
+                const deckPath: string[] = plugin.findDeckPath(note);
+                if (deckPath.length !== 0) {
+                    // await plugin.findFlashcardsInNote(note, deckPath, false, false);
+                    let fileText: string = await plugin.app.vault.read(note);
+                    let fileChanged = false;
+                    await this.syncNoteCardsIndex(note, (cardText, cardinfo) => {
+                        if (cardinfo == null || cardinfo?.itemIds == null) {
+                            return;
+                        }
+                        const ids = cardinfo.itemIds;
+                        ids.sort((a: number, b: number) => a - b);
+                        const scheduling: RegExpMatchArray[] = [];
+                        ids.forEach((id: number) => {
+                            const sched = this.getSchedbyId(id);
+                            // ignore new add card
+                            if (sched != null) {
+                                scheduling.push(sched);
+                            }
+                        });
+                        const newCardText = this.updateCardSchedXml(cardText, scheduling);
+                        const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
+                        fileText = fileText.replace(replacementRegex, () => newCardText);
+                        fileChanged = true;
+                    }).then(async () => {
+                        if (fileChanged) {
+                            await plugin.app.vault.modify(note, fileText);
+                        }
+                    });
+                }
+                if (this.isDue(id)) {
+                    // let due: number, ease: number, interval: number;
+
+                    const ret = store.getSchedbyId(id);
+                    if (ret != null) {
+                        // console.debug("converteTrackfileToNoteSched: " + tkfile.path);
+                        await this.updateNoteSchedFrontHeader(note, ret);
+                    }
+                }
+            }
+        }
+        plugin.syncLock = false;
+        const msg = "converteTrackfileToNoteSched success!";
+        new Notice(msg);
+        console.log(msg);
+    }
+
+    /**
+     * updateNoteSchedFrontHeader, if sched == null, delete sched info in frontmatter.
+     * @param note TFile
+     * @param sched [, due, interval, ease] | null
+     */
+    async updateNoteSchedFrontHeader(note: TFile, sched?: RegExpMatchArray) {
+        // update yaml schedule
+        const plugin = this.plugin;
+        let schedString = "";
+        if (sched != null) {
+            const [, dueString, interval, ease] = sched;
+            // const dueString: string = window.moment(due).format("YYYY-MM-DD");
+            schedString = `sr-due: ${dueString}\nsr-interval: ${interval}\n` + `sr-ease: ${ease}\n`;
+        } else {
+            schedString = "";
+        }
+
+        let fileText: string = await plugin.app.vault.read(note);
+
+        // check if scheduling info exists
+        if (SCHEDULING_INFO_REGEX.test(fileText)) {
+            const schedulingInfo = SCHEDULING_INFO_REGEX.exec(fileText);
+            if (schedulingInfo[1].length || schedulingInfo[5].length) {
+                fileText = fileText.replace(
+                    SCHEDULING_INFO_REGEX,
+                    `---\n${schedulingInfo[1]}${schedString}` + `${schedulingInfo[5]}---\n`,
+                );
+            } else {
+                fileText = fileText.replace(SCHEDULING_INFO_REGEX, "");
+            }
+        } else if (YAML_FRONT_MATTER_REGEX.test(fileText)) {
+            // new note with existing YAML front matter
+            const existingYaml = YAML_FRONT_MATTER_REGEX.exec(fileText);
+            fileText = fileText.replace(
+                YAML_FRONT_MATTER_REGEX,
+                `---\n${existingYaml[1]}${schedString}---`,
+            );
+        } else {
+            fileText = `---\n${schedString}---\n${fileText}`;
+        }
+        await plugin.app.vault.modify(note, fileText);
+    }
+
+    /**
+     * updateCardSchedXml, if have scheduling, update card sched in note. else delete it.
+     * @param cardText
+     * @param scheduling
+     * @param cardCount
+     * @returns
+     */
+    updateCardSchedXml(cardText: string, scheduling?: RegExpMatchArray[], cardCount?: number) {
+        const plugin = this.plugin;
+        let schedString = "";
+        let sep: string = plugin.data.settings.cardCommentOnSameLine ? " " : "\n";
+        const headerReg = /.<!--SR:/gm;
+        const hRegex = headerReg.exec(cardText); // .lastIndexOf(sep+"<!--SR:");
+        if (hRegex == null) {
+            // Override separator if last block is a codeblock
+            if (cardText.endsWith("```") && sep !== "\n") {
+                sep = "\n";
+            }
+        } else {
+            // const len = cardText.length - hRegex.index; // .lastIndexOf(sep+"<!--SR:"); < is \x3C escape
+            // Override separator if last block is a codeblock
+            if (cardText.endsWith("```", hRegex.index) && sep !== "\n") {
+                sep = "\n";
+            }
+        }
+        if (scheduling != null && scheduling.length > 0) {
+            schedString = sep + "<!--SR:";
+
+            if (cardCount == null) {
+                cardCount = scheduling.length;
+            } else {
+                cardCount = Math.min(cardCount, scheduling.length);
+                console.debug("cardCount:", cardCount);
+            }
+            for (let i = 0; i < cardCount; i++) {
+                schedString += `!${scheduling[i][1]},${scheduling[i][2]},${scheduling[i][3]}`;
+            }
+            schedString += "-->";
+        } else {
+            schedString = "";
+        }
+
+        // const idxSched: number = cardText.lastIndexOf(sep + "<!--SR:");
+        let newCardText: string;
+        if (hRegex == null) {
+            newCardText = cardText + schedString;
+        } else {
+            newCardText = cardText.substring(0, hRegex.index);
+            newCardText += schedString;
+        }
+
+        // const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
+        // fileText = fileText.replace(replacementRegex, () => newCardText);
+        // fileChanged = true;
+        return newCardText;
     }
 }

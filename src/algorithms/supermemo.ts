@@ -1,7 +1,8 @@
-import { DateUtils } from "src/utils_recall";
+import { DateUtils, MiscUtils } from "src/utils_recall";
 import SrsAlgorithm from "./../algorithms";
 import { RepetitionItem, ReviewResult } from "./../data";
 import deepcopy from "deepcopy";
+import { AnkiAlgorithm } from "./anki";
 
 interface Sm2Data {
     ease: number;
@@ -18,7 +19,7 @@ const Sm2Options: string[] = ["Blackout", "Incorrect", "Incorrect (Easy)", "Hard
 export class Sm2Algorithm extends SrsAlgorithm {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     defaultSettings(): any {
-        return {};
+        return new AnkiAlgorithm().defaultSettings();
     }
 
     defaultData(): Sm2Data {
@@ -83,9 +84,10 @@ export class Sm2Algorithm extends SrsAlgorithm {
                 data.ease = 1.3;
             }
 
+            data.ease = MiscUtils.fixed(data.ease, 3);
             data.lastInterval = nextReview;
-            console.log("item.data:", item.data);
-            console.log("smdata:", data);
+            // console.log("item.data:", item.data);
+            // console.log("smdata:", data);
             return {
                 correct: true,
                 nextReview: nextReview * DateUtils.DAYS_TO_MILLIS,
@@ -97,6 +99,11 @@ export class Sm2Algorithm extends SrsAlgorithm {
     displaySettings(containerEl: HTMLElement, update: (settings: any) => void): void {
         containerEl.createDiv().innerHTML =
             '用于间隔重复的算法. 目前与Anki算法共用参数（仅算法处理方式不同），更多信息请查阅 <a href="https://www.supermemo.com/en/archives1990-2015/english/ol/sm2">sm2算法</a>.';
-        return;
+
+        const anki = new AnkiAlgorithm();
+        anki.updateSettings(this.plugin, this.settings);
+        anki.displaySettings(containerEl, (settings) => {
+            update((this.settings = settings));
+        });
     }
 }

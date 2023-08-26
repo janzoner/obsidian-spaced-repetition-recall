@@ -22,6 +22,14 @@ export enum ReviewResponse {
     Easy,
 }
 
+interface DefaultAlgoSettings {
+    baseEase: number;
+    lapsesIntervalChange: number;
+    easyBonus: number;
+    maximumInterval: number;
+    maxLinkFactor: number;
+}
+
 interface Sm2Data {
     ease: number;
     lastInterval: number;
@@ -90,7 +98,7 @@ export function schedule(
 }
 
 export class DefaultAlgorithm extends SrsAlgorithm {
-    defaultSettings(): any {
+    defaultSettings(): DefaultAlgoSettings {
         return {
             // algorithm
             baseEase: 250,
@@ -103,8 +111,8 @@ export class DefaultAlgorithm extends SrsAlgorithm {
 
     defaultData(): Sm2Data {
         return {
-            ease: 2.5,
-            lastInterval: 1, //todo: if should set it to 1, the anki is 0.
+            ease: this.settings.baseEase,
+            lastInterval: 1, // the anki is 0.
             iteration: 1,
         };
     }
@@ -114,7 +122,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
     }
 
     calcAllOptsIntervals(item: RepetitionItem): number[] {
-        const data = item.data as Sm2Data;
+        const data: Sm2Data = item.data as Sm2Data;
         const due = item.nextReview;
         const now: number = Date.now();
         const delayBeforeReview = due === 0 ? 0 : now - due; //just in case.
@@ -132,7 +140,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
             const schedObj: Record<string, number> = schedule(
                 ind,
                 dataCopy.lastInterval,
-                dataCopy.ease * 100,
+                dataCopy.ease,
                 delayBeforeReview,
                 this.settings,
                 dueDates,
@@ -149,12 +157,14 @@ export class DefaultAlgorithm extends SrsAlgorithm {
 
         const response = Sm2Options.indexOf(optionStr) as ReviewResponse;
 
+        let correct = true;
         if (repeat) {
             if (response < 1) {
-                return { correct: false, nextReview: -1 };
+                correct = false;
             } else {
-                return { correct: true, nextReview: -1 };
+                correct = true;
             }
+            return { correct: correct, nextReview: -1 };
         }
 
         const due = item.nextReview;
@@ -163,14 +173,14 @@ export class DefaultAlgorithm extends SrsAlgorithm {
         const schedObj: Record<string, number> = schedule(
             response,
             data.lastInterval,
-            data.ease * 100,
+            data.ease,
             delayBeforeReview,
             this.settings,
             this.plugin.dueDatesNotes,
         );
 
         const nextReview = schedObj.interval;
-        data.ease = schedObj.ease / 100;
+        data.ease = Math.round(schedObj.ease);
         if (response < 1) {
             data.iteration = 1;
             data.lastInterval = nextReview;
@@ -181,8 +191,6 @@ export class DefaultAlgorithm extends SrsAlgorithm {
         } else {
             data.iteration += 1;
             data.lastInterval = nextReview;
-            console.log("item.data:", item.data);
-            console.log("smdata:", data);
             return {
                 correct: true,
                 nextReview: nextReview * DateUtils.DAYS_TO_MILLIS,
@@ -190,7 +198,10 @@ export class DefaultAlgorithm extends SrsAlgorithm {
         }
     }
 
-    displaySettings(containerEl: HTMLElement, update: (settings: any) => void): void {
+    displaySettings(
+        containerEl: HTMLElement,
+        update: (settings: DefaultAlgoSettings) => void,
+    ): void {
         containerEl.createDiv().innerHTML = t("CHECK_ALGORITHM_WIKI", {
             algo_url: "https://www.stephenmwangi.com/obsidian-spaced-repetition/algorithms/",
         });

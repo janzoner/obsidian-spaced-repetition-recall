@@ -129,7 +129,7 @@ export default {
     DATA_LOC_DESC: "间隔重复数据项的文件的保存位置.",
     DATA_FOLDER: "`tracked_files.json`的文件夹",
     NEW_PER_DAY: "每天新增重复的数量",
-    NEW_PER_DAY_DESC: "每天要添加到队列中的新（未重复过的）笔记的最大数量。.",
+    NEW_PER_DAY_DESC: "每天要添加到队列中的新（未重复过的）笔记的最大数量。设置为`-1`则无限制。",
     NEW_PER_DAY_NAN: "必须是整数",
     NEW_PER_DAY_NEG: "整数必须大于等于-1.",
     REPEAT_ITEMS: "重复错误",

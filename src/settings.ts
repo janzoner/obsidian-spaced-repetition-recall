@@ -6,12 +6,10 @@ import { t } from "src/lang/helpers";
 import SrsAlgorithm from "./algorithms";
 import { DefaultAlgorithm } from "./algorithms/scheduling_default";
 import { Sm2Algorithm } from "./algorithms/supermemo";
-import { AnkiAlgorithm, AnkiData } from "./algorithms/anki";
-import { FsrsAlgorithm, FsrsData } from "./algorithms/fsrs";
+import { AnkiAlgorithm } from "./algorithms/anki";
+import { FsrsAlgorithm } from "./algorithms/fsrs";
 import ConfirmModal from "./modals/confirm";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
-import { DateUtils } from "./utils_recall";
-import deepcopy from "deepcopy";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -158,7 +156,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
     // trackfile: https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
     dataLocation: DataLocation.PluginFolder,
     customFolder: "",
-    maxNewPerDay: 20,
+    maxNewPerDay: -1,
     repeatItems: false,
     trackedNoteToDecks: false,
     algorithm: Object.keys(algorithms)[0],
@@ -608,6 +606,7 @@ export class SRSettingTab extends PluginSettingTab {
 
     addDataLocationSettings(containerEl: HTMLElement) {
         const plugin = this.plugin;
+        const settings = plugin.data.settings;
 
         new Setting(containerEl)
             .setName(t("DATA_LOC"))
@@ -618,13 +617,69 @@ export class SRSettingTab extends PluginSettingTab {
                 });
                 dropdown.setValue(plugin.data.settings.dataLocation);
 
-                dropdown.onChange(async (val) => {
+                dropdown.onChange((val) => {
                     const loc = locationMap[val];
-                    plugin.data.settings.dataLocation = loc;
-                    plugin.store.moveStoreLocation();
-                    plugin.data.settings.customFolder = plugin.store.getStorePath();
-                    await plugin.savePluginData();
-                    this.display();
+                    const moveP = new Promise(function (resolve) {
+                        if (
+                            settings.algorithm !== algorithmNames.Default &&
+                            loc === DataLocation.SaveOnNoteFile
+                        ) {
+                            new ConfirmModal(
+                                plugin.app,
+                                "if you want to save data on notefile, you **have to** use Default Algorithm.",
+                                () => {
+                                    dropdown.setValue(plugin.data.settings.dataLocation);
+                                },
+                            ).open();
+                        } else if (loc === DataLocation.SaveOnNoteFile) {
+                            new ConfirmModal(
+                                plugin.app,
+                                "BE CAREFUL!!!  if you confirm this, it will converte \
+                                all your scheduling informations in `tracked_files.json` will add to note,\
+                                which will change lots of your note file in the same time.",
+                                async (confirm) => {
+                                    if (confirm) {
+                                        plugin.data.settings.dataLocation = loc;
+                                        plugin.store.moveStoreLocation();
+                                        plugin.data.settings.customFolder =
+                                            plugin.store.getStorePath();
+                                        await plugin.store.converteTrackfileToNoteSched();
+
+                                        resolve(true);
+                                    }
+                                },
+                            ).open();
+                        } else if (settings.dataLocation === DataLocation.SaveOnNoteFile) {
+                            new ConfirmModal(
+                                plugin.app,
+                                "BE CAREFUL!!! \n if you confirm this, it will converte \
+                                all your scheduling informations on note(which will be deleted in the same time) TO `tracked_files.json`.",
+                                async (confirm) => {
+                                    if (confirm) {
+                                        plugin.data.settings.dataLocation = loc;
+                                        plugin.store.moveStoreLocation();
+                                        plugin.data.settings.customFolder =
+                                            plugin.store.getStorePath();
+                                        await plugin.store.converteNoteSchedToTrackfile();
+
+                                        resolve(true);
+                                    }
+                                },
+                            ).open();
+                        } else {
+                            plugin.data.settings.dataLocation = loc;
+                            plugin.store.moveStoreLocation();
+                            plugin.data.settings.customFolder = plugin.store.getStorePath();
+
+                            resolve(true);
+                        }
+                    });
+                    moveP.then(() => {
+                        dropdown.setValue(plugin.data.settings.dataLocation);
+                        plugin.savePluginData();
+                        console.debug("finish location change.");
+                        this.display();
+                    });
                 });
             });
     }
@@ -651,10 +706,10 @@ export class SRSettingTab extends PluginSettingTab {
                 btn
                     .setButtonText("save")
                     .setCta()
-                    .onClick(async () => {
+                    .onClick(() => {
                         plugin.data.settings.customFolder = cusFolder + "/" + cusFilename;
                         plugin.store.moveStoreLocation();
-                        await plugin.savePluginData();
+                        plugin.savePluginData();
                         this.display();
                     }),
             );
@@ -696,15 +751,16 @@ export class SRSettingTab extends PluginSettingTab {
             .setDesc(t("REPEAT_ITEMS_DESC"))
             .addToggle((toggle) => {
                 toggle.setValue(this.plugin.data.settings.repeatItems);
-                toggle.onChange(async (value) => {
+                toggle.onChange((value) => {
                     plugin.data.settings.repeatItems = value;
-                    await plugin.savePluginData();
+                    plugin.savePluginData();
                 });
             });
     }
 
     addAlgorithmSetting(containerEl: HTMLElement) {
         const plugin = this.plugin;
+        const settings = plugin.data.settings;
 
         new Setting(containerEl)
             .setName(t("ALGORITHM"))
@@ -716,9 +772,24 @@ export class SRSettingTab extends PluginSettingTab {
                 dropdown.setValue(plugin.data.settings.algorithm);
                 dropdown.onChange((newValue) => {
                     if (newValue != plugin.data.settings.algorithm) {
+                        if (
+                            settings.dataLocation === DataLocation.SaveOnNoteFile &&
+                            newValue !== algorithmNames.Default
+                        ) {
+                            new ConfirmModal(
+                                plugin.app,
+                                "if you want to use " +
+                                    newValue +
+                                    " Algorithm, you **can't ** save data on notefile.",
+                                () => {
+                                    dropdown.setValue(plugin.data.settings.algorithm);
+                                },
+                            ).open();
+                            return;
+                        }
                         new ConfirmModal(plugin.app, t("ALGORITHMS_CONFIRM"), async (confirmed) => {
                             if (confirmed) {
-                                const result = this.algorithmSwitchData(
+                                const result = await plugin.store.algorithmSwitchData(
                                     oldAlgo,
                                     newValue as algorithmNames,
                                 );
@@ -735,7 +806,7 @@ export class SRSettingTab extends PluginSettingTab {
                                         plugin.data.settings.algorithm
                                     ],
                                 );
-                                plugin.savePluginData();
+                                await plugin.savePluginData();
                                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                 // @ts-ignore
                                 await this.app.plugins.disablePlugin(plugin.manifest.id);
@@ -758,10 +829,7 @@ export class SRSettingTab extends PluginSettingTab {
     addAlgorithmSpecificDisplaySetting(containerEl: HTMLElement) {
         const plugin = this.plugin;
 
-        // Add algorithm specific settings
-        // containerEl.createEl("h3").innerText = "Trackfile Algorithm Settings";
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        plugin.algorithm.displaySettings(containerEl, (settings: any) => {
+        plugin.algorithm.displaySettings(containerEl, (settings: unknown) => {
             plugin.data.settings.algorithmSettings[plugin.data.settings.algorithm] = settings;
             plugin.savePluginData();
             // this.display(); // 容易导致失去输入焦点
@@ -848,9 +916,9 @@ export class SRSettingTab extends PluginSettingTab {
                 .setDesc(t("FLASHCARD_" + opt.toUpperCase() + "_DESC"));
             btnTextEl.addText((text) =>
                 text.setValue(btnText[algo][ind]).onChange((value) => {
-                    applySettingsUpdate(async () => {
+                    applySettingsUpdate(() => {
                         btnText[algo][ind] = value;
-                        await this.plugin.savePluginData();
+                        this.plugin.savePluginData();
                     });
                 }),
             );
@@ -858,75 +926,14 @@ export class SRSettingTab extends PluginSettingTab {
                 button
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
+                    .onClick(() => {
                         this.plugin.data.settings.responseOptionBtnsText[algo][ind] =
                             DEFAULT_SETTINGS.responseOptionBtnsText[algo][ind];
-                        await this.plugin.savePluginData();
+                        this.plugin.savePluginData();
                         this.display();
                     });
             });
         });
-    }
-
-    async algorithmSwitchData(fromAlgo: algorithmNames, toAlgo: algorithmNames) {
-        const plugin = this.plugin;
-        let result = false;
-        const items = plugin.store.data.items;
-
-        const old_path = plugin.store.dataPath;
-
-        await plugin.store.save(old_path + ".bak");
-        plugin.store.pruneData();
-        try {
-            if (
-                fromAlgo === algorithmNames.Anki ||
-                fromAlgo === algorithmNames.Default ||
-                fromAlgo === algorithmNames.SM2
-            ) {
-                if (toAlgo === algorithmNames.Fsrs) {
-                    items.forEach((item) => {
-                        if (item != null && item.data != null) {
-                            const data = item.data as AnkiData;
-                            const due = new Date(item.nextReview);
-                            const lastview = new Date(
-                                item.nextReview - data.lastInterval * DateUtils.DAYS_TO_MILLIS,
-                            );
-                            const reps = item.timesReviewed;
-                            const card = algorithms[algorithmNames.Fsrs].defaultData();
-                            card.due = due;
-                            card.reps = reps;
-                            card.last_review = lastview;
-                            item.data = deepcopy(card);
-                        }
-                    });
-                }
-            } else if (
-                fromAlgo === algorithmNames.Fsrs &&
-                (toAlgo === algorithmNames.Anki ||
-                    toAlgo === algorithmNames.Default ||
-                    toAlgo === algorithmNames.SM2)
-            ) {
-                items.forEach((item) => {
-                    const data = item.data as FsrsData;
-                    const lastitval =
-                        (new Date(data.due).valueOf() - new Date(data.last_review).valueOf()) /
-                        DateUtils.DAYS_TO_MILLIS;
-                    const iter = data.reps;
-                    const newdata = algorithms[algorithmNames.Default].defaultData();
-                    newdata.lastInterval =
-                        lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
-                    newdata.iteration = iter;
-                    item.data = deepcopy(newdata);
-                });
-            }
-            new Notice("转换完成，因算法参数不同，会导致后续复习间隔调整");
-            result = true;
-        } catch (error) {
-            await plugin.store.load(old_path + ".bak");
-            new Notice(error + "\n转换失败，已恢复旧算法及数据");
-            console.log(error);
-        }
-        return result;
     }
 
     private buildDonation(): void {

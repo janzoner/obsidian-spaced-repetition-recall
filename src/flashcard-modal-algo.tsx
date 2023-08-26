@@ -1069,17 +1069,29 @@ export class Deck {
                 ease = modal.plugin.easeByPath[modal.currentCard.note.path];
             }
         }
-
-        const store = modal.plugin.store;
-        const lineNo: number = modal.currentCard.lineNo;
-        const hash: string = cyrb53(modal.currentCard.cardText);
-        const cardinfo = store.getAndSyncCardInfo(modal.currentCard.note, lineNo, hash);
-
-        const cardId = cardinfo.itemIds[modal.currentCard.siblingIdx];
-        const cardItem = store.getItembyID(cardId);
-        const intervals = modal.plugin.algorithm.calcAllOptsIntervals(cardItem);
-        const algo = modal.plugin.data.settings.algorithm;
+        const intervals: number[] = [];
+        const settings = modal.plugin.data.settings;
+        const algo = settings.algorithm;
         const btnTexts = modal.plugin.data.settings.responseOptionBtnsText[algo];
+        const opts = modal.plugin.algorithm.srsOptions();
+        if (settings.dataLocation === DataLocation.SaveOnNoteFile) {
+            opts.forEach((v, _idx) => {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const resp = ReviewResponse[v] as ReviewResponse;
+                const itv = schedule(resp, interval, ease, delayBeforeReview, settings).interval;
+                intervals.push(itv);
+            });
+        } else {
+            const store = modal.plugin.store;
+            const lineNo: number = modal.currentCard.lineNo;
+            const hash: string = cyrb53(modal.currentCard.cardText);
+            const cardinfo = store.getAndSyncCardInfo(modal.currentCard.note, lineNo, hash);
+            const cardId = cardinfo.itemIds[modal.currentCard.siblingIdx];
+            const cardItem = store.getItembyID(cardId);
+            intervals.push(...modal.plugin.algorithm.calcAllOptsIntervals(cardItem));
+        }
+
         if (modal.ignoreStats) {
             // Same for mobile/desktop
             modal.hardBtn.setText(`${btnTexts[1]}`);

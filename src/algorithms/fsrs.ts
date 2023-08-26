@@ -92,7 +92,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     defaultData(): FsrsData {
-        return deepcopy(this.card);
+        return new fsrsjs.Card();
     }
 
     srsOptions(): string[] {
@@ -124,7 +124,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         return intvls;
     }
     onSelection(item: RepetitionItem, optionStr: string, repeat: boolean): ReviewResult {
-        const data = item.data as FsrsData;
+        let data = item.data as FsrsData;
         data.due = new Date(data.due);
         data.last_review = new Date(data.last_review);
         const response = FsrsOptions.indexOf(optionStr) + 1;
@@ -152,7 +152,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         // console.log(scheduling_cards);
 
         //Update the card after rating:
-        item.data = deepcopy(scheduling_cards[response].card) as FsrsData;
+        data = item.data = deepcopy(scheduling_cards[response].card) as FsrsData;
 
         //Get the due date for card:
         // const due = card.due;
@@ -163,7 +163,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         //Get the review log after rating `Good`:
         // review_log = scheduling_cards[2].review_log;
 
-        const nextInterval = item.data.due.valueOf() - item.data.last_review.valueOf();
+        const nextInterval = data.due.valueOf() - data.last_review.valueOf();
 
         this.appendRevlog(now, item, response);
 

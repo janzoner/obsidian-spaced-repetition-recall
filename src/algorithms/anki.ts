@@ -1,5 +1,5 @@
 import { Setting, Notice } from "obsidian";
-import { DateUtils } from "src/utils_recall";
+import { DateUtils, MiscUtils } from "src/utils_recall";
 import SrsAlgorithm from "./../algorithms";
 import { RepetitionItem, ReviewResult } from "./../data";
 import deepcopy from "deepcopy";
@@ -50,7 +50,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
     calcAllOptsIntervals(item: RepetitionItem): number[] {
         const intvls: number[] = [];
         this.srsOptions().forEach((opt, _ind) => {
-            const itemCopy = deepcopy(item);
+            const itemCopy: RepetitionItem = deepcopy(item);
             const result = this.onSelection(itemCopy, opt, false);
             const intvl = Math.round((result.nextReview / DateUtils.DAYS_TO_MILLIS) * 100) / 100;
             intvls.push(intvl);
@@ -59,7 +59,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
     }
 
     onSelection(item: RepetitionItem, optionStr: string, repeat: boolean): ReviewResult {
-        const data = item.data as AnkiData;
+        const data: AnkiData = item.data as AnkiData;
         const response = AnkiOptions.indexOf(optionStr);
 
         let correct = true;
@@ -104,6 +104,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
             }
         }
 
+        data.ease = MiscUtils.fixed(data.ease, 3);
         data.iteration += 1;
         data.lastInterval = nextInterval;
 

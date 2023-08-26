@@ -11,7 +11,7 @@ This is a modified version of [obsidian-spaced-repetition](https://github.com/st
 
 -   merge [recall plugin](https://github.com/martin-jw/obsidian-recall) to use seperate file
     -   setting where to save schedule info by Data Location
-        -   ~~save on note file, just as used do.~~
+        -   save on note file, just as used do.
         -   save on seperate tracked_files.json.
             -   it still have problems about saving cards shedule info, because when we change note content, the lineNumber and texthash will changes. I add a eventListener, but note work well in some cases. Is there any good idea?
     -   setting convert tracked note to decks

@@ -35,6 +35,8 @@ let PLUGIN_VERSION: string;
 export class ReleaseNotes extends Modal {
     private plugin: SRPlugin;
     private version: string;
+    private name: string;
+
     // contentEl: any;
 
     constructor(app: App, plugin: SRPlugin, version: string) {
@@ -42,11 +44,12 @@ export class ReleaseNotes extends Modal {
         this.plugin = plugin;
         this.version = version;
         PLUGIN_VERSION = plugin.manifest.version;
+        this.name = "间隔重复";
     }
 
     onOpen(): void {
-        this.containerEl.classList.add("间隔重复-release");
-        this.titleEl.setText(`Welcome to 间隔重复 ${this.version ?? ""}`);
+        this.containerEl.classList.add(`${this.name}-release`); // contains HTML space characters, which are not valid in tokens.
+        this.titleEl.setText(`Welcome to ${this.name} ${this.version ?? ""}`);
         this.createForm();
     }
 
@@ -117,7 +120,7 @@ export class ReleaseNotes extends Modal {
                         note: el.body,
                     };
                 })
-                .filter((el: any) => el.version.match(/^\d+\.\d+\.\d+$/))
+                .filter((el: any) => el.version.match(/^[\d.]+$/))
                 .sort((el1: any, el2: any) => el2.published - el1.published);
 
             const latestVersion = latestVersionInfo[0].version;

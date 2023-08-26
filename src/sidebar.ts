@@ -97,7 +97,7 @@ export class ReviewQueueListView extends ItemView {
                     now = Date.now();
                 } else {
                     // end of today
-                    now = Math.ceil(Date.now() / (24 * 3600 * 1000)) * 24 * 3600 * 1000;
+                    now = this.plugin.store.EndofToday;
                 }
                 let currnDays: number | null = null;
                 let schedFolderEl: HTMLElement | null = null,
@@ -236,13 +236,14 @@ export class ReviewQueueListView extends ItemView {
                 event.preventDefault();
                 plugin.lastSelectedReviewDeck = deck.deckName;
                 await this.app.workspace.getLeaf().openFile(file);
-                const fid = this.plugin.store.getFileId(file.path);
-                const item = plugin.store.data.items[fid];
-                plugin.reviewNoteFloatBar.algoDisplay(
-                    true,
-                    plugin.algorithm.calcAllOptsIntervals(item),
-                );
-
+                if (plugin.data.settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+                    const fid = this.plugin.store.getFileId(file.path);
+                    const item = plugin.store.data.items[fid];
+                    plugin.reviewNoteFloatBar.algoDisplay(
+                        true,
+                        plugin.algorithm.calcAllOptsIntervals(item),
+                    );
+                }
                 return false;
             },
             false,

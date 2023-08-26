@@ -139,7 +139,8 @@ export default {
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",
     DATA_FOLDER: "Folder for `tracked_files.json`",
     NEW_PER_DAY: "New Per Day",
-    NEW_PER_DAY_DESC: "Maximum number of new (unreviewed) notes to add to the queue each day.",
+    NEW_PER_DAY_DESC:
+        "Maximum number of new (unreviewed) notes to add to the queue each day, set `-1` with unlimit.",
     NEW_PER_DAY_NAN: "Timeout must be a number",
     NEW_PER_DAY_NEG: "New per day must be -1 or greater.",
     REPEAT_ITEMS: "Repeat Items",
