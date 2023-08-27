@@ -980,7 +980,7 @@ export default class SRPlugin extends Plugin {
                 // reviewedNote update interval
                 const id = this.store.getFileId(path);
                 const item = this.store.getItembyID(id);
-                // console.debug("item:", item);
+                console.debug("item:", item);
                 // this.reviewNoteFloatBar.algoDisplay(show, store.calcReviewInterval(fid));
                 this.reviewNoteFloatBar.algoDisplay(
                     show,

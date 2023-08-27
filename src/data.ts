@@ -712,9 +712,14 @@ export class DataStore {
      * @param {number} itemId
      */
     calcReviewInterval(itemId: number): number[] {
+        const plugin = this.plugin;
         const item = this.data.items[itemId];
+        console.debug("item:", item);
         if (item == null) {
             return null;
+        }
+        if (plugin.algorithm != null) {
+            return plugin.algorithm.calcAllOptsIntervals(item);
         }
         const intervals: number[] = [];
         for (const opt of this.plugin.algorithm.srsOptions()) {
@@ -2182,14 +2187,16 @@ export class DataStore {
                     plugin.data.settings.algorithmSettings[algorithmNames.Anki],
                 );
                 items.forEach((item) => {
-                    const data = item.data as FsrsData;
-                    const lastitval = data.scheduled_days;
-                    const iter = data.reps;
-                    const newdata = algorithms[algorithmNames.Anki].defaultData() as AnkiData;
-                    newdata.lastInterval =
-                        lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
-                    newdata.iteration = iter;
-                    item.data = deepcopy(newdata);
+                    if (item != null && item.data != null) {
+                        const data = item.data as FsrsData;
+                        const lastitval = data.scheduled_days;
+                        const iter = data.reps;
+                        const newdata = algorithms[algorithmNames.Anki].defaultData() as AnkiData;
+                        newdata.lastInterval =
+                            lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
+                        newdata.iteration = iter;
+                        item.data = deepcopy(newdata);
+                    }
                 });
             } else if (fromAlgo === algorithmNames.Fsrs && toAlgo === algorithmNames.Default) {
                 algorithms[algorithmNames.Default].updateSettings(
@@ -2197,14 +2204,18 @@ export class DataStore {
                     plugin.data.settings.algorithmSettings[algorithmNames.Default],
                 );
                 items.forEach((item) => {
-                    const data = item.data as FsrsData;
-                    const lastitval = data.scheduled_days;
-                    const iter = data.reps;
-                    const newdata = algorithms[algorithmNames.Default].defaultData() as AnkiData;
-                    newdata.lastInterval =
-                        lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
-                    newdata.iteration = iter;
-                    item.data = deepcopy(newdata);
+                    if (item != null && item.data != null) {
+                        const data = item.data as FsrsData;
+                        const lastitval = data.scheduled_days;
+                        const iter = data.reps;
+                        const newdata = algorithms[
+                            algorithmNames.Default
+                        ].defaultData() as AnkiData;
+                        newdata.lastInterval =
+                            lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
+                        newdata.iteration = iter;
+                        item.data = deepcopy(newdata);
+                    }
                 });
             } else {
                 const msg =
@@ -2215,6 +2226,7 @@ export class DataStore {
                 console.error(msg);
                 throw new Error(msg);
             }
+            await this.save();
             const msg = fromTo + "转换完成，因算法参数不同，会导致后续复习间隔调整";
             new Notice(msg);
             console.debug(msg);
