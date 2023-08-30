@@ -20,6 +20,7 @@ export default class Commands {
                     if (!plugin.store.isTracked(file.path)) {
                         if (!checking) {
                             plugin.store.trackFile(file.path, "default");
+                            plugin.store.save();
                             // plugin.updateStatusBar();
                         }
                         return true;
@@ -38,6 +39,7 @@ export default class Commands {
                     if (plugin.store.isTracked(file.path)) {
                         if (!checking) {
                             plugin.store.untrackFile(file.path);
+                            plugin.store.save();
                             // plugin.updateStatusBar();
                         }
                         return true;
@@ -56,6 +58,7 @@ export default class Commands {
                     if (plugin.store.isTracked(file.path)) {
                         if (!checking) {
                             plugin.store.updateItems(file.path);
+                            plugin.store.save();
                             // plugin.updateStatusBar();
                         }
                         return true;

@@ -291,7 +291,7 @@ export class DataStore {
         });
 
         try {
-            this.save();
+            this.save(newPath);
             adapter.remove(this.dataPath).then(
                 () => {
                     this.dataPath = newPath;
@@ -964,7 +964,7 @@ export class DataStore {
         } else {
             this.data.trackedFiles[index].items.file = -1;
         }
-        this.save();
+        // this.save();         // will be used when plugin.sync_Algo(), which shouldn't
         // this.plugin.updateStatusBar();
         console.log("Untracked: " + path + nulrstr);
         return 1;
@@ -1037,7 +1037,7 @@ export class DataStore {
             }
         }
         trackedFile.items = newItems;
-        this.save();
+        // this.save();     // will be used when plugin.sync_Algo(), which shouldn't
 
         // if (notice) {
         //     new Notice("Added " + added + " new items, removed " + removed + " items.");

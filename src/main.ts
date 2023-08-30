@@ -102,6 +102,7 @@ export default class SRPlugin extends Plugin {
 
     async onload(): Promise<void> {
         await this.loadPluginData();
+        const store = this.store;
 
         appIcon();
 
@@ -190,6 +191,7 @@ export default class SRPlugin extends Plugin {
                             item.setTitle("Track All Notes");
                             item.onClick((_evt) => {
                                 this.store.trackFilesInFolder(folder);
+                                store.save();
                             });
                         });
 
@@ -198,6 +200,7 @@ export default class SRPlugin extends Plugin {
                             item.setTitle("Untrack All Notes");
                             item.onClick((_evt) => {
                                 this.store.untrackFilesInFolder(folder);
+                                store.save();
                             });
                         });
                     } else if (fileish instanceof TFile) {
@@ -207,6 +210,7 @@ export default class SRPlugin extends Plugin {
                                 item.setTitle("Untrack Note");
                                 item.onClick(async (_evt) => {
                                     this.store.untrackFile(fileish.path);
+                                    store.save();
                                     if (
                                         this.reviewNoteFloatBar.isDisplay() &&
                                         this.data.settings.autoNextNote
@@ -224,6 +228,7 @@ export default class SRPlugin extends Plugin {
                                 item.setTitle("Track Note");
                                 item.onClick((_evt) => {
                                     this.store.trackFile(fileish.path);
+                                    store.save();
                                 });
                             });
                         }
@@ -980,7 +985,7 @@ export default class SRPlugin extends Plugin {
                 // reviewedNote update interval
                 const id = this.store.getFileId(path);
                 const item = this.store.getItembyID(id);
-                console.debug("item:", item);
+                // console.debug("item:", item);
                 // this.reviewNoteFloatBar.algoDisplay(show, store.calcReviewInterval(fid));
                 this.reviewNoteFloatBar.algoDisplay(
                     show,
