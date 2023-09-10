@@ -1975,13 +1975,9 @@ export class DataStore {
      * @returns
      */
     getNoteDeckName(tags: string[]): string | null {
-        for (const tag of tags) {
-            if (
-                this.plugin.data.settings.tagsToReview.some(
-                    (tagToReview) => tag === tagToReview || tag.startsWith(tagToReview + "/"),
-                )
-            ) {
-                return tag;
+        for (const tagToReview of this.plugin.data.settings.tagsToReview) {
+            if (tags.some((tag) => tag === tagToReview || tag.startsWith(tagToReview + "/"))) {
+                return tagToReview;
             }
         }
         return null;

@@ -1090,7 +1090,7 @@ export class Deck {
             const cardinfo = store.getAndSyncCardInfo(modal.currentCard.note, lineNo, hash);
             const cardId = cardinfo.itemIds[modal.currentCard.siblingIdx];
             const cardItem = store.getItembyID(cardId);
-            console.debug("item:", cardItem);
+            // console.debug("item:", cardItem);
             intervals.push(...modal.plugin.algorithm.calcAllOptsIntervals(cardItem));
         }
 
