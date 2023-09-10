@@ -28,7 +28,7 @@ import {
 import { escapeRegexString, cyrb53 } from "src/utils";
 import { t } from "src/lang/helpers";
 import { DataLocation, algorithmNames } from "./settings";
-import { RepetitionItem } from "./data";
+import { RPITEMTYPE, RepetitionItem } from "./data";
 
 export enum FlashcardModalMode {
     DecksList,
@@ -310,7 +310,7 @@ export class FlashcardModal extends Modal {
         setIcon(this.openNoteFileButton, "file-edit");
         this.openNoteFileButton.setAttribute("aria-label", t("OPEN_NOTE"));
         this.openNoteFileButton.addEventListener("click", async () => {
-            const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.getLeaf("tab");
+            const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.getLeaf();
             await activeLeaf.openFile(this.currentCard.note);
             if (activeLeaf.view instanceof MarkdownView) {
                 const activeView = activeLeaf.view;
@@ -620,6 +620,7 @@ export class FlashcardModal extends Modal {
                 ]);
             }
             const id = cardinfo.itemIds[this.currentCard.siblingIdx];
+            store.updateReviewedCounts(id, RPITEMTYPE.CARD);
             store.reviewId(id, opt);
             store.save();
         }

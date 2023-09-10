@@ -208,4 +208,9 @@ export default {
     CARD_TYPE_YOUNG: "Mladá",
     CARD_TYPE_MATURE: "Dospělá",
     CARD_TYPES_SUMMARY: "Kartiček celkem: ${totalCardsCount}",
+    REVIEWED_TODAY: "Reviewed today",
+    REVIEWED_TODAY_DESC: "counts of cards/notes you have reviewed today",
+    NEW_LEARNED: "New Learned",
+    DUE_REVIEWED: "due Reviewed",
+    REVIEWED_TODAY_SUMMARY: "Total Reviewed today: ${totalreviewedCount}",
 };

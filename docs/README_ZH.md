@@ -12,7 +12,8 @@
 4. 在有多个标签时，可不用选标签，直接打开笔记；
 5. 算法可以切换：默认的 Anki 优化算法、Anki 算法、[Fsrs 算法](https://github.com/open-spaced-repetition/fsrs.js)；
 6. 使用 Fsrs 算法时，可根据标签输出重复日志文件 `ob_revlog.csv`，以使用[optimizer](https://github.com/open-spaced-repetition/fsrs-optimizer) 优化算法参数，达到更好的复习效果；
-7. 其他待发现的小改动；
+7. 数据表中新增笔记复习情况、当天复习情况；
+8. 其他待发现的小改动；
 
 **注意**
 没有使用过 obsidian-spaced-repetition 插件的可以直接用，正在使用 obsidian-spaced-repetition 插件的话，建议试用前先备份 :yum:
@@ -41,8 +42,8 @@ github: https://github.com/open-spaced-repetition/obsidian-spaced-repetition-rec
 
 或：
 
-1. 从[最新发布](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/releases/)中下载 main.js, manifest.json, styles.css；
-2. 在 `Vault-name/.obsidian/plugins` 中新建个文件夹`obsidian-spaced-repetition-recall`, 把刚下的文件放入新建的文件夹中；
+1. 从[最新发布](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/releases/)中下载压缩包（已包括 main.js, manifest.json, styles.css）；
+2. 在 `Vault-name/.obsidian/plugins` 中，把刚下的文件解压（应是`obsidian-spaced-repetition-recall`文件夹）放入`plugins`文件夹下，；
 3. 重启Obsidan 开启插件，就可以使用了。
 
 ## Thanks

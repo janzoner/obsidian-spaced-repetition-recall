@@ -219,4 +219,9 @@ export default {
     CARD_TYPE_YOUNG: "Jung",
     CARD_TYPE_MATURE: "Ausgereift",
     CARD_TYPES_SUMMARY: "Insgesamt ${totalCardsCount} Karten",
+    REVIEWED_TODAY: "Reviewed today",
+    REVIEWED_TODAY_DESC: "counts of cards/notes you have reviewed today",
+    NEW_LEARNED: "New Learned",
+    DUE_REVIEWED: "due Reviewed",
+    REVIEWED_TODAY_SUMMARY: "Total Reviewed today: ${totalreviewedCount}",
 };

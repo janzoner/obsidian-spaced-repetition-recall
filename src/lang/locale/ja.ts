@@ -212,4 +212,9 @@ export default {
     CARD_TYPE_YOUNG: "復習(初期)",
     CARD_TYPE_MATURE: "復習(後期)",
     CARD_TYPES_SUMMARY: "カードの合計: ${totalCardsCount}枚",
+    REVIEWED_TODAY: "Reviewed today",
+    REVIEWED_TODAY_DESC: "counts of cards/notes you have reviewed today",
+    NEW_LEARNED: "New Learned",
+    DUE_REVIEWED: "due Reviewed",
+    REVIEWED_TODAY_SUMMARY: "Total Reviewed today: ${totalreviewedCount}",
 };

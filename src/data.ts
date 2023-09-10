@@ -21,7 +21,7 @@ import {
 } from "./constants";
 
 const ROOT_DATA_PATH = "./tracked_files.json";
-const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";
+// const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";
 
 /**
  * SrsData.
@@ -45,6 +45,15 @@ interface SrsData {
     cardRepeatQueue: number[];
     toDayAllQueue: Record<number, string>;
     toDayLatterQueue: Record<number, string>;
+
+    /**
+     * @type {ReviewedCounts}
+     */
+    reviewedCounts: ReviewedCounts;
+    /**
+     * @type {ReviewedCounts}
+     */
+    reviewedCardCounts: ReviewedCounts;
     /**
      * @type {RepetitionItem[]}
      */
@@ -71,6 +80,8 @@ export enum RPITEMTYPE {
     NOTE = "note",
     CARD = "card",
 }
+
+export type ReviewedCounts = Record<string, { new: number; due: number }>;
 
 /**
  * RepetitionItem.
@@ -177,6 +188,8 @@ const DEFAULT_SRS_DATA: SrsData = {
     cardRepeatQueue: [],
     toDayAllQueue: {},
     toDayLatterQueue: {},
+    reviewedCounts: {},
+    reviewedCardCounts: {},
     items: [],
     trackedFiles: [],
     lastQueue: 0,
@@ -666,6 +679,13 @@ export class DataStore {
             return trackedFile.path;
         }
         return null;
+    }
+
+    getReviewedCounts() {
+        return this.data.reviewedCounts;
+    }
+    getReviewedCardCounts(): ReviewedCounts {
+        return this.data.reviewedCardCounts;
     }
 
     /**
@@ -1197,6 +1217,36 @@ export class DataStore {
             data[key] = value;
         } catch (error) {
             console.log(error);
+        }
+    }
+
+    updateReviewedCounts(id: number, type: RPITEMTYPE = RPITEMTYPE.NOTE) {
+        let rc =this.data.reviewedCounts;
+        if(type === RPITEMTYPE.NOTE){
+            rc = this.data.reviewedCounts;
+        }else{
+            rc = this.data.reviewedCardCounts;
+        }
+        // const date = new Date().toLocaleDateString();
+        const date = window.moment(new Date()).format("YYYY-MM-DD");
+        if (!(date in rc)) {
+            rc[date] = { due: 0, new: 0 };
+        }
+        if (this.isDue(id)) {
+            const item = this.getItembyID(id);
+            if (this.plugin.data.settings.algorithm === algorithmNames.Fsrs) {
+                const data: FsrsData = item.data as FsrsData;
+                if (data.scheduled_days >= 1) {
+                    rc[date].due++;
+                }
+            } else {
+                const data: AnkiData = item.data as AnkiData;
+                if (data.lastInterval >= 1) {
+                    rc[date].due++;
+                }
+            }
+        } else {
+            rc[date].new++;
         }
     }
 

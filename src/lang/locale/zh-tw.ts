@@ -192,4 +192,9 @@ export default {
     CARD_TYPE_YOUNG: "較新",
     CARD_TYPE_MATURE: "熟悉",
     CARD_TYPES_SUMMARY: "總卡片數: ${totalCardsCount}",
+    REVIEWED_TODAY: "今天復習情況",
+    REVIEWED_TODAY_DESC: "今天已經復習的卡片/筆記的數量",
+    NEW_LEARNED: "新學",
+    DUE_REVIEWED: "復習",
+    REVIEWED_TODAY_SUMMARY: "總復習數: ${totalreviewedCount}",
 };

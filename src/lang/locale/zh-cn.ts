@@ -193,4 +193,9 @@ export default {
     CARD_TYPE_YOUNG: "较新",
     CARD_TYPE_MATURE: "熟悉",
     CARD_TYPES_SUMMARY: "总卡片数: ${totalCardsCount}",
+    REVIEWED_TODAY: "今天复习情况",
+    REVIEWED_TODAY_DESC: "今天已经复习的卡片/笔记的数量",
+    NEW_LEARNED: "新学",
+    DUE_REVIEWED: "复习",
+    REVIEWED_TODAY_SUMMARY: "总复习数: ${totalreviewedCount}",
 };

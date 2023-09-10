@@ -13,13 +13,13 @@ This is a modified version of [obsidian-spaced-repetition](https://github.com/st
     -   setting where to save schedule info by Data Location
         -   save on note file, just as used do.
         -   save on seperate tracked_files.json.
-            -   it still have problems about saving cards shedule info, because when we change note content, the lineNumber and texthash will changes. I add a eventListener, but note work well in some cases. Is there any good idea?
     -   setting convert tracked note to decks
     -   switch Algorithm(only work on saving on seperate tracked_files.json.): Default, anki, [Fsrs](https://github.com/open-spaced-repetition/fsrs.js)
     -   file menu to tracknote/untracknote
 -   show floatbar for reviewing response when reviewing note by click statusbar or review command or sidebar, and can set whether showing the interval or not;
 -   Reviewing a Notes directly [#635];
 -   when using fsrs, output `ob-revlog.csv`, to optimize the algorithm parameters using [optimizer](https://github.com/open-spaced-repetition/fsrs-optimizer) for better review;
+-   Statistics: add note view statistics,and today review statistics.
 
 ## Maintainers Wanted
 

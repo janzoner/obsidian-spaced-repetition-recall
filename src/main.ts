@@ -92,6 +92,7 @@ export default class SRPlugin extends Plugin {
     public deckTree: Deck = new Deck("root", null);
     public dueDatesFlashcards: Record<number, number> = {}; // Record<# of days in future, due count>
     public cardStats: Stats;
+    public noteStats: Stats;
 
     // https://github.com/martin-jw/obsidian-recall/blob/main/src/main.ts
     public store: DataStore;
@@ -578,6 +579,14 @@ export default class SRPlugin extends Plugin {
             matureCount: 0,
         };
 
+        this.noteStats = {
+            eases: {},
+            intervals: {},
+            newCount: 0,
+            youngCount: 0,
+            matureCount: 0,
+        };
+
         // check trackfile
         store.reLoad();
 
@@ -646,8 +655,17 @@ export default class SRPlugin extends Plugin {
                 // update single note deck data, only tagged reviewnote
                 if (!this.store.isTracked(note.path)) {
                     this.store.trackFile(note.path, deckname);
+                    this.noteStats.newCount++;
+                } else {
+                    const id = store.getFileId(note.path);
+                    const scheduling = store.getSchedbyId(id);
+                    if (scheduling != null) {
+                        this.updateStats(this.noteStats, scheduling);
+                    } else {
+                        this.noteStats.newCount++;
+                    }
                 }
-                this.store.syncRCDataToSRrevDeck(this.reviewDecks[deckname], note);
+                store.syncRCDataToSRrevDeck(this.reviewDecks[deckname], note);
                 const id = store.getFileId(note.path);
 
                 const settings = this.data.settings;
@@ -913,6 +931,7 @@ export default class SRPlugin extends Plugin {
             }
         }
 
+        store.updateReviewedCounts(fileId);
         store.reviewId(fileId, response);
         store.save();
 
@@ -1295,22 +1314,10 @@ export default class SRPlugin extends Plugin {
 
                     const interval: number = parseInt(scheduling[i][2]),
                         ease: number = parseInt(scheduling[i][3]);
-                    if (!Object.prototype.hasOwnProperty.call(this.cardStats.intervals, interval)) {
-                        this.cardStats.intervals[interval] = 0;
-                    }
-                    this.cardStats.intervals[interval]++;
-                    if (!Object.prototype.hasOwnProperty.call(this.cardStats.eases, ease)) {
-                        this.cardStats.eases[ease] = 0;
-                    }
-                    this.cardStats.eases[ease]++;
                     totalNoteEase += ease;
                     scheduledCount++;
 
-                    if (interval >= 32) {
-                        this.cardStats.matureCount++;
-                    } else {
-                        this.cardStats.youngCount++;
-                    }
+                    this.updateStats(this.cardStats, scheduling[i]);
 
                     if (this.data.buryList.includes(cardTextHash)) {
                         this.deckTree.countFlashcard([...deckPath]);
@@ -1530,6 +1537,25 @@ export default class SRPlugin extends Plugin {
                 console.debug("interval diff:should be - (", this.minNextView - item.nextReview);
                 this.minNextView = item.nextReview;
             }
+        }
+    }
+
+    updateStats(stats: Stats, scheduling: RegExpMatchArray) {
+        const interval: number = parseInt(scheduling[2]),
+            ease: number = parseInt(scheduling[3]);
+        if (!Object.prototype.hasOwnProperty.call(stats.intervals, interval)) {
+            stats.intervals[interval] = 0;
+        }
+        stats.intervals[interval]++;
+        if (!Object.prototype.hasOwnProperty.call(stats.eases, ease)) {
+            stats.eases[ease] = 0;
+        }
+        stats.eases[ease]++;
+
+        if (interval >= 32) {
+            stats.matureCount++;
+        } else {
+            stats.youngCount++;
         }
     }
 
