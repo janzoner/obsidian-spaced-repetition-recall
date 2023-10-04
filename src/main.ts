@@ -30,8 +30,31 @@ import {
 import { escapeRegexString, cyrb53 } from "src/utils";
 import { ReviewDeck, ReviewDeckSelectionModal } from "src/review-deck";
 import { t } from "src/lang/helpers";
-import { parse } from "src/parser";
 import { appIcon } from "src/icons/appicon";
+import { TopicPath } from "./TopicPath";
+import { CardListType, Deck, DeckTreeFilter } from "./Deck";
+import { Stats } from "./stats";
+import {
+    FlashcardReviewMode,
+    FlashcardReviewSequencer as FlashcardReviewSequencer,
+    IFlashcardReviewSequencer as IFlashcardReviewSequencer,
+} from "./FlashcardReviewSequencer";
+import {
+    CardListOrder,
+    DeckTreeIterator,
+    IDeckTreeIterator,
+    IIteratorOrder,
+    IteratorDeckSource,
+    OrderMethod,
+} from "./DeckTreeIterator";
+import { CardScheduleCalculator } from "./CardSchedule";
+import { Note } from "./Note";
+import { NoteFileLoader } from "./NoteFileLoader";
+import { ISRFile, SrTFile as SrTFile } from "./SRFile";
+import { NoteEaseCalculator } from "./NoteEaseCalculator";
+import { DeckTreeStatsCalculator } from "./DeckTreeStatsCalculator";
+import { NoteEaseList } from "./NoteEaseList";
+import { QuestionPostponementList } from "./QuestionPostponementList";
 
 // https://github.com/martin-jw/obsidian-recall
 import { DataStore, RPITEMTYPE } from "./data";
@@ -78,9 +101,8 @@ export default class SRPlugin extends Plugin {
     public reviewDecks: { [deckKey: string]: ReviewDeck } = {};
     public lastSelectedReviewDeck: string;
 
-    public newNotes: TFile[] = [];
-    public scheduledNotes: SchedNote[] = [];
-    public easeByPath: Record<string, number> = {};
+    public easeByPath: NoteEaseList;
+    private questionPostponementList: QuestionPostponementList;
     private incomingLinks: Record<string, LinkStat[]> = {};
     private pageranks: Record<string, number> = {};
     public newNotesCount = 0;
@@ -90,7 +112,7 @@ export default class SRPlugin extends Plugin {
     public dueDatesNotes: Record<number, number> = {}; // Record<# of days in future, due count>
 
     public deckTree: Deck = new Deck("root", null);
-    public dueDatesFlashcards: Record<number, number> = {}; // Record<# of days in future, due count>
+    private remainingDeckTree: Deck;
     public cardStats: Stats;
     public noteStats: Stats;
 
@@ -148,7 +170,11 @@ export default class SRPlugin extends Plugin {
         this.addRibbonIcon("SpacedRepIcon", t("REVIEW_CARDS"), async () => {
             if (!this.syncLock) {
                 await this.sync();
-                new FlashcardModal(this.app, this).open();
+                this.openFlashcardModal(
+                    this.deckTree,
+                    this.remainingDeckTree,
+                    FlashcardReviewMode.Review,
+                );
             }
         });
 
@@ -288,7 +314,11 @@ export default class SRPlugin extends Plugin {
             callback: async () => {
                 if (!this.syncLock) {
                     await this.sync();
-                    new FlashcardModal(this.app, this).open();
+                    this.openFlashcardModal(
+                        this.deckTree,
+                        this.remainingDeckTree,
+                        FlashcardReviewMode.Review,
+                    );
                 }
             },
         });
@@ -297,8 +327,8 @@ export default class SRPlugin extends Plugin {
             id: "srs-cram-flashcards",
             name: t("CRAM_ALL_CARDS"),
             callback: async () => {
-                await this.sync(true);
-                new FlashcardModal(this.app, this, true).open();
+                await this.sync();
+                this.openFlashcardModal(this.deckTree, this.deckTree, FlashcardReviewMode.Cram);
             },
         });
 
@@ -308,10 +338,7 @@ export default class SRPlugin extends Plugin {
             callback: async () => {
                 const openFile: TFile | null = this.app.workspace.getActiveFile();
                 if (openFile && openFile.extension === "md") {
-                    this.deckTree = new Deck("root", null);
-                    const deckPath: string[] = this.findDeckPath(openFile);
-                    await this.findFlashcardsInNote(openFile, deckPath);
-                    new FlashcardModal(this.app, this).open();
+                    this.openFlashcardModalForSingleNote(openFile, FlashcardReviewMode.Review);
                 }
             },
         });
@@ -322,10 +349,7 @@ export default class SRPlugin extends Plugin {
             callback: async () => {
                 const openFile: TFile | null = this.app.workspace.getActiveFile();
                 if (openFile && openFile.extension === "md") {
-                    this.deckTree = new Deck("root", null);
-                    const deckPath: string[] = this.findDeckPath(openFile);
-                    await this.findFlashcardsInNote(openFile, deckPath, false, true);
-                    new FlashcardModal(this.app, this, true).open();
+                    this.openFlashcardModalForSingleNote(openFile, FlashcardReviewMode.Cram);
                 }
             },
         });
@@ -377,7 +401,7 @@ export default class SRPlugin extends Plugin {
 
         // reset notes stuff
         graph.reset();
-        this.easeByPath = {};
+        this.easeByPath = new NoteEaseList(this.data.settings);
         this.incomingLinks = {};
         this.pageranks = {};
         this.newNotesCount = 0;
@@ -386,26 +410,18 @@ export default class SRPlugin extends Plugin {
         this.reviewDecks = {};
 
         // reset flashcards stuff
-        this.deckTree = new Deck("root", null);
-        this.dueDatesFlashcards = {};
-        this.cardStats = {
-            eases: {},
-            intervals: {},
-            newCount: 0,
-            youngCount: 0,
-            matureCount: 0,
-        };
+        const fullDeckTree = new Deck("root", null);
 
         const now = window.moment(Date.now());
         const todayDate: string = now.format("YYYY-MM-DD");
         // clear bury list if we've changed dates
         if (todayDate !== this.data.buryDate) {
             this.data.buryDate = todayDate;
-            this.data.buryList = [];
+            this.questionPostponementList.clear();
         }
 
         const notes: TFile[] = this.app.vault.getMarkdownFiles();
-        for (const note of notes) {
+        for (const noteFile of notes) {
             if (
                 this.data.settings.noteFoldersToIgnore.some((folder) =>
                     // note.path.startsWith(folder)
@@ -415,11 +431,11 @@ export default class SRPlugin extends Plugin {
                 continue;
             }
 
-            if (this.incomingLinks[note.path] === undefined) {
-                this.incomingLinks[note.path] = [];
+            if (this.incomingLinks[noteFile.path] === undefined) {
+                this.incomingLinks[noteFile.path] = [];
             }
 
-            const links = this.app.metadataCache.resolvedLinks[note.path] || {};
+            const links = this.app.metadataCache.resolvedLinks[noteFile.path] || {};
             for (const targetPath in links) {
                 if (this.incomingLinks[targetPath] === undefined)
                     this.incomingLinks[targetPath] = [];
@@ -427,29 +443,29 @@ export default class SRPlugin extends Plugin {
                 // markdown files only
                 if (targetPath.split(".").pop().toLowerCase() === "md") {
                     this.incomingLinks[targetPath].push({
-                        sourcePath: note.path,
+                        sourcePath: noteFile.path,
                         linkCount: links[targetPath],
                     });
 
-                    graph.link(note.path, targetPath, links[targetPath]);
+                    graph.link(noteFile.path, targetPath, links[targetPath]);
                 }
             }
 
-            const deckPath: string[] = this.findDeckPath(note);
-            if (deckPath.length !== 0) {
-                const flashcardsInNoteAvgEase: number = await this.findFlashcardsInNote(
+            const topicPath: TopicPath = this.findTopicPath(this.createSrTFile(noteFile));
+            if (topicPath.hasPath) {
+                const note: Note = await this.loadNote(noteFile, topicPath);
+                const flashcardsInNoteAvgEase: number = NoteEaseCalculator.Calculate(
                     note,
-                    deckPath,
-                    false,
-                    ignoreStats,
+                    this.data.settings,
                 );
+                note.appendCardsToDeck(fullDeckTree);
 
                 if (flashcardsInNoteAvgEase > 0) {
-                    this.easeByPath[note.path] = flashcardsInNoteAvgEase;
+                    this.easeByPath.setEaseForPath(note.filePath, flashcardsInNoteAvgEase);
                 }
             }
 
-            const fileCachedData = this.app.metadataCache.getFileCache(note) || {};
+            const fileCachedData = this.app.metadataCache.getFileCache(noteFile) || {};
 
             const frontmatter: FrontMatterCache | Record<string, unknown> =
                 fileCachedData.frontmatter || {};
@@ -492,18 +508,19 @@ export default class SRPlugin extends Plugin {
                 .valueOf();
 
             for (const matchedNoteTag of matchedNoteTags) {
-                this.reviewDecks[matchedNoteTag].scheduledNotes.push({ note, dueUnix });
+                this.reviewDecks[matchedNoteTag].scheduledNotes.push({ note: noteFile, dueUnix });
                 if (dueUnix <= now.valueOf()) {
                     this.reviewDecks[matchedNoteTag].dueNotesCount++;
                 }
             }
 
-            if (Object.prototype.hasOwnProperty.call(this.easeByPath, note.path)) {
-                this.easeByPath[note.path] =
-                    (this.easeByPath[note.path] + frontmatter["sr-ease"]) / 2;
+            let ease: number;
+            if (this.easeByPath.hasEaseForPath(noteFile.path)) {
+                ease = (this.easeByPath.getEaseByPath(noteFile.path) + frontmatter["sr-ease"]) / 2;
             } else {
-                this.easeByPath[note.path] = frontmatter["sr-ease"];
+                ease = frontmatter["sr-ease"];
             }
+            this.easeByPath.setEaseForPath(noteFile.path, ease);
 
             if (dueUnix <= now.valueOf()) {
                 this.dueNotesCount++;
@@ -520,10 +537,21 @@ export default class SRPlugin extends Plugin {
             this.pageranks[node] = rank * 10000;
         });
 
+        // Reviewable cards are all except those with the "edit later" tag
+        this.deckTree = DeckTreeFilter.filterForReviewableCards(fullDeckTree);
+
         // sort the deck names
         this.deckTree.sortSubdecksList();
+        this.remainingDeckTree = DeckTreeFilter.filterForRemainingCards(
+            this.questionPostponementList,
+            this.deckTree,
+            FlashcardReviewMode.Review,
+        );
+        const calc: DeckTreeStatsCalculator = new DeckTreeStatsCalculator();
+        this.cardStats = calc.calculate(this.deckTree);
+
         if (this.data.settings.showDebugMessages) {
-            console.log(`SR: ${t("EASES")}`, this.easeByPath);
+            console.log(`SR: ${t("EASES")}`, this.easeByPath.dict);
             console.log(`SR: ${t("DECKS")}`, this.deckTree);
         }
 
@@ -543,7 +571,7 @@ export default class SRPlugin extends Plugin {
         this.statusBar.setText(
             t("STATUS_BAR", {
                 dueNotesCount: this.dueNotesCount,
-                dueFlashcardsCount: this.deckTree.dueFlashcardsCount,
+                dueFlashcardsCount: this.remainingDeckTree.getCardCount(CardListType.All, true),
             }),
         );
 
@@ -778,7 +806,7 @@ export default class SRPlugin extends Plugin {
                 totalLinkCount = 0;
 
             for (const statObj of this.incomingLinks[note.path] || []) {
-                const ease: number = this.easeByPath[statObj.sourcePath];
+                const ease: number = this.easeByPath.getEaseByPath(statObj.sourcePath);
                 if (ease) {
                     linkTotal += statObj.linkCount * this.pageranks[statObj.sourcePath] * ease;
                     linkPGTotal += this.pageranks[statObj.sourcePath] * statObj.linkCount;
@@ -788,7 +816,7 @@ export default class SRPlugin extends Plugin {
 
             const outgoingLinks = this.app.metadataCache.resolvedLinks[note.path] || {};
             for (const linkedFilePath in outgoingLinks) {
-                const ease: number = this.easeByPath[linkedFilePath];
+                const ease: number = this.easeByPath.getEaseByPath(linkedFilePath);
                 if (ease) {
                     linkTotal +=
                         outgoingLinks[linkedFilePath] * this.pageranks[linkedFilePath] * ease;
@@ -807,7 +835,7 @@ export default class SRPlugin extends Plugin {
                     : linkContribution * this.data.settings.baseEase);
             // add note's average flashcard ease if available
             if (Object.prototype.hasOwnProperty.call(this.easeByPath, note.path)) {
-                ease = (ease + this.easeByPath[note.path]) / 2;
+                ease = (ease + this.easeByPath.getEaseByPath(note.path)) / 2;
             }
             ease = Math.round(ease);
             interval = 1.0;
@@ -860,7 +888,11 @@ export default class SRPlugin extends Plugin {
         }
 
         if (this.data.settings.burySiblingCards) {
-            await this.findFlashcardsInNote(note, [], true); // bury all cards in current note
+            const topicPath: TopicPath = this.findTopicPath(this.createSrTFile(note));
+            const noteX: Note = await this.loadNote(note, topicPath);
+            for (const question of noteX.questionList) {
+                this.data.buryList.push(question.questionText.textHash);
+            }
             await this.savePluginData();
         }
         await this.app.vault.modify(note, fileText);
@@ -1602,26 +1634,4 @@ export default class SRPlugin extends Plugin {
             }),
         );
     }
-}
-
-function getCardContext(cardLine: number, headings: HeadingCache[], note_title: string): string {
-    const stack: HeadingCache[] = [];
-    for (const heading of headings) {
-        if (heading.position.start.line > cardLine) {
-            break;
-        }
-
-        while (stack.length > 0 && stack[stack.length - 1].level >= heading.level) {
-            stack.pop();
-        }
-
-        stack.push(heading);
-    }
-
-    let context = `${note_title} > `;
-    for (const headingObj of stack) {
-        headingObj.heading = headingObj.heading.replace(/\[\^\d+\]/gm, "").trim();
-        context += `${headingObj.heading} > `;
-    }
-    return context.slice(0, -3);
 }

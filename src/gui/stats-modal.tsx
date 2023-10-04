@@ -17,7 +17,7 @@ import {
 } from "chart.js";
 
 import type SRPlugin from "src/main";
-import { getKeysPreserveType, getTypedObjectEntries } from "src/utils";
+import { getKeysPreserveType, getTypedObjectEntries } from "src/util/utils";
 import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
 import { RPITEMTYPE } from "./data";
@@ -36,14 +36,6 @@ Chart.register(
     PieController,
     ArcElement,
 );
-
-export interface Stats {
-    eases: Record<number, number>;
-    intervals: Record<number, number>;
-    newCount: number;
-    youngCount: number;
-    matureCount: number;
-}
 
 export class StatsModal extends Modal {
     private plugin: SRPlugin;
@@ -135,8 +127,8 @@ export class StatsModal extends Modal {
         const rc = this.plugin.store.getReviewedCardCounts();
         const now = window.moment(Date.now());
         const todayDate: string = now.format("YYYY-MM-DD");
-        if(!(todayDate in rc)){
-            rc[todayDate]={due: 0, new: 0};
+        if (!(todayDate in rc)) {
+            rc[todayDate] = { due: 0, new: 0 };
         }
         const rdueCnt = rc[todayDate].due,
             rnewCnt = rc[todayDate].new;
@@ -159,15 +151,14 @@ export class StatsModal extends Modal {
         );
 
         // Add forecast
-        let maxN: number = Math.max(...getKeysPreserveType(this.plugin.dueDatesFlashcards));
+        const cardStats: Stats = this.plugin.cardStats;
+        let maxN: number = cardStats.delayedDays.getMaxValue();
         for (let dueOffset = 0; dueOffset <= maxN; dueOffset++) {
-            if (!Object.prototype.hasOwnProperty.call(this.plugin.dueDatesFlashcards, dueOffset)) {
-                this.plugin.dueDatesFlashcards[dueOffset] = 0;
-            }
+            cardStats.delayedDays.clearCountIfMissing(dueOffset);
         }
 
         const dueDatesFlashcardsCopy: Record<number, number> = { 0: 0 };
-        for (const [dueOffset, dueCount] of getTypedObjectEntries(this.plugin.dueDatesFlashcards)) {
+        for (const [dueOffset, dueCount] of getTypedObjectEntries(cardStats.delayedDays.dict)) {
             if (dueOffset <= 0) {
                 dueDatesFlashcardsCopy[0] += dueCount;
             } else {
@@ -175,7 +166,6 @@ export class StatsModal extends Modal {
             }
         }
 
-        const cardStats: Stats = this.plugin.cardStats;
         const scheduledCount: number = cardStats.youngCount + cardStats.matureCount;
         maxN = Math.max(maxN, 1);
 
@@ -192,36 +182,27 @@ export class StatsModal extends Modal {
             t("NUMBER_OF_CARDS"),
         );
 
-        maxN = Math.max(...getKeysPreserveType(cardStats.intervals));
+        maxN = cardStats.intervals.getMaxValue();
         for (let interval = 0; interval <= maxN; interval++) {
-            if (!Object.prototype.hasOwnProperty.call(cardStats.intervals, interval)) {
-                cardStats.intervals[interval] = 0;
-            }
+            cardStats.intervals.clearCountIfMissing(interval);
         }
 
         // Add intervals
         const average_interval: string = textInterval(
                 Math.round(
-                    (getTypedObjectEntries(cardStats.intervals)
-                        .map(([interval, count]) => interval * count)
-                        .reduce((a, b) => a + b, 0) /
-                        scheduledCount) *
-                        10,
+                    (cardStats.intervals.getTotalOfValueMultiplyCount() / scheduledCount) * 10,
                 ) / 10 || 0,
                 false,
             ),
-            longest_interval: string = textInterval(
-                Math.max(...getKeysPreserveType(cardStats.intervals)) || 0,
-                false,
-            );
+            longest_interval: string = textInterval(cardStats.intervals.getMaxValue(), false);
 
         createStatsChart(
             "bar",
             "intervalsChart",
             t("INTERVALS"),
             t("INTERVALS_DESC"),
-            Object.keys(cardStats.intervals),
-            Object.values(cardStats.intervals),
+            Object.keys(cardStats.intervals.dict),
+            Object.values(cardStats.intervals.dict),
             t("INTERVALS_SUMMARY", { avg: average_interval, longest: longest_interval }),
             t("COUNT"),
             t("DAYS"),
@@ -229,18 +210,12 @@ export class StatsModal extends Modal {
         );
 
         // Add eases
-        const eases: number[] = getKeysPreserveType(cardStats.eases);
+        const eases: number[] = getKeysPreserveType(cardStats.eases.dict);
         for (let ease = Math.min(...eases); ease <= Math.max(...eases); ease++) {
-            if (!Object.prototype.hasOwnProperty.call(cardStats.eases, ease)) {
-                cardStats.eases[ease] = 0;
-            }
+            cardStats.eases.clearCountIfMissing(ease);
         }
         const average_ease: number =
-            Math.round(
-                getTypedObjectEntries(cardStats.eases)
-                    .map(([ease, count]) => ease * count)
-                    .reduce((a, b) => a + b, 0) / scheduledCount,
-            ) || 0;
+            Math.round(cardStats.eases.getTotalOfValueMultiplyCount() / scheduledCount) || 0;
 
         const esaeStr: string[] = [];
         Object.keys(cardStats.eases).forEach((value: string) => {
@@ -267,7 +242,7 @@ export class StatsModal extends Modal {
         );
 
         // Add card types
-        const totalCardsCount: number = this.plugin.deckTree.totalFlashcards;
+        const totalCardsCount: number = this.plugin.deckTree.getCardCount(CardListType.All, true);
         createStatsChart(
             "pie",
             "cardTypesChart",
@@ -294,8 +269,8 @@ export class StatsModal extends Modal {
         const rc = this.plugin.store.getReviewedCounts();
         const now = window.moment(Date.now());
         const todayDate: string = now.format("YYYY-MM-DD");
-        if(!(todayDate in rc)){
-            rc[todayDate]={due: 0, new: 0};
+        if (!(todayDate in rc)) {
+            rc[todayDate] = { due: 0, new: 0 };
         }
         const rdueCnt = rc[todayDate].due,
             rnewCnt = rc[todayDate].new;
