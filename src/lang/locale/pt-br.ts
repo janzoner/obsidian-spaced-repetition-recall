@@ -55,6 +55,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "${interval}d",
     MONTHS_STR_IVL_MOBILE: "${interval}m",
     YEARS_STR_IVL_MOBILE: "${interval}a",
+    HOURS_STR_IVL: "${interval}hour(s)",
+    MINUTES_STR_IVL: "${interval}minute(s)",
+    HOURS_STR_IVL_MOBILE: "${interval}h",
+    MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
     SETTINGS_HEADER: "Plguin Spaced Repetition - Configuração",
@@ -220,4 +224,5 @@ export default {
     NEW_LEARNED: "New Learned",
     DUE_REVIEWED: "due Reviewed",
     REVIEWED_TODAY_SUMMARY: "Total Reviewed today: ${totalreviewedCount}",
+    DATE: "Date",
 };

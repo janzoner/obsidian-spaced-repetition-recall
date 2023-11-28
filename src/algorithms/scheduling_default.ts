@@ -1,12 +1,16 @@
 import { Notice, Setting } from "obsidian";
 
-import { DEFAULT_SETTINGS, SRSettings } from "src/settings";
 import { t } from "src/lang/helpers";
 
-import { DateUtils } from "src/utils_recall";
-import SrsAlgorithm from "./../algorithms";
-import { RPITEMTYPE, RepetitionItem, ReviewResult } from "./../data";
+import { DateUtils } from "src/util/utils_recall";
+import SrsAlgorithm from "./algorithms";
+import { ReviewResult } from "src/dataStore/data";
 import deepcopy from "deepcopy";
+import { algorithmNames } from "./algorithms_switch";
+import { AnkiData } from "./anki";
+import { FsrsData } from "./fsrs";
+import { balance } from "./balance/balance";
+import { RepetitionItem } from "src/dataStore/repetitionItem";
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
 let applyDebounceTimer = 0;
@@ -43,7 +47,7 @@ export function schedule(
     interval: number,
     ease: number,
     delayBeforeReview: number,
-    settingsObj: SRSettings,
+    settingsObj: DefaultAlgoSettings,
     dueDates?: Record<number, number>,
 ): Record<string, number> {
     delayBeforeReview = Math.max(0, Math.floor(delayBeforeReview / (24 * 3600 * 1000)));
@@ -63,41 +67,14 @@ export function schedule(
     }
 
     // replaces random fuzz with load balancing over the fuzz interval
-    if (dueDates !== undefined) {
-        interval = Math.round(interval);
-        if (!Object.prototype.hasOwnProperty.call(dueDates, interval)) {
-            dueDates[interval] = 0;
-        } else {
-            // disable fuzzing for small intervals
-            if (interval > 4) {
-                let fuzz = 0;
-                if (interval < 7) fuzz = 1;
-                else if (interval < 30) fuzz = Math.max(2, Math.floor(interval * 0.15));
-                else fuzz = Math.max(4, Math.floor(interval * 0.05));
 
-                const originalInterval = interval;
-                outer: for (let i = 1; i <= fuzz; i++) {
-                    for (const ivl of [originalInterval - i, originalInterval + i]) {
-                        if (!Object.prototype.hasOwnProperty.call(dueDates, ivl)) {
-                            dueDates[ivl] = 0;
-                            interval = ivl;
-                            break outer;
-                        }
-                        if (dueDates[ivl] < dueDates[interval]) interval = ivl;
-                    }
-                }
-            }
-        }
-
-        dueDates[interval]++;
-    }
-
-    interval = Math.min(interval, settingsObj.maximumInterval);
+    interval = balance(interval, dueDates, settingsObj.maximumInterval);
 
     return { interval: Math.round(interval * 10) / 10, ease };
 }
 
 export class DefaultAlgorithm extends SrsAlgorithm {
+    settings: DefaultAlgoSettings;
     defaultSettings(): DefaultAlgoSettings {
         return {
             // algorithm
@@ -127,10 +104,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
         const now: number = Date.now();
         const delayBeforeReview = due === 0 ? 0 : now - due; //just in case.
         // console.log("item.data:", item.data);
-        const dueDatesNotesorCards =
-            item.itemType === RPITEMTYPE.NOTE
-                ? this.plugin.dueDatesNotes
-                : this.plugin.dueDatesFlashcards;
+        const dueDatesNotesorCards = this.getDueDates(item.itemType);
 
         const intvls: number[] = [];
         this.srsOptions().forEach((opt, ind) => {
@@ -176,7 +150,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
             data.ease,
             delayBeforeReview,
             this.settings,
-            this.plugin.dueDatesNotes,
+            this.getDueDates(item.itemType),
         );
 
         const nextReview = schedObj.interval;
@@ -198,6 +172,47 @@ export class DefaultAlgorithm extends SrsAlgorithm {
         }
     }
 
+    importer(fromAlgo: algorithmNames, items: RepetitionItem[]): void {
+        if (fromAlgo === algorithmNames.Anki || fromAlgo === algorithmNames.SM2) {
+            this.importer_Anki(items);
+        } else if (fromAlgo === algorithmNames.Fsrs) {
+            this.importer_Fsrs(items);
+        } else {
+            throw Error(fromAlgo + "can't import to Default");
+        }
+    }
+
+    private importer_Anki(items: RepetitionItem[]) {
+        items.forEach((item) => {
+            if (item != null && item.data != null) {
+                const data: AnkiData = item.data as AnkiData;
+                data.ease *= 100;
+                if (data.lastInterval === 0) {
+                    data.lastInterval = 1;
+                } else {
+                    data.lastInterval *= 1;
+                }
+            }
+        });
+    }
+
+    private importer_Fsrs(items: RepetitionItem[]) {
+        // const plugin = this.plugin;
+        // this.updateSettings(plugin, plugin.data.settings.algorithmSettings[algorithmNames.Default]);
+        items.forEach((item) => {
+            if (item != null && item.data != null) {
+                const data = item.data as FsrsData;
+                const lastitval = data.scheduled_days;
+                const iter = data.reps;
+                const newdata = this.defaultData() as AnkiData;
+                newdata.lastInterval =
+                    lastitval > newdata.lastInterval ? lastitval : newdata.lastInterval;
+                newdata.iteration = iter;
+                item.data = deepcopy(newdata);
+            }
+        });
+    }
+
     displaySettings(
         containerEl: HTMLElement,
         update: (settings: DefaultAlgoSettings) => void,
@@ -207,6 +222,9 @@ export class DefaultAlgorithm extends SrsAlgorithm {
         });
         containerEl.createDiv().innerHTML =
             '用于间隔重复的算法. 更多信息请查阅 <a href="https://www.stephenmwangi.com/obsidian-spaced-repetition/algorithms/">anki修改算法</a>.';
+
+        const DEFAULTSETTINGS = this.defaultSettings();
+
         new Setting(containerEl)
             .setName(t("BASE_EASE"))
             .setDesc(t("BASE_EASE_DESC"))
@@ -234,7 +252,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.baseEase = DEFAULT_SETTINGS.baseEase;
+                        this.settings.baseEase = DEFAULTSETTINGS.baseEase;
                         update(this.settings);
                         this.plugin.settingTab.display();
                     });
@@ -258,7 +276,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.lapsesIntervalChange = DEFAULT_SETTINGS.lapsesIntervalChange;
+                        this.settings.lapsesIntervalChange = DEFAULTSETTINGS.lapsesIntervalChange;
                         update(this.settings);
                         this.plugin.settingTab.display();
                     });
@@ -291,7 +309,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.easyBonus = DEFAULT_SETTINGS.easyBonus;
+                        this.settings.easyBonus = DEFAULTSETTINGS.easyBonus;
                         update(this.settings);
                         this.plugin.settingTab.display();
                     });
@@ -324,7 +342,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.maximumInterval = DEFAULT_SETTINGS.maximumInterval;
+                        this.settings.maximumInterval = DEFAULTSETTINGS.maximumInterval;
                         update(this.settings);
                         this.plugin.settingTab.display();
                     });
@@ -348,7 +366,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.maxLinkFactor = DEFAULT_SETTINGS.maxLinkFactor;
+                        this.settings.maxLinkFactor = DEFAULTSETTINGS.maxLinkFactor;
                         update(this.settings);
                         this.plugin.settingTab.display();
                     });

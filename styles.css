@@ -1,10 +1,10 @@
 .tag-pane-tag-self:before {
     content: "";
     position: absolute;
-    width: 100%;
+    width: 90%;
     height: 100%;
     top: -6px;
-    left: -5px;
+    left: 10%;
     cursor: pointer;
 }
 .sr-flashcard-menu {
@@ -47,9 +47,13 @@
 }
 
 .sr-flashcard-response {
+    grid-template-columns: auto auto auto auto;
+}
+
+.sr-ignorestats-response,
+.sr-flashcard-response {
     display: inline-grid;
     width: 100%;
-    grid-template-columns: auto auto auto auto;
     position: absolute;
     bottom: 0;
 }
@@ -78,6 +82,7 @@
 }
 
 #sr-show-answer {
+    display: block;
     height: 48px;
     line-height: 48px;
     width: 100%;
@@ -181,10 +186,11 @@
         margin: auto;
     }
 
+    .ResponseFloatBarCommandItem,
     #sr-hard-btn,
     #sr-good-btn,
     #sr-easy-btn {
-        width: 100px;
+        width: 90%;
     }
 
     /* sidebar */
@@ -210,12 +216,21 @@
     }
 }
 
+.srs-flex-row {
+    display: flex;
+    width: 100%;
+    flex-flow: row wrap;
+    justify-content: space-evenly;
+    align-items: flex-start;
+    padding-top: 10px;
+}
+
 /* https://img.shields.io/github/v/release/chetachiezikeuzor/cMenu-Plugin */
 /*----------------------------------------------------------------
 ResponseFloatBar TOOLBAR
 ----------------------------------------------------------------*/
 
-#reviewNoteResponseModalBar {
+#reviewResponseModalBar {
     width: 95%;
     height: auto;
     padding: 3px;
@@ -231,10 +246,20 @@ ResponseFloatBar TOOLBAR
     align-items: center;
     transition: 200ms ease;
     min-width: fit-content;
-    justify-content: space-around;
+    /* justify-content: space-around; */
     z-index: var(--layer-status-bar);
     box-shadow: 0px 3px 32px rgba(37, 49, 224, 0.15);
     border: 1px solid var(--background-modifier-border);
+    background: rgb(255 255 255 / 90%);
+}
+
+.sr-show-response {
+    height: 48px;
+    position: relative;
+}
+
+.ResponseFloatBarCommandItem:before {
+    position: relative;
 }
 
 .ResponseFloatBarCommandItem {
@@ -243,7 +268,7 @@ ResponseFloatBar TOOLBAR
     cursor: pointer;
     padding: 5px 6px;
     min-width: 10px;
-    width: 98%;
+    width: 90%;
     height: 48px;
     box-shadow: none;
     margin-left: 3px;
@@ -256,12 +281,12 @@ ResponseFloatBar TOOLBAR
     --background-secondary: var(--background-primary-alt);
 }
 
-#reviewNoteResponseModalBar button.ResponseFloatBarCommandItem:hover {
+#reviewResponseModalBar button.ResponseFloatBarCommandItem:hover {
     color: #050505;
     background-color: var(--background-secondary);
 }
 
-#reviewNoteResponseModalBar button.ResponseFloatBarCommandItem svg {
+#reviewResponseModalBar button.ResponseFloatBarCommandItem svg {
     width: 1.3em;
     height: 1.3em;
 }
@@ -290,37 +315,14 @@ ResponseFloatBar TOOLBAR
 #sr-showintvl-btn,
 #sr-close-btn {
     margin-top: 13px;
+    margin-right: 3px;
     height: 20px;
+    width: 30px;
 }
 
 .ResponseFloatBarCommandItem {
     cursor: grab;
     padding: 18px 0 18px 0;
-}
-
-.sortable-fallback {
-    cursor: grabbing;
-    box-shadow: 0px 3px 32px rgb(31 38 135 / 15%);
-}
-
-.sortable-grab {
-    cursor: grabbing !important;
-}
-
-.sortable-ghost {
-    opacity: 0.4;
-    cursor: grabbing;
-}
-
-.sortable-chosen {
-    cursor: grabbing;
-    padding: 18px 0 18px 18px;
-    background-color: var(--background-primary);
-}
-
-.sortable-drag {
-    cursor: grabbing;
-    box-shadow: 0px 3px 32px rgb(31 38 135 / 15%);
 }
 
 /*----------------------------------------------------------------

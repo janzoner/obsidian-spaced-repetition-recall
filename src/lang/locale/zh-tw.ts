@@ -53,6 +53,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "${interval}天",
     MONTHS_STR_IVL_MOBILE: "${interval}月",
     YEARS_STR_IVL_MOBILE: "${interval}年",
+    HOURS_STR_IVL: "${interval}小時",
+    MINUTES_STR_IVL: "${interval}分鐘",
+    HOURS_STR_IVL_MOBILE: "${interval}時",
+    MINUTES_STR_IVL_MOBILE: "${interval}分",
 
     // settings.ts
     SETTINGS_HEADER: "間隔重複外掛 - 設定",
@@ -197,4 +201,5 @@ export default {
     NEW_LEARNED: "新學",
     DUE_REVIEWED: "復習",
     REVIEWED_TODAY_SUMMARY: "總復習數: ${totalreviewedCount}",
+    DATE: "日期",
 };

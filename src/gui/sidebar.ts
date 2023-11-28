@@ -4,7 +4,8 @@ import type SRPlugin from "src/main";
 import { COLLAPSE_ICON } from "src/constants";
 import { ReviewDeck } from "src/ReviewDeck";
 import { t } from "src/lang/helpers";
-import { DataLocation } from "./settings";
+import { DataLocation } from "src/dataStore/location_switch";
+import { DateUtils } from "src/util/utils_recall";
 
 export const REVIEW_QUEUE_VIEW_TYPE = "review-queue-list-view";
 
@@ -70,10 +71,7 @@ export class ReviewQueueListView extends ItemView {
                 );
 
                 for (const newFile of deck.newNotes) {
-                    const fileIsOpen =
-                        activeFile &&
-                        deckKey === this.plugin.lastSelectedReviewDeck &&
-                        newFile.path === activeFile.path;
+                    const fileIsOpen = activeFile && newFile.path === activeFile.path;
                     if (fileIsOpen) {
                         deck.activeFolders.add(deck.deckName);
                         deck.activeFolders.add(t("NEW"));
@@ -97,7 +95,7 @@ export class ReviewQueueListView extends ItemView {
                     now = Date.now();
                 } else {
                     // end of today
-                    now = this.plugin.store.EndofToday;
+                    now = DateUtils.EndofToday;
                 }
                 let currnDays: number | null = null;
                 let schedFolderEl: HTMLElement | null = null,
@@ -109,8 +107,8 @@ export class ReviewQueueListView extends ItemView {
                     const nDays: number = Math.ceil((sNote.dueUnix - now) / (24 * 3600 * 1000));
                     if (nDays != currnDays) {
                         if (nDays > maxDaysToRender) {
-                            // break;
-                            continue; //rand review Queue
+                            break;
+                            // continue; //rand review Queue
                         }
 
                         if (nDays === -1) {
@@ -138,10 +136,7 @@ export class ReviewQueueListView extends ItemView {
                         currnDays = nDays;
                     }
 
-                    const fileIsOpen =
-                        activeFile &&
-                        deckKey === this.plugin.lastSelectedReviewDeck &&
-                        sNote.note.path === activeFile.path;
+                    const fileIsOpen = activeFile && sNote.note.path === activeFile.path;
                     if (fileIsOpen) {
                         deck.activeFolders.add(deck.deckName);
                         deck.activeFolders.add(folderTitle);
@@ -238,11 +233,8 @@ export class ReviewQueueListView extends ItemView {
                 await this.app.workspace.getLeaf().openFile(file);
                 if (plugin.data.settings.dataLocation !== DataLocation.SaveOnNoteFile) {
                     const fid = this.plugin.store.getFileId(file.path);
-                    const item = plugin.store.data.items[fid];
-                    plugin.reviewNoteFloatBar.algoDisplay(
-                        true,
-                        plugin.algorithm.calcAllOptsIntervals(item),
-                    );
+                    const item = plugin.store.getItembyID(fid);
+                    plugin.reviewFloatBar.algoDisplay(true, item);
                 }
                 return false;
             },

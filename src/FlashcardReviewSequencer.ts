@@ -8,6 +8,7 @@ import { CardScheduleInfo, ICardScheduleCalculator } from "./CardSchedule";
 import { Note } from "./Note";
 import { IDeckTreeIterator } from "./DeckTreeIterator";
 import { IQuestionPostponementList } from "./QuestionPostponementList";
+import { DataLocation } from "src/dataStore/location_switch";
 
 export interface IFlashcardReviewSequencer {
     get hasCurrentCard(): boolean;
@@ -133,10 +134,12 @@ export class FlashcardReviewSequencer implements IFlashcardReviewSequencer {
     }
 
     async processReview_ReviewMode(response: ReviewResponse): Promise<void> {
-        this.currentCard.scheduleInfo = this.determineCardSchedule(response, this.currentCard);
+        if (this.settings.dataLocation === DataLocation.SaveOnNoteFile) {
+            this.currentCard.scheduleInfo = this.determineCardSchedule(response, this.currentCard);
 
-        // Update the source file with the updated schedule
-        await this.currentQuestion.writeQuestion(this.settings);
+            // Update the source file with the updated schedule
+            await this.currentQuestion.writeQuestion(this.settings);
+        }
 
         // Move/delete the card
         if (response == ReviewResponse.Reset) {

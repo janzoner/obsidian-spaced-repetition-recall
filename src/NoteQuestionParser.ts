@@ -33,7 +33,7 @@ export class NoteQuestionParser {
         this.noteFile = noteFile;
         const noteText: string = await noteFile.read();
         let noteTopicPath: TopicPath;
-        if (this.settings.convertFoldersToDecks) {
+        if (this.settings.convertFoldersToDecks || this.settings.trackedNoteToDecks) {
             noteTopicPath = folderTopicPath;
         } else {
             const tagList: string[] = noteFile.getAllTags();

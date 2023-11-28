@@ -5,7 +5,7 @@ import { CardListType } from "./Deck";
 export class Card {
     question: Question;
     cardIdx: number;
-
+    Id?: number;
     // scheduling
     get hasSchedule(): boolean {
         return this.scheduleInfo != null;

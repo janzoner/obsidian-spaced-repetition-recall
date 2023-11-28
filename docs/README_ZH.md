@@ -24,7 +24,7 @@
 
 因我本人并不是程序员，对 typescript 编程有许多不懂的地方，目前只能做些 bug 修复、及小功能更新。而对一些好的功能建议就难以实现了，欢迎对这个插件感兴趣的朋友加入，一起维护更新这个插件。
 
-加入方式直接提 issue 或 PR 即可。
+加入方式直接提 [issue](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues)/[PR](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/pulls)、或[论坛讨论](https://forum-zh.obsidian.md/t/topic/20551) 。
 
 ## 适用场景
 
@@ -32,7 +32,7 @@
 2. 渐进式总结；
 3. 增量写作；
 
-Check the [docs](https://www.stephenmwangi.com/obsidian-spaced-repetition/) for more details.
+更详细内容请参考 [使用教程](使用教程.md).
 
 ## 下载
 

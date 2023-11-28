@@ -53,6 +53,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "${interval}天",
     MONTHS_STR_IVL_MOBILE: "${interval}月",
     YEARS_STR_IVL_MOBILE: "${interval}年",
+    HOURS_STR_IVL: "${interval}小时",
+    MINUTES_STR_IVL: "${interval}分钟",
+    HOURS_STR_IVL_MOBILE: "${interval}时",
+    MINUTES_STR_IVL_MOBILE: "${interval}分",
 
     // settings.ts
     SETTINGS_HEADER: "间隔重复插件 - 设置",
@@ -198,4 +202,5 @@ export default {
     NEW_LEARNED: "新学",
     DUE_REVIEWED: "复习",
     REVIEWED_TODAY_SUMMARY: "总复习数: ${totalreviewedCount}",
+    DATE: "日期",
 };

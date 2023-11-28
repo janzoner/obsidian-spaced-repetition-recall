@@ -53,6 +53,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "ي${interval}",
     MONTHS_STR_IVL_MOBILE: "ش${interval}",
     YEARS_STR_IVL_MOBILE: "س${interval}",
+    HOURS_STR_IVL: "${interval}hour(s)",
+    MINUTES_STR_IVL: "${interval}minute(s)",
+    HOURS_STR_IVL_MOBILE: "${interval}h",
+    MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
     SETTINGS_HEADER: "Spaced Repetition Plugin - Settings",
@@ -209,4 +213,5 @@ export default {
     NEW_LEARNED: "New Learned",
     DUE_REVIEWED: "due Reviewed",
     REVIEWED_TODAY_SUMMARY: "Total Reviewed today: ${totalreviewedCount}",
+    DATE: "Date",
 };

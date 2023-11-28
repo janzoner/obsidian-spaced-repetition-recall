@@ -1,6 +1,8 @@
 import { SRSettings } from "src/settings";
 import { OBSIDIAN_TAG_AT_STARTOFLINE_REGEX } from "./constants";
 import { ISRFile } from "./SRFile";
+import { DataStore } from "src/dataStore/data";
+import { DataLocation } from "src/dataStore/location_switch";
 
 export class TopicPath {
     path: string[];
@@ -38,7 +40,11 @@ export class TopicPath {
         return result;
     }
 
-    static getTopicPathOfFile(noteFile: ISRFile, settings: SRSettings): TopicPath {
+    static getTopicPathOfFile(
+        noteFile: ISRFile,
+        settings: SRSettings,
+        store?: DataStore,
+    ): TopicPath {
         let deckPath: string[] = [];
         let result: TopicPath = TopicPath.emptyPath;
 
@@ -61,8 +67,34 @@ export class TopicPath {
                     }
                 }
             }
-        }
 
+            if (result.isEmptyPath && settings.trackedNoteToDecks) {
+                outer: for (const tagToReview of this.getTopicPathsFromTagList(
+                    settings.tagsToReview,
+                )) {
+                    for (const tag of tagList) {
+                        if (tagToReview.isSameOrAncestorOf(tag)) {
+                            result = tag;
+                            break outer;
+                        }
+                    }
+                }
+                if (settings.dataLocation !== DataLocation.SaveOnNoteFile && store != undefined) {
+                    if (result.isEmptyPath) {
+                        if (store.isTracked(noteFile.path)) {
+                            let deckName = store.getFileLasTag(noteFile.path);
+                            if (deckName == null) {
+                                deckName = store.defaultDackName;
+                            } else if (TopicPath.isValidTag(deckName)) {
+                                deckName = deckName.slice(1);
+                            }
+                            deckPath = deckName.split("/");
+                            result = new TopicPath(deckPath);
+                        }
+                    }
+                }
+            }
+        }
         return result;
     }
 

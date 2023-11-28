@@ -20,9 +20,11 @@ import type SRPlugin from "src/main";
 import { getKeysPreserveType, getTypedObjectEntries } from "src/util/utils";
 import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
-import { RPITEMTYPE } from "./data";
+import { RPITEMTYPE, ReviewedCounts } from "src/dataStore/data";
 import { State } from "fsrs.js";
-import { algorithmNames } from "./settings";
+import { algorithmNames } from "src/algorithms/algorithms_switch";
+import { Stats } from "src/stats";
+import { CardListType } from "src/Deck";
 
 Chart.register(
     BarElement,
@@ -103,18 +105,30 @@ export class StatsModal extends Modal {
         );
 
         const chartTypeEl = document.getElementById("sr-chart-type") as HTMLSelectElement;
-        chartTypeEl.addEventListener("click", () => {
+        chartTypeEl.addEventListener("change", () => {
             const chartType = chartTypeEl.value;
             if (chartType === RPITEMTYPE.NOTE) {
-                this.createNoteStatsChart();
+                this.createCharts(
+                    this.plugin.store.getReviewedCounts(),
+                    this.plugin.noteStats,
+                    this.plugin.noteStats.getTotalCount(CardListType.All),
+                );
                 return;
             } else {
-                this.createCardStatsChart();
+                this.createCharts(
+                    this.plugin.store.getReviewedCardCounts(),
+                    this.plugin.cardStats,
+                    this.plugin.deckTree.getCardCount(CardListType.All, true),
+                );
                 return;
             }
         });
 
-        this.createCardStatsChart();
+        this.createCharts(
+            this.plugin.store.getReviewedCardCounts(),
+            this.plugin.cardStats,
+            this.plugin.deckTree.getCardCount(CardListType.All, true),
+        );
     }
 
     onClose(): void {
@@ -122,9 +136,9 @@ export class StatsModal extends Modal {
         contentEl.empty();
     }
 
-    private createCardStatsChart() {
+    private createCharts(rc: ReviewedCounts, cardStats: Stats, totalCardsCount: number) {
         //Add today review data
-        const rc = this.plugin.store.getReviewedCardCounts();
+        // const rc = reviewedCounts;
         const now = window.moment(Date.now());
         const todayDate: string = now.format("YYYY-MM-DD");
         if (!(todayDate in rc)) {
@@ -139,10 +153,7 @@ export class StatsModal extends Modal {
             "todayReviewedChart",
             t("REVIEWED_TODAY"),
             t("REVIEWED_TODAY_DESC"),
-            [
-                `${t("NEW_LEARNED")} - ${Math.round(rnewCnt)}`,
-                `${t("DUE_REVIEWED")} - ${Math.round(rdueCnt)}`,
-            ],
+            [`${t("NEW_LEARNED")} - ${rnewCnt}`, `${t("DUE_REVIEWED")} - ${rdueCnt}`],
             [rnewCnt, rdueCnt],
             t("REVIEWED_TODAY_SUMMARY", { totalreviewedCount }),
             t("COUNT"),
@@ -151,18 +162,24 @@ export class StatsModal extends Modal {
         );
 
         // Add forecast
-        const cardStats: Stats = this.plugin.cardStats;
+        // const cardStats: Stats = this.plugin.cardStats;
         let maxN: number = cardStats.delayedDays.getMaxValue();
         for (let dueOffset = 0; dueOffset <= maxN; dueOffset++) {
             cardStats.delayedDays.clearCountIfMissing(dueOffset);
         }
 
-        const dueDatesFlashcardsCopy: Record<number, number> = { 0: 0 };
+        const dueDatesFlashcardsCopy: Record<string, number> = {};
+        const todayStr = t("TODAY");
+        dueDatesFlashcardsCopy[todayStr] = 0;
         for (const [dueOffset, dueCount] of getTypedObjectEntries(cardStats.delayedDays.dict)) {
             if (dueOffset <= 0) {
-                dueDatesFlashcardsCopy[0] += dueCount;
+                // dueDatesFlashcardsCopy[0] += dueCount;
+                dueDatesFlashcardsCopy[todayStr] += dueCount;
             } else {
-                dueDatesFlashcardsCopy[dueOffset] = dueCount;
+                // dueDatesFlashcardsCopy[dueOffset] = dueCount;
+                const due = now.clone().add(dueOffset, "days");
+                const dateStr = due.format("YYYY-MM-DD");
+                dueDatesFlashcardsCopy[dateStr] = dueCount;
             }
         }
 
@@ -178,7 +195,7 @@ export class StatsModal extends Modal {
             Object.values(dueDatesFlashcardsCopy),
             t("REVIEWS_PER_DAY", { avg: (scheduledCount / maxN).toFixed(1) }),
             t("SCHEDULED"),
-            t("DAYS"),
+            t("DATE"),
             t("NUMBER_OF_CARDS"),
         );
 
@@ -218,12 +235,11 @@ export class StatsModal extends Modal {
             Math.round(cardStats.eases.getTotalOfValueMultiplyCount() / scheduledCount) || 0;
 
         const esaeStr: string[] = [];
-        Object.keys(cardStats.eases).forEach((value: string) => {
-            const v = parseInt(value);
+        getKeysPreserveType(cardStats.eases.dict).forEach((value: number) => {
             if (this.plugin.data.settings.algorithm === algorithmNames.Fsrs) {
-                esaeStr.push(`${State[v]} `);
+                esaeStr.push(`${State[value]} `);
             } else {
-                esaeStr.push(`${v} `);
+                esaeStr.push(`${value} `);
             }
         });
 
@@ -234,7 +250,7 @@ export class StatsModal extends Modal {
             "",
             esaeStr,
             // Object.keys(cardStats.eases),
-            Object.values(cardStats.eases),
+            Object.values(cardStats.eases.dict),
             t("EASES_SUMMARY", { avgEase: average_ease }),
             t("COUNT"),
             t("EASES"),
@@ -242,172 +258,12 @@ export class StatsModal extends Modal {
         );
 
         // Add card types
-        const totalCardsCount: number = this.plugin.deckTree.getCardCount(CardListType.All, true);
+        // const totalCardsCount: number = this.plugin.deckTree.getCardCount(CardListType.All, true);
         createStatsChart(
             "pie",
             "cardTypesChart",
             t("CARD_TYPES"),
             t("CARD_TYPES_DESC"),
-            [
-                `${t("CARD_TYPE_NEW")} - ${Math.round(
-                    (cardStats.newCount / totalCardsCount) * 100,
-                )}%`,
-                `${t("CARD_TYPE_YOUNG")} - ${Math.round(
-                    (cardStats.youngCount / totalCardsCount) * 100,
-                )}%`,
-                `${t("CARD_TYPE_MATURE")} - ${Math.round(
-                    (cardStats.matureCount / totalCardsCount) * 100,
-                )}%`,
-            ],
-            [cardStats.newCount, cardStats.youngCount, cardStats.matureCount],
-            t("CARD_TYPES_SUMMARY", { totalCardsCount }),
-        );
-    }
-
-    private createNoteStatsChart() {
-        //Add today review data
-        const rc = this.plugin.store.getReviewedCounts();
-        const now = window.moment(Date.now());
-        const todayDate: string = now.format("YYYY-MM-DD");
-        if (!(todayDate in rc)) {
-            rc[todayDate] = { due: 0, new: 0 };
-        }
-        const rdueCnt = rc[todayDate].due,
-            rnewCnt = rc[todayDate].new;
-
-        const totalreviewedCount = rdueCnt + rnewCnt;
-        createStatsChart(
-            "bar",
-            "todayReviewedChart",
-            t("REVIEWED_TODAY"),
-            t("REVIEWED_TODAY_DESC"),
-            [
-                `${t("NEW_LEARNED")} - ${Math.round(rnewCnt)}`,
-                `${t("DUE_REVIEWED")} - ${Math.round(rdueCnt)}`,
-            ],
-            [rnewCnt, rdueCnt],
-            t("REVIEWED_TODAY_SUMMARY", { totalreviewedCount }),
-            t("COUNT"),
-            "",
-            t("NUMBER_OF_CARDS"),
-        );
-
-        // Add forecast
-        let maxN: number = Math.max(...getKeysPreserveType(this.plugin.dueDatesNotes));
-        for (let dueOffset = 0; dueOffset <= maxN; dueOffset++) {
-            if (!Object.prototype.hasOwnProperty.call(this.plugin.dueDatesNotes, dueOffset)) {
-                this.plugin.dueDatesNotes[dueOffset] = 0;
-            }
-        }
-
-        const dueDatesFlashcardsCopy: Record<number, number> = { 0: 0 };
-        for (const [dueOffset, dueCount] of getTypedObjectEntries(this.plugin.dueDatesNotes)) {
-            if (dueOffset <= 0) {
-                dueDatesFlashcardsCopy[0] += dueCount;
-            } else {
-                dueDatesFlashcardsCopy[dueOffset] = dueCount;
-            }
-        }
-
-        const cardStats: Stats = this.plugin.noteStats;
-        const scheduledCount: number = cardStats.youngCount + cardStats.matureCount;
-        maxN = Math.max(maxN, 1);
-
-        createStatsChart(
-            "bar",
-            "forecastChart",
-            t("FORECAST"),
-            t("FORECAST_DESC"),
-            Object.keys(dueDatesFlashcardsCopy),
-            Object.values(dueDatesFlashcardsCopy),
-            t("REVIEWS_PER_DAY", { avg: (scheduledCount / maxN).toFixed(1) }),
-            t("SCHEDULED"),
-            t("DAYS"),
-            t("NUMBER_OF_CARDS"),
-        );
-
-        maxN = Math.max(...getKeysPreserveType(cardStats.intervals));
-        for (let interval = 0; interval <= maxN; interval++) {
-            if (!Object.prototype.hasOwnProperty.call(cardStats.intervals, interval)) {
-                cardStats.intervals[interval] = 0;
-            }
-        }
-
-        // Add intervals
-        const average_interval: string = textInterval(
-                Math.round(
-                    (getTypedObjectEntries(cardStats.intervals)
-                        .map(([interval, count]) => interval * count)
-                        .reduce((a, b) => a + b, 0) /
-                        scheduledCount) *
-                        10,
-                ) / 10 || 0,
-                false,
-            ),
-            longest_interval: string = textInterval(
-                Math.max(...getKeysPreserveType(cardStats.intervals)) || 0,
-                false,
-            );
-
-        createStatsChart(
-            "bar",
-            "intervalsChart",
-            t("INTERVALS"),
-            t("INTERVALS_DESC"),
-            Object.keys(cardStats.intervals),
-            Object.values(cardStats.intervals),
-            t("INTERVALS_SUMMARY", { avg: average_interval, longest: longest_interval }),
-            t("COUNT"),
-            t("DAYS"),
-            t("NUMBER_OF_CARDS"),
-        );
-
-        // Add eases
-        const eases: number[] = getKeysPreserveType(cardStats.eases);
-        for (let ease = Math.min(...eases); ease <= Math.max(...eases); ease++) {
-            if (!Object.prototype.hasOwnProperty.call(cardStats.eases, ease)) {
-                cardStats.eases[ease] = 0;
-            }
-        }
-        const average_ease: number =
-            Math.round(
-                getTypedObjectEntries(cardStats.eases)
-                    .map(([ease, count]) => ease * count)
-                    .reduce((a, b) => a + b, 0) / scheduledCount,
-            ) || 0;
-
-        const esaeStr: string[] = [];
-        Object.keys(cardStats.eases).forEach((value: string) => {
-            const v = parseInt(value);
-            if (this.plugin.data.settings.algorithm === algorithmNames.Fsrs) {
-                esaeStr.push(`${State[v]} `);
-            } else {
-                esaeStr.push(`${v} `);
-            }
-        });
-
-        createStatsChart(
-            "bar",
-            "easesChart",
-            t("EASES"),
-            "",
-            esaeStr,
-            // Object.keys(cardStats.eases),
-            Object.values(cardStats.eases),
-            t("EASES_SUMMARY", { avgEase: average_ease }),
-            t("COUNT"),
-            t("EASES"),
-            t("NUMBER_OF_CARDS"),
-        );
-
-        // Add card types
-        const totalCardsCount: number = this.plugin.dueNotesCount + this.plugin.newNotesCount;
-        createStatsChart(
-            "pie",
-            "cardTypesChart",
-            t("CARD_TYPES"),
-            "",
-            // t("CARD_TYPES_DESC"),
             [
                 `${t("CARD_TYPE_NEW")} - ${Math.round(
                     (cardStats.newCount / totalCardsCount) * 100,
@@ -514,7 +370,7 @@ function createStatsChart(
 
     if (shouldFilter) {
         const chartPeriodEl = document.getElementById("sr-chart-period") as HTMLSelectElement;
-        chartPeriodEl.addEventListener("click", () => {
+        chartPeriodEl.addEventListener("change", () => {
             if (statsChart.canvas != null) {
                 chartPeriodCallBack(chartPeriodEl);
             }
@@ -549,4 +405,6 @@ function createStatsChart(
         };
         statsChart.update();
     }
+
+    document.getElementById(`${canvasId}Summary`).innerText = summary;
 }

@@ -1,11 +1,16 @@
 import { Setting, Notice } from "obsidian";
-import { DateUtils } from "src/utils_recall";
-import SrsAlgorithm from "../algorithms";
-import { RepetitionItem, ReviewResult } from "../data";
+import { DateUtils } from "src/util/utils_recall";
+import SrsAlgorithm from "./algorithms";
+import { ReviewResult } from "../dataStore/data";
 
 import * as fsrsjs from "fsrs.js";
 import { t } from "src/lang/helpers";
 import deepcopy from "deepcopy";
+import { algorithmNames } from "./algorithms_switch";
+import { AnkiData } from "./anki";
+import { Rating, ReviewLog } from "fsrs.js";
+import { balance } from "./balance/balance";
+import { RepetitionItem } from "src/dataStore/repetitionItem";
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
 let applyDebounceTimer = 0;
@@ -25,7 +30,17 @@ export class RevLog {
     review_duration = 0;
     tag = "";
 
-    constructor() {
+    constructor(item: RepetitionItem = null, reviewLog: ReviewLog = null, duration: number = 0) {
+        if (item) {
+            this.card_id = item.ID;
+            this.tag = item.deckName;
+        }
+        if (reviewLog) {
+            this.review_time = reviewLog.review.getTime();
+            this.review_rating = reviewLog.rating;
+            this.review_state = reviewLog.state;
+        }
+        this.review_duration = duration;
         return;
     }
 
@@ -50,6 +65,7 @@ const FsrsOptions: string[] = ["Again", "Hard", "Good", "Easy"];
  * https://github.com/open-spaced-repetition/fsrs.js
  */
 export class FsrsAlgorithm extends SrsAlgorithm {
+    settings: FsrsSettings;
     fsrs = new fsrsjs.FSRS();
     card = new fsrsjs.Card();
 
@@ -86,7 +102,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     getLogfilepath() {
-        const filepath = this.plugin.store.getStorePath();
+        const filepath = this.plugin.store.dataPath;
         const fder_index = filepath.lastIndexOf("/");
         this.logfilepath = filepath.substring(0, fder_index + 1) + this.filename;
     }
@@ -123,7 +139,12 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         this.review_duration = new Date().getTime();
         return intvls;
     }
-    onSelection(item: RepetitionItem, optionStr: string, repeat: boolean): ReviewResult {
+    onSelection(
+        item: RepetitionItem,
+        optionStr: string,
+        repeat: boolean,
+        log: boolean = true,
+    ): ReviewResult {
         let data = item.data as FsrsData;
         data.due = new Date(data.due);
         data.last_review = new Date(data.last_review);
@@ -160,12 +181,18 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         //Get the state for card:
         // state = card.state;
 
-        //Get the review log after rating `Good`:
-        // review_log = scheduling_cards[2].review_log;
+        // Get the review log after rating :
+        if (log) {
+            const review_log = scheduling_cards[response].review_log;
+            this.appendRevlog(item, review_log);
+        }
 
-        const nextInterval = data.due.valueOf() - data.last_review.valueOf();
-
-        this.appendRevlog(now, item, response);
+        let nextInterval = data.due.valueOf() - data.last_review.valueOf();
+        // not sure should use balance or not.
+        let days = nextInterval / DateUtils.DAYS_TO_MILLIS;
+        days = balance(days, this.getDueDates(item.itemType));
+        nextInterval = days * DateUtils.DAYS_TO_MILLIS;
+        data.due = new Date(nextInterval + now.getTime());
 
         return {
             correct,
@@ -179,7 +206,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
      * @param cid 对应数据项ID
      * @param rating
      */
-    async appendRevlog(now: Date, item: RepetitionItem, rating: number) {
+    async appendRevlog(item: RepetitionItem, reviewLog: ReviewLog) {
         if (this.settings.revlog_tags.length > 0) {
             if (item.deckName.includes("/")) {
                 if (
@@ -195,18 +222,10 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             }
         }
 
-        const plugin = this.plugin;
-        const adapter = plugin.app.vault.adapter;
-        const rlog = new RevLog();
-        rlog.card_id = item.ID;
-        rlog.review_time = now.getTime();
-        rlog.review_rating = rating;
-        const carddata = item.data as FsrsData;
-        rlog.review_duration =
-            this.review_duration > 0 ? new Date().getTime() - this.review_duration : 0;
+        const adapter = app.vault.adapter;
+        const duration = this.review_duration > 0 ? new Date().getTime() - this.review_duration : 0;
         this.review_duration = 0;
-        rlog.review_state = carddata.state;
-        rlog.tag = item.deckName;
+        const rlog = new RevLog(item, reviewLog, duration);
 
         let data = Object.values(rlog).join(this.REVLOG_sep);
         data += "\n";
@@ -224,8 +243,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
      * @param rating
      */
     reWriteRevlog(data: string, withTitle = false) {
-        const plugin = this.plugin;
-        const adapter = plugin.app.vault.adapter;
+        const adapter = app.vault.adapter;
 
         if (withTitle) {
             data = this.REVLOG_TITLE + data;
@@ -234,13 +252,75 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     async readRevlog() {
-        const plugin = this.plugin;
-        const adapter = plugin.app.vault.adapter;
+        const adapter = app.vault.adapter;
         let data = "";
         if (await adapter.exists(this.logfilepath)) {
             data = await adapter.read(this.logfilepath);
         }
         return data;
+    }
+
+    importer(fromAlgo: algorithmNames, items: RepetitionItem[]): void {
+        // const plugin = this.plugin;
+        // const store = plugin.store;
+        const options = this.srsOptions();
+        // this.updateSettings(plugin, plugin.data.settings.algorithmSettings[algorithmNames.Fsrs]);
+        const initItvl = this.settings.w[4];
+        items.forEach((item) => {
+            if (item != null && item.data != null) {
+                const reps = item.timesReviewed;
+                let card = this.defaultData() as FsrsData;
+                if (reps > 0) {
+                    const data = item.data as AnkiData;
+                    const due = new Date(item.nextReview);
+                    const interval = data.lastInterval;
+                    const lastview = new Date(
+                        item.nextReview - data.lastInterval * DateUtils.DAYS_TO_MILLIS,
+                    );
+
+                    let opt: string;
+                    item.data = card;
+                    if (interval > initItvl * 3) {
+                        // card.state = State.Learning;
+                        // in case the param is to big.
+                        opt = options[Rating.Easy - 1];
+                        this.onSelection(item, opt, false, false);
+                    }
+                    if (interval > initItvl) {
+                        opt = options[Rating.Easy - 1];
+                        this.onSelection(item, opt, false, false);
+                    }
+                    opt = options[Rating.Good - 1];
+                    this.onSelection(item, opt, false, false);
+
+                    card = item.data as FsrsData;
+                    card.due = due;
+                    card.scheduled_days = interval;
+                    card.reps = reps;
+                    card.last_review = lastview;
+                } else {
+                    item.data = card;
+                }
+                // item.data = deepcopy(card);
+                if (
+                    card.difficulty === 0 ||
+                    card.difficulty == null ||
+                    card.stability === 0 ||
+                    card.stability == null
+                ) {
+                    if (reps > 0) {
+                        const show = [item.ID, card, reps];
+                        console.warn("data switch: d, s" + card.difficulty + ", " + card.stability);
+                        console.warn(...show);
+                    }
+                }
+            }
+        });
+        items.some((item) => {
+            if (Object.prototype.hasOwnProperty.call(item.data, "ease")) {
+                throw new Error("conv to fsrs failed");
+            }
+        });
     }
 
     displaySettings(containerEl: HTMLElement, update: (settings: FsrsSettings) => void) {
@@ -287,10 +367,13 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.request_retention = this.defaultSettings().request_retention;
-                        this.fsrs.p.request_retention = this.settings.request_retention;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(async () => {
+                            this.settings.request_retention =
+                                this.defaultSettings().request_retention;
+                            this.fsrs.p.request_retention = this.settings.request_retention;
+                            update(this.settings);
+                            // this.plugin.settingTab.display();
+                        });
                     });
             });
 
@@ -323,10 +406,11 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.maximum_interval = this.fsrs.p.maximum_interval =
-                            this.defaultSettings().maximum_interval;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(async () => {
+                            this.settings.maximum_interval = this.fsrs.p.maximum_interval =
+                                this.defaultSettings().maximum_interval;
+                            update(this.settings);
+                        });
                     });
             });
 
@@ -358,9 +442,11 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.w = this.fsrs.p.w = this.defaultSettings().w;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(async () => {
+                            this.settings.w = this.fsrs.p.w = this.defaultSettings().w;
+                            update(this.settings);
+                            // this.plugin.settingTab.display();
+                        });
                     });
             })
             .settingEl.querySelector(".setting-item-description").innerHTML =

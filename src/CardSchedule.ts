@@ -157,6 +157,10 @@ export class NoteCardScheduleParser {
         if (scheduling.length === 0)
             scheduling = [...questionText.matchAll(LEGACY_SCHEDULING_EXTRACTOR)];
 
+        return this.createInfoList(scheduling);
+    }
+
+    static createInfoList(scheduling: RegExpMatchArray[]) {
         const result: CardScheduleInfo[] = [];
         for (let i = 0; i < scheduling.length; i++) {
             const match: RegExpMatchArray = scheduling[i];
@@ -166,6 +170,27 @@ export class NoteCardScheduleParser {
             const dueDate: Moment = DateUtil.dateStrToMoment(dueDateStr);
             const delayBeforeReviewTicks: number =
                 dueDate.valueOf() - globalDateProvider.today.valueOf();
+
+            const info: CardScheduleInfo = new CardScheduleInfo(
+                dueDate,
+                interval,
+                ease,
+                delayBeforeReviewTicks,
+            );
+            result.push(info);
+        }
+        return result;
+    }
+
+    static createInfoList_algo(scheduling: RegExpMatchArray[]) {
+        const result: CardScheduleInfo[] = [];
+        for (let i = 0; i < scheduling.length; i++) {
+            const match: RegExpMatchArray = scheduling[i];
+            const dueDateNum = parseInt(match[1]);
+            const interval = parseInt(match[2]);
+            const ease = parseInt(match[3]);
+            const dueDate: Moment = window.moment(dueDateNum);
+            const delayBeforeReviewTicks: number = dueDateNum - globalDateProvider.today.valueOf();
 
             const info: CardScheduleInfo = new CardScheduleInfo(
                 dueDate,

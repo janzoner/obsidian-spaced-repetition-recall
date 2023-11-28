@@ -1,5 +1,8 @@
+import { MarkdownView } from "obsidian";
 import ObsidianSrsPlugin from "./main";
-// import { ItemInfoModal } from "./modals/info";
+import { ReviewNote } from "src/reviewNote/review-note";
+import { ItemInfoModal } from "src/gui/info";
+import { Queue } from "./dataStore/queue";
 
 export default class Commands {
     plugin: ObsidianSrsPlugin;
@@ -12,6 +15,23 @@ export default class Commands {
         const plugin = this.plugin;
 
         plugin.addCommand({
+            id: "view-item-info",
+            name: "Item Info",
+            checkCallback: (checking: boolean) => {
+                const file = plugin.app.workspace.getActiveFile();
+                if (file) {
+                    if (plugin.store.isTracked(file.path)) {
+                        if (!checking) {
+                            new ItemInfoModal(plugin.data.settings, file).open();
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            },
+        });
+
+        plugin.addCommand({
             id: "track-file",
             name: "Track Note",
             checkCallback: (checking: boolean) => {
@@ -19,7 +39,7 @@ export default class Commands {
                 if (file != null) {
                     if (!plugin.store.isTracked(file.path)) {
                         if (!checking) {
-                            plugin.store.trackFile(file.path, "default");
+                            plugin.store.trackFile(file.path);
                             plugin.store.save();
                             // plugin.updateStatusBar();
                         }
@@ -49,30 +69,30 @@ export default class Commands {
             },
         });
 
-        plugin.addCommand({
-            id: "update-file",
-            name: "Update Note",
-            checkCallback: (checking: boolean) => {
-                const file = plugin.app.workspace.getActiveFile();
-                if (file != null) {
-                    if (plugin.store.isTracked(file.path)) {
-                        if (!checking) {
-                            plugin.store.updateItems(file.path);
-                            plugin.store.save();
-                            // plugin.updateStatusBar();
-                        }
-                        return true;
-                    }
-                }
-                return false;
-            },
-        });
+        // plugin.addCommand({
+        //     id: "update-file",
+        //     name: "Update Note",
+        //     checkCallback: (checking: boolean) => {
+        //         const file = plugin.app.workspace.getActiveFile();
+        //         if (file != null) {
+        //             if (plugin.store.isTracked(file.path)) {
+        //                 if (!checking) {
+        //                     plugin.store.updateItems(file.path);
+        //                     plugin.store.save();
+        //                     // plugin.updateStatusBar();
+        //                 }
+        //                 return true;
+        //             }
+        //         }
+        //         return false;
+        //     },
+        // });
 
         plugin.addCommand({
             id: "build-queue",
             name: "Build Queue",
             callback: () => {
-                plugin.store.buildQueue();
+                Queue.getInstance().buildQueue();
             },
         });
 
@@ -80,39 +100,10 @@ export default class Commands {
             id: "review-view",
             name: "Review",
             callback: () => {
-                this.recallReviewNote();
+                Queue.getInstance().buildQueue();
+                ReviewNote.recallReviewNote(this.plugin.data.settings);
             },
         });
-    }
-
-    recallReviewNote() {
-        const plugin = this.plugin;
-        this.plugin.store.buildQueue();
-        const item = this.plugin.store.getNext();
-        const state: any = { mode: "empty" };
-        if (item != null) {
-            const path = this.plugin.store.getFilePath(item);
-            if (path != null) {
-                state.file = path;
-                state.item = this.plugin.store.getNextId();
-                // state.mode = "note";
-                // state.mode = "question";
-                const fid = plugin.store.getFileId(path);
-                const item = plugin.store.data.items[fid];
-                plugin.reviewNoteFloatBar.algoDisplay(
-                    true,
-                    plugin.algorithm.calcAllOptsIntervals(item),
-                );
-                // plugin.reviewNoteFloatBar.algoDisplay(true, plugin.store.calcReviewInterval(fid));
-            }
-        }
-        const leaf = this.plugin.app.workspace.getLeaf();
-        leaf.setViewState({
-            type: "markdown",
-            state: state,
-        });
-
-        this.plugin.app.workspace.setActiveLeaf(leaf);
     }
 
     addDebugCommands() {
@@ -123,7 +114,8 @@ export default class Commands {
             id: "debug-print-view-state",
             name: "Print View State",
             callback: () => {
-                console.log(plugin.app.workspace.activeLeaf.getViewState());
+                const state = plugin.app.workspace.getActiveViewOfType(MarkdownView).getState();
+                console.log(state);
             },
         });
 
@@ -135,38 +127,35 @@ export default class Commands {
             },
         });
 
-        plugin.addCommand({
-            id: "debug-print-queue",
-            name: "Print Queue",
-            callback: () => {
-                console.log(plugin.store.data.queue);
-                console.log("There are " + plugin.store.data.queue.length + " items in queue.");
-                console.log(plugin.store.data.newAdded + " new where added to today.");
-                console.log("repeatQueue: " + plugin.store.data.repeatQueue);
-                console.log("cardQueue: " + plugin.store.data.cardQueue);
-                console.log("cardRepeatQueue: " + plugin.store.data.cardRepeatQueue);
-            },
-        });
+        // plugin.addCommand({
+        //     id: "debug-print-queue",
+        //     name: "Print Queue",
+        //     callback: () => {
+        //         console.log(plugin.store.data);
+        //         console.log(plugin.store.data.queue);
+        //         console.log("There are " + plugin.store.data.queue.length + " items in queue.");
+        //         console.log(plugin.store.data.newAdded + " new where added to today.");
+        //         console.log("repeatQueue: " + plugin.store.data.repeatQueue);
+        //         console.log("cardQueue: " + plugin.store.data.cardQueue);
+        //         console.log("cardRepeatQueue: " + plugin.store.data.cardRepeatQueue);
+        //     },
+        // });
 
-        plugin.addCommand({
-            id: "debug-clear-queue",
-            name: "Clear Queue",
-            callback: () => {
-                plugin.store.clearQueue();
-            },
-        });
+        // plugin.addCommand({
+        //     id: "debug-clear-queue",
+        //     name: "Clear Queue",
+        //     callback: () => {
+        //         Queue.getInstance().clearQueue();
+        //     },
+        // });
 
         plugin.addCommand({
             id: "debug-queue-all",
             name: "Queue All",
             callback: () => {
-                plugin.store.data.queue = [];
-                for (let i = 0; i < plugin.store.data.items.length; i++) {
-                    if (plugin.store.data.items[i] != null) {
-                        plugin.store.data.queue.push(i);
-                    }
-                }
-                console.log("Queue Size: " + plugin.store.queueSize());
+                const que = Queue.getInstance();
+                que.buildQueueAll();
+                console.log("Queue Size: " + que.queueSize());
             },
         });
 
@@ -178,23 +167,31 @@ export default class Commands {
             },
         });
 
-        plugin.addCommand({
-            id: "debug-reset-data",
-            name: "Reset Data",
-            callback: () => {
-                console.log("Resetting data...");
-                plugin.store.resetData();
-                console.log(plugin.store.data);
-            },
-        });
+        // plugin.addCommand({
+        //     id: "debug-reset-data",
+        //     name: "Reset Data",
+        //     callback: () => {
+        //         console.log("Resetting data...");
+        //         plugin.store.resetData();
+        //         console.log(plugin.store.data);
+        //     },
+        // });
+
+        // plugin.addCommand({
+        //     id: "debug-prune-data",
+        //     name: "Prune Data",
+        //     callback: () => {
+        //         console.log("Pruning data...");
+        //         plugin.store.pruneData();
+        //         console.log(plugin.store.data);
+        //     },
+        // });
 
         plugin.addCommand({
-            id: "debug-prune-data",
-            name: "Prune Data",
+            id: "update-dataItems",
+            name: "Update Items",
             callback: () => {
-                console.log("Pruning data...");
-                plugin.store.pruneData();
-                console.log(plugin.store.data);
+                plugin.store.verifyItems();
             },
         });
     }

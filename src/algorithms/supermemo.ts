@@ -1,8 +1,11 @@
-import { DateUtils, MiscUtils } from "src/utils_recall";
-import SrsAlgorithm from "./../algorithms";
-import { RepetitionItem, ReviewResult } from "./../data";
+import { DateUtils, MiscUtils } from "src/util/utils_recall";
+import SrsAlgorithm from "./algorithms";
+import { ReviewResult } from "src/dataStore/data";
 import deepcopy from "deepcopy";
-import { AnkiAlgorithm } from "./anki";
+import { AnkiAlgorithm, AnkiSettings } from "./anki";
+import { algorithmNames } from "./algorithms_switch";
+import { balance } from "./balance/balance";
+import { RepetitionItem } from "src/dataStore/repetitionItem";
 
 interface Sm2Data {
     ease: number;
@@ -17,8 +20,8 @@ const Sm2Options: string[] = ["Blackout", "Incorrect", "Incorrect (Easy)", "Hard
  * https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
  */
 export class Sm2Algorithm extends SrsAlgorithm {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    defaultSettings(): any {
+    settings: AnkiSettings;
+    defaultSettings(): AnkiSettings {
         return new AnkiAlgorithm().defaultSettings();
     }
 
@@ -77,7 +80,7 @@ export class Sm2Algorithm extends SrsAlgorithm {
                 nextReview: nextReview * DateUtils.DAYS_TO_MILLIS,
             };
         } else {
-            const nextReview = interval(data.iteration);
+            let nextReview = interval(data.iteration);
             data.iteration += 1;
             data.ease = data.ease + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
             if (data.ease < 1.3) {
@@ -85,6 +88,7 @@ export class Sm2Algorithm extends SrsAlgorithm {
             }
 
             data.ease = MiscUtils.fixed(data.ease, 3);
+            nextReview = balance(nextReview, this.getDueDates(item.itemType));
             data.lastInterval = nextReview;
             // console.log("item.data:", item.data);
             // console.log("smdata:", data);
@@ -93,6 +97,12 @@ export class Sm2Algorithm extends SrsAlgorithm {
                 nextReview: nextReview * DateUtils.DAYS_TO_MILLIS,
             };
         }
+    }
+
+    importer(fromAlgo: algorithmNames, items: RepetitionItem[]): void {
+        const anki = new AnkiAlgorithm();
+        anki.updateSettings(this.plugin, this.settings);
+        anki.importer(fromAlgo, items);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any

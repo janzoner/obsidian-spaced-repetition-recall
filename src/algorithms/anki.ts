@@ -1,8 +1,12 @@
 import { Setting, Notice } from "obsidian";
-import { DateUtils, MiscUtils } from "src/utils_recall";
-import SrsAlgorithm from "./../algorithms";
-import { RepetitionItem, ReviewResult } from "./../data";
+import { DateUtils, MiscUtils } from "src/util/utils_recall";
+import SrsAlgorithm from "./algorithms";
+import { ReviewResult } from "src/dataStore/data";
 import deepcopy from "deepcopy";
+import { algorithmNames } from "./algorithms_switch";
+import { FsrsData } from "./fsrs";
+import { balance } from "./balance/balance";
+import { RepetitionItem } from "src/dataStore/repetitionItem";
 
 export interface AnkiData {
     ease: number;
@@ -10,9 +14,9 @@ export interface AnkiData {
     iteration: number;
 }
 
-interface AnkiSettings {
+export interface AnkiSettings {
     easyBonus: number;
-    startingEase: number;
+    baseEase: number;
     lapseInterval: number;
     graduatingInterval: number;
     easyInterval: number;
@@ -25,10 +29,11 @@ const AnkiOptions: string[] = ["Again", "Hard", "Good", "Easy"];
  * https://faqs.ankiweb.net/what-spaced-repetition-algorithm.html
  */
 export class AnkiAlgorithm extends SrsAlgorithm {
+    settings: AnkiSettings;
     defaultSettings(): AnkiSettings {
         return {
             easyBonus: 1.3,
-            startingEase: 2.5,
+            baseEase: 2.5,
             lapseInterval: 0.5,
             graduatingInterval: 1,
             easyInterval: 4,
@@ -37,7 +42,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
 
     defaultData(): AnkiData {
         return {
-            ease: this.settings.startingEase,
+            ease: this.settings.baseEase,
             lastInterval: 0,
             iteration: 1,
         };
@@ -100,18 +105,74 @@ export class AnkiAlgorithm extends SrsAlgorithm {
                 // Graduation!
                 nextInterval = this.settings.easyInterval;
             } else {
+                if (data.lastInterval < 1) {
+                    data.lastInterval += 1;
+                } else if (data.lastInterval - this.settings.easyInterval < 1) {
+                    data.lastInterval = this.settings.easyInterval;
+                }
                 nextInterval = data.lastInterval * data.ease * this.settings.easyBonus;
             }
         }
 
         data.ease = MiscUtils.fixed(data.ease, 3);
         data.iteration += 1;
+        nextInterval = balance(nextInterval, this.getDueDates(item.itemType));
         data.lastInterval = nextInterval;
 
         return {
             correct,
             nextReview: nextInterval * DateUtils.DAYS_TO_MILLIS,
         };
+    }
+
+    importer(fromAlgo: algorithmNames, items: RepetitionItem[]): void {
+        switch (fromAlgo) {
+            case algorithmNames.Default:
+                this.importer_Defualt(items);
+                break;
+            case algorithmNames.Anki:
+            case algorithmNames.SM2:
+                console.log("use same data, don't have to convert.");
+                break;
+            case algorithmNames.Fsrs:
+                this.importer_Fsrs(items);
+                break;
+            default:
+                throw Error(fromAlgo + "can't import to Anki");
+                break;
+        }
+    }
+    private importer_Defualt(items: RepetitionItem[]): void {
+        items.map((item) => {
+            if (item != null && item.data != null) {
+                const data = item.data as AnkiData;
+                data.ease /= 100;
+            }
+        });
+    }
+
+    private importer_Fsrs(items: RepetitionItem[]): void {
+        // const plugin = this.plugin;
+        // this.updateSettings(
+        //     plugin,
+        //     plugin.data.settings.algorithmSettings[algorithmNames.Anki],
+        // );
+        items.forEach((item) => {
+            if (item != null && item.data != null) {
+                const data = item.data as FsrsData;
+                const lastitval = data.scheduled_days;
+                const iter = data.reps;
+                const newdata = this.defaultData() as AnkiData;
+                newdata.lastInterval =
+                    lastitval > newdata.lastInterval
+                        ? lastitval
+                        : iter > 1
+                        ? this.settings.graduatingInterval
+                        : newdata.lastInterval;
+                newdata.iteration = iter;
+                item.data = deepcopy(newdata);
+            }
+        });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,7 +185,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
             .addText((text) =>
                 text
                     .setPlaceholder("Starting Ease")
-                    .setValue(this.settings.startingEase.toString())
+                    .setValue(this.settings.baseEase.toString())
                     .onChange((newValue) => {
                         const ease = Number(newValue);
 
@@ -137,7 +198,7 @@ export class AnkiAlgorithm extends SrsAlgorithm {
                             new Notice("Starting ease lower than 1.3 is not recommended.");
                         }
 
-                        this.settings.startingEase = ease;
+                        this.settings.baseEase = ease;
                         update(this.settings);
                     }),
             );

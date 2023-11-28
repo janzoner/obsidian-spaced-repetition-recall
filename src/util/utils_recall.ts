@@ -1,6 +1,20 @@
-import { cyrb53 } from "./utils";
+import { cyrb53 } from "src/util/utils";
 
 export class DateUtils {
+    /**
+     * ms
+     * @type {number}
+     */
+    static _EndofToday: number = 0;
+
+    static get EndofToday() {
+        if (DateUtils._EndofToday === 0) {
+            const nowToday = window.moment().endOf("day").valueOf();
+            DateUtils._EndofToday = nowToday;
+        }
+        return DateUtils._EndofToday;
+    }
+
     static addTime(date: Date, time: number): Date {
         return new Date(date.getTime() + time);
     }

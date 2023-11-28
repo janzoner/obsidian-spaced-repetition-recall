@@ -1,26 +1,28 @@
-import { App, Modal, ButtonComponent } from "obsidian";
+import { App, Modal, ButtonComponent, MarkdownRenderer } from "obsidian";
+import SRPlugin from "src/main";
 
 type ConfirmCallback = (confirmed: boolean) => void;
 
 export default class ConfirmModal {
+    private plugin: SRPlugin;
     message: string;
     callback: ConfirmCallback;
     modal: Modal;
 
-    constructor(app: App, message: string, callback: ConfirmCallback) {
-        // super(app);
+    constructor(plugin: SRPlugin, message: string, callback: ConfirmCallback) {
+        this.plugin = plugin;
         this.message = message;
-        this.modal = new Modal(app);
+        this.modal = new Modal(plugin.app);
         this.callback = callback;
     }
 
     open() {
         const { contentEl } = this.modal;
-
-        contentEl.createEl("p").setText(this.message);
+        MarkdownRenderer.render(this.plugin.app, this.message, contentEl, "", this.plugin);
+        // contentEl.createEl("p").setText(this.message);
 
         const buttonDiv = contentEl.createDiv("srs-flex-row");
-        buttonDiv.setAttribute("align", "center");
+        // buttonDiv.setAttribute("align", "center");
 
         new ButtonComponent(buttonDiv)
             .setButtonText("Confirm")

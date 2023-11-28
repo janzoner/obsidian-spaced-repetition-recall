@@ -1,11 +1,12 @@
 {
     "id": "obsidian-spaced-repetition-recall",
     "name": "Spaced Repetition Recall",
-    "version": "1.10.1.11",
+    "version": "1.10.5.1",
     "minAppVersion": "0.15.4",
     "description": "Fight the forgetting curve by reviewing flashcards & entire notes.",
     "author": "Newdea",
     "authorUrl": "https://github.com/Newdea",
+    "helpUrl": "https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/blob/dev-master/docs/README_ZH.md",
     "isDesktopOnly": false,
     "fundingUrl": {
         "支付宝Alipay": "https://github.com/Newdea/newdea/blob/main/.github/funding/QR_alipay.png",

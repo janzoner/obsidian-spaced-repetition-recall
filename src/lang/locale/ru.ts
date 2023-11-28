@@ -60,6 +60,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "${interval}д.",
     MONTHS_STR_IVL_MOBILE: "${interval}м.",
     YEARS_STR_IVL_MOBILE: "${interval}г.",
+    HOURS_STR_IVL: "${interval}hour(s)",
+    MINUTES_STR_IVL: "${interval}minute(s)",
+    HOURS_STR_IVL_MOBILE: "${interval}h",
+    MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
     SETTINGS_HEADER: "Плагин Spaced Repetition - Настройки",
@@ -224,4 +228,5 @@ export default {
     NEW_LEARNED: "New Learned",
     DUE_REVIEWED: "due Reviewed",
     REVIEWED_TODAY_SUMMARY: "Total Reviewed today: ${totalreviewedCount}",
+    DATE: "Date",
 };

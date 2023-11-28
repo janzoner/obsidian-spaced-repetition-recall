@@ -16,6 +16,12 @@ export class ValueCountDict {
         this.dict[value]++;
     }
 
+    decrementCount(value: number): void {
+        if (this.dict[value] > 0) {
+            this.dict[value]--;
+        }
+    }
+
     getMaxValue(): number {
         return Math.max(...getKeysPreserveType(this.dict)) || 0;
     }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { App, MarkdownRenderer, Modal, Notice, moment, request } from "obsidian";
-import { errorlog, isVersionNewerThanOther } from "src/utils_recall";
-import SRPlugin from "../main";
+import { errorlog, isVersionNewerThanOther } from "src/util/utils_recall";
+import SRPlugin from "src/main";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -12,21 +12,22 @@ import README_ZH from "docs/README_ZH.md";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import RELEASE_changelog from "docs/changelog.md";
+import { buildDonation } from "src/settings";
 
 // const fmd = fs.readFileSync("CHANGELOG.md", "utf8");
 
 const local = moment.locale();
 let README_LOC: string;
 let readme: string[];
-let readme_tks: string[];
+// let readme_tks: string[];
 if (local === "zh-cn" || local === "zh-tw") {
     README_LOC = README_ZH;
     readme = README_LOC.match(/^(.|\r?\n)*(?=\r?\n## 下载)/gm);
-    readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
+    // readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
 } else {
     README_LOC = README;
     readme = README_LOC.match(/^(.|\r?\n)*(?=\r?\n## How)/gm);
-    readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
+    // readme_tks = README_LOC.match(/^(## Thanks(?:.|\r?\n)*)$/gm);
 }
 const latestRelease = RELEASE_changelog.match(/## \[(?:.|\r?\n)*?(?=\r?\n## \[)/gm);
 let PLUGIN_VERSION: string;
@@ -60,16 +61,17 @@ export class ReleaseNotes extends Modal {
     }
 
     async createForm() {
-        const FIRST_RUN = [readme[0], readme_tks[0]].join("\n\n---\n");
-        const release_note = await this.getReleaseNote();
-        const notes: string[] = [];
-        if (release_note == null) {
-            notes.push(...FIRST_RUN, latestRelease[0]);
-        } else {
-            release_note.slice(0, 9).forEach((el: { release_note: any }) => {
-                notes.push(el.release_note);
-            });
-        }
+        const FIRST_RUN = [readme[0]].join("\n\n---\n");
+        let instro: string = FIRST_RUN.match(/^(?:.|\r?\n)+?(?=\r\n## Feat)/gm).join("\n\n---\n");
+        // const release_note = await this.getReleaseNote();
+        // const notes: string[] = [];
+        // if (release_note == null) {
+        //     notes.push(...FIRST_RUN, latestRelease[0]);
+        // } else {
+        //     release_note.slice(0, 9).forEach((el: { release_note: any }) => {
+        //         notes.push(el.release_note);
+        //     });
+        // }
         let prevRelease = this.plugin.data.settings.previousRelease;
         prevRelease = this.version === prevRelease ? "0.0.0" : prevRelease;
         // const message = this.version ? notes.join("\n\n---\n") : FIRST_RUN;
@@ -82,9 +84,12 @@ export class ReleaseNotes extends Modal {
                   // .map((key: string) => `${key==="Intro" ? "" : `# ${key}\n`}${RELEASE_NOTES[key]}`)
                   .slice(0, 10)
                   .join("\n\n---\n")
-            : FIRST_RUN;
-        message = this.version ? FIRST_RUN + message : message;
-        await MarkdownRenderer.renderMarkdown(message, this.contentEl, "", this.plugin);
+            : "";
+        instro = this.version ? instro : FIRST_RUN;
+        message = this.version ? "## What's New:\n---\n" + message : message;
+        await MarkdownRenderer.render(this.plugin.app, instro, this.contentEl, "", this.plugin);
+        buildDonation(this.contentEl);
+        await MarkdownRenderer.render(this.plugin.app, message, this.contentEl, "", this.plugin);
 
         this.contentEl.createEl("p", { text: "" }, (el) => {
             //files manually follow one of two options:
@@ -97,8 +102,8 @@ export class ReleaseNotes extends Modal {
     async getReleaseNote(): Promise<any[]> {
         const release_url =
             "https://api.github.com/repos/open-spaced-repetiton/obsidian-spaced-repetition-recall/releases?per_page=5&page=1";
-        const readMe_url =
-            "https://api.github.com/repos/open-spaced-repetiton/obsidian-spaced-repetition-recall/readme";
+        // const readMe_url =
+        //     "https://api.github.com/repos/open-spaced-repetiton/obsidian-spaced-repetition-recall/readme";
 
         // "content":  "encoding": "base64"
 

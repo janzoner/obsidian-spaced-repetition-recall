@@ -25,7 +25,7 @@ This is a modified version of [obsidian-spaced-repetition](https://github.com/st
 
 Since I am not a programmer, I don't know much about typescript programming, so I can only do some bug fixes and small feature updates. I can only do some bug fixes and small feature updates, but it is difficult to realize some of the proposed features. Welcome to join us if you are interested in this plugin, and work together to maintain and update this plugin.
 
-You can join us by submitting an issue or PR directly.
+You can join us by submitting an [issue](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues)/[PR](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/pulls)、或[论坛讨论](https://forum-zh.obsidian.md/t/topic/20551) directly.
 
 ## How to install the plugin
 
@@ -37,7 +37,7 @@ OR USE BRAT pulgin;
 
 ## Usage
 
-Check the [docs](https://www.stephenmwangi.com/obsidian-spaced-repetition/) for more details.
+Check the [docs](./docs/usage.md) for more details.
 
 ## Thanks
 
