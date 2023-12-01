@@ -283,14 +283,14 @@ export class Queue implements IQueue {
     }
 
     remove(id: number, queue?: number[]) {
-        if(queue==undefined){
+        if (queue == undefined) {
             this.remove(id, this.queue);
             this.remove(id, this.repeatQueue);
-    
+
             if (this.toDayLatterQueue[id] !== null) {
                 delete this.toDayLatterQueue[id];
             }
-        }else{
+        } else {
             if (this.isQueued(queue, id)) {
                 queue.remove(id);
             }

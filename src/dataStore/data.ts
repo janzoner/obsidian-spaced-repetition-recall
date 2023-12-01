@@ -646,7 +646,7 @@ export class DataStore {
             item = this.getItembyID(id);
             if (item != null) {
                 item.setTracked(fileIndex);
-                item.itemType= itemType;
+                item.itemType = itemType;
                 item.data = Object.assign(algorithm.defaultData(), item.data);
             } else {
                 this.data.items.push(newItem);

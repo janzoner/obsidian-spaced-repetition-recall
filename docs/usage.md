@@ -1,7 +1,6 @@
-
 ### Quick Guide
 
-#### CASE1:  Not using the original SR plugin, directly using this plugin
+#### CASE1: Not using the original SR plugin, directly using this plugin
 
 Recommended settings
 ![image](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/assets/9208450/a22d23df-5d11-4b19-9007-e1530e2808be)
@@ -21,7 +20,7 @@ For the rest, refer to [@st3v3nmw's ReadMe](https://github.com/st3v3nmw/obsidian
 **backup the note vault**
 **backup the note vault ！！！**
 
- It is possible that there are bugs which may delete data in the current note. **Please make backups!**
+It is possible that there are bugs which may delete data in the current note. **Please make backups!**
 Suggestions:
 
 1. Close the original plugin first to avoid conflict.
