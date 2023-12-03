@@ -69,6 +69,27 @@ export class RepetitionItem {
         this.data = data;
     }
 
+    /**
+     * @param {ReviewResult} result
+     * @return {*}
+     */
+    reviewUpdate(result: ReviewResult) {
+        this.nextReview = DateUtils.fromNow(result.nextReview).getTime();
+        this.timesReviewed += 1;
+        if (result.correct) {
+            this.timesCorrect += 1;
+            this.errorStreak = 0;
+        } else {
+            this.errorStreak += 1;
+        }
+    }
+
+    /**
+     *
+     * @param isFsrs
+     * @param isNumDue  default is true.
+     * @returns
+     */
     getSched(isFsrs?: boolean, isNumDue = true): RegExpMatchArray | null {
         if (this.nextReview === 0 || this.nextReview === null || this.timesReviewed === 0) {
             return null; // new card doesn't need schedinfo

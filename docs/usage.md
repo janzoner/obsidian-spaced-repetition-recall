@@ -25,8 +25,8 @@ Suggestions:
 
 1. Close the original plugin first to avoid conflict.
 2. backup the note vault (because after changing the DataLocation in the settings, the review information in the note content will be deleted and saved to a separate file tracked_files.json.)
-
-If you want to use FSRS algorithm, you need to set it as recommended [above CASE1]().
+3. close Obsidan.md, copy `obsidian-spaced-repetition/data.json` to `obsidian-spaced-repetition-recall/data.json`, then start Obsidan.md.
+4. If you want to use FSRS algorithm, you need to set it as recommended [above CASE1]().
 
 ---
 

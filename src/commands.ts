@@ -87,6 +87,11 @@ export default class Commands {
         //         return false;
         //     },
         // });
+    }
+
+    addDebugCommands() {
+        console.log("Injecting debug commands...");
+        const plugin = this.plugin;
 
         plugin.addCommand({
             id: "build-queue",
@@ -104,11 +109,6 @@ export default class Commands {
                 ReviewNote.recallReviewNote(this.plugin.data.settings);
             },
         });
-    }
-
-    addDebugCommands() {
-        console.log("Injecting debug commands...");
-        const plugin = this.plugin;
 
         plugin.addCommand({
             id: "debug-print-view-state",
@@ -141,13 +141,13 @@ export default class Commands {
         //     },
         // });
 
-        // plugin.addCommand({
-        //     id: "debug-clear-queue",
-        //     name: "Clear Queue",
-        //     callback: () => {
-        //         Queue.getInstance().clearQueue();
-        //     },
-        // });
+        plugin.addCommand({
+            id: "debug-clear-queue",
+            name: "Clear Queue",
+            callback: () => {
+                Queue.getInstance().clearQueue();
+            },
+        });
 
         plugin.addCommand({
             id: "debug-queue-all",

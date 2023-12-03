@@ -93,7 +93,7 @@ export default class SRPlugin extends Plugin {
     private questionPostponementList: QuestionPostponementList;
     public incomingLinks: Record<string, LinkStat[]> = {};
     public pageranks: Record<string, number> = {};
-    public dueNotesCount = 0;
+    private dueNotesCount = 0;
     public dueDatesNotes: Record<number, number> = {}; // Record<# of days in future, due count>
 
     public deckTree: Deck = new Deck("root", null);
@@ -209,9 +209,9 @@ export default class SRPlugin extends Plugin {
         const options = this.algorithm.srsOptions();
         const algo = this.data.settings.algorithm;
         const showtext = this.data.settings.responseOptionBtnsText;
-        for (let i = 1; i < options.length; i++) {
+        options.map((option, i) => {
             this.addCommand({
-                id: "srs-note-review-" + options[i].toLowerCase(),
+                id: "srs-note-review-" + option.toLowerCase(),
                 name: "review as: " + showtext[algo][i],
                 callback: () => {
                     const openFile: TFile | null = this.app.workspace.getActiveFile();
@@ -220,7 +220,7 @@ export default class SRPlugin extends Plugin {
                     }
                 },
             });
-        }
+        });
 
         this.addCommand({
             id: "srs-review-flashcards",
@@ -588,7 +588,14 @@ export default class SRPlugin extends Plugin {
             }
 
             const settings = this.data.settings;
-            const deckname = Tags.getNoteDeckName(noteFile, this.data.settings);
+            let deckname = Tags.getNoteDeckName(noteFile, this.data.settings);
+            if (deckname == null) {
+                const tf = store.getTrackedFile(noteFile.path);
+                const tag = tf?.lastTag;
+                if (tag != undefined && settings.tagsToReview.includes(tag)) {
+                    deckname = tag;
+                }
+            }
             if (deckname != null) {
                 if (!Object.prototype.hasOwnProperty.call(this.reviewDecks, deckname)) {
                     this.reviewDecks[deckname] = new ReviewDeck(deckname);
@@ -631,13 +638,6 @@ export default class SRPlugin extends Plugin {
                             }
                         }
                     }
-                }
-            } else {
-                const tf = store.getTrackedFile(noteFile.path);
-                const tag = tf?.tags?.last();
-                if (tag != undefined && settings.tagsToReview.includes(tag)) {
-                    tf.tags.remove(tag);
-                    tf.updateTags(store.defaultDackName);
                 }
             }
         }
@@ -895,7 +895,10 @@ export default class SRPlugin extends Plugin {
     async reviewNextNoteModal(): Promise<void> {
         const reviewDeckNames: string[] = Object.keys(this.reviewDecks);
         if (this.data.settings.reviewingNoteDirectly) {
-            const rdname = ReviewNote.getDeckNameForReviewDirectly(this.reviewDecks);
+            const rdname =
+                this.lastSelectedReviewDeck ??
+                ReviewNote.getDeckNameForReviewDirectly(this.reviewDecks) ??
+                reviewDeckNames[0];
             this.reviewNextNote(rdname);
         } else if (reviewDeckNames.length === 1) {
             this.reviewNextNote(reviewDeckNames[0]);

@@ -11,7 +11,7 @@ import SRPlugin from "src/main";
 import { isIgnoredPath } from "src/reviewNote/review-note";
 import { SRSettings } from "src/settings";
 import { escapeRegexString } from "src/util/utils";
-import { DataStore } from "./data";
+import { DataStore, RPITEMTYPE } from "./data";
 import { Tags } from "src/tags";
 import { DataSyncer } from "./dataSyncer";
 
@@ -342,9 +342,22 @@ export class LocationSwitch {
                 } else if (item?.isNew) {
                     plugin.noteStats.incrementNew();
                 }
-                if (item?.deckName === store.defaultDackName) {
-                    fileText = addDefaultTagtoNote(fileText, this.revTag);
-                    fileChanged = true;
+                //update tag to note
+                if (item?.itemType === RPITEMTYPE.NOTE) {
+                    const noteTag = Tags.getNoteDeckName(note, this.settings);
+                    if (item.deckName === store.defaultDackName) {
+                        fileText = addDefaultTagtoNote(fileText, this.revTag);
+                        fileChanged = true;
+                    } else if (
+                        noteTag == null &&
+                        this.settings.tagsToReview.includes(item.deckName)
+                    ) {
+                        const tag = [this.settings.tagsToReview[0], item.deckName.substring(1)]
+                            .join("/")
+                            .substring(1);
+                        fileText = addDefaultTagtoNote(fileText, tag);
+                        fileChanged = true;
+                    }
                 }
                 if (!dryrun && fileChanged) {
                     if (fileText == null) {

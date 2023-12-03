@@ -4,11 +4,11 @@ import SRPlugin from "src/main";
 
 export function registerTrackFileEvents(plugin: SRPlugin) {
     plugin.registerEvent(
-        plugin.app.vault.on("rename", (file, old) => {
+        plugin.app.vault.on("rename", async (file, old) => {
             const trackFile = plugin.store.getTrackedFile(old);
             if (trackFile != null) {
                 trackFile.rename(file.path);
-                plugin.store.save();
+                await plugin.store.save();
             }
         }),
     );

@@ -77,15 +77,15 @@ export class DataSyncer {
         const ind = store.getFileIndex(note.path);
         const trackedFile = store.getTrackedFile(note.path);
         const fileid = store.getFileId(note.path);
-        let item = store.getItembyID(fileid);
+        const item = store.getItembyID(fileid);
         let now_number: number = now;
         const nowToday: number = DateUtils.EndofToday;
 
         if (item == null || !item.isTracked) {
-            store._updateItem(fileid, ind, RPITEMTYPE.NOTE, rdeck.deckName);
-            item = store.getItembyID(fileid);
+            // store._updateItem(fileid, ind, RPITEMTYPE.NOTE, rdeck.deckName);
+            // item = store.getItembyID(fileid);
             console.debug("syncRCDataToSRrevDeck update null item:", item, trackedFile);
-            // return;
+            return;
         }
         if (now == null) {
             now_number = nowToday;

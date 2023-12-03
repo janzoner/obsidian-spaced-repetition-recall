@@ -143,13 +143,20 @@ export class ReviewNote {
         [deckKey: string]: ReviewDeck;
     }): string | null {
         const reviewDeckNames: string[] = Object.keys(reviewDecks);
-
-        const rdname = reviewDeckNames.find((dkey: string) => {
+        const rdnames: string[] = [];
+        reviewDeckNames.some((dkey: string) => {
             const ndeck = reviewDecks[dkey];
             const ncount = ndeck.dueNotesCount + ndeck.newNotes.length;
-            return ncount > 0;
+            if (ncount > 0) {
+                rdnames.push(dkey);
+            }
         });
-        return rdname;
+        if (rdnames.length > 0) {
+            const ind = Math.floor(Math.random() * rdnames.length);
+            return rdnames[ind];
+        } else {
+            return null;
+        }
     }
 
     static getNextDueNoteIndex(NotesCount: number, openRandomNote: boolean = false) {
