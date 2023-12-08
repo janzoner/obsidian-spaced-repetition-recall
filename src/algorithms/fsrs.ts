@@ -1,7 +1,7 @@
 import { Setting, Notice } from "obsidian";
 import { DateUtils } from "src/util/utils_recall";
 import SrsAlgorithm from "./algorithms";
-import { ReviewResult } from "../dataStore/data";
+import { DataStore, ReviewResult } from "../dataStore/data";
 
 import * as fsrsjs from "fsrs.js";
 import { t } from "src/lang/helpers";
@@ -102,7 +102,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     getLogfilepath() {
-        const filepath = this.plugin.store.dataPath;
+        const filepath = DataStore.getInstance().dataPath;
         const fder_index = filepath.lastIndexOf("/");
         this.logfilepath = filepath.substring(0, fder_index + 1) + this.filename;
     }
@@ -190,7 +190,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         let nextInterval = data.due.valueOf() - data.last_review.valueOf();
         // not sure should use balance or not.
         let days = nextInterval / DateUtils.DAYS_TO_MILLIS;
-        days = balance(days, this.getDueDates(item.itemType));
+        days = balance(days, this.getDueDates(item.itemType), this.settings.maximum_interval);
         nextInterval = days * DateUtils.DAYS_TO_MILLIS;
         data.due = new Date(nextInterval + now.getTime());
 
@@ -261,10 +261,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     importer(fromAlgo: algorithmNames, items: RepetitionItem[]): void {
-        // const plugin = this.plugin;
-        // const store = plugin.store;
         const options = this.srsOptions();
-        // this.updateSettings(plugin, plugin.data.settings.algorithmSettings[algorithmNames.Fsrs]);
         const initItvl = this.settings.w[4];
         items.forEach((item) => {
             if (item != null && item.data != null) {
@@ -343,7 +340,6 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         tags.last() === "" ? tags.pop() : tags;
                         this.settings.revlog_tags = tags;
                         update(this.settings);
-                        // await this.plugin.savePluginData();
                     });
                 }),
             );
@@ -372,7 +368,6 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                                 this.defaultSettings().request_retention;
                             this.fsrs.p.request_retention = this.settings.request_retention;
                             update(this.settings);
-                            // this.plugin.settingTab.display();
                         });
                     });
             });
@@ -445,7 +440,6 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         applySettingsUpdate(async () => {
                             this.settings.w = this.fsrs.p.w = this.defaultSettings().w;
                             update(this.settings);
-                            // this.plugin.settingTab.display();
                         });
                     });
             })

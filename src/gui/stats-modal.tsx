@@ -20,11 +20,12 @@ import type SRPlugin from "src/main";
 import { getKeysPreserveType, getTypedObjectEntries } from "src/util/utils";
 import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
-import { RPITEMTYPE, ReviewedCounts } from "src/dataStore/data";
+import { ReviewedCounts } from "src/dataStore/data";
 import { State } from "fsrs.js";
 import { algorithmNames } from "src/algorithms/algorithms_switch";
 import { Stats } from "src/stats";
 import { CardListType } from "src/Deck";
+import { RPITEMTYPE } from "src/dataStore/repetitionItem";
 
 Chart.register(
     BarElement,

@@ -1,13 +1,13 @@
 import { algorithmNames } from "./algorithms_switch";
-import { RPITEMTYPE, ReviewResult } from "src/dataStore/data";
-import SRPlugin from "../main";
+import { ReviewResult } from "src/dataStore/data";
 import { MiscUtils } from "src/util/utils_recall";
-import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { RPITEMTYPE, RepetitionItem } from "src/dataStore/repetitionItem";
 
 export default abstract class SrsAlgorithm {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     settings: any;
-    plugin: SRPlugin;
+    // plugin: SRPlugin;
+    private dueDates: { [type: string]: Record<number, number> };
     public static instance: SrsAlgorithm;
 
     public static getInstance(): SrsAlgorithm {
@@ -19,18 +19,18 @@ export default abstract class SrsAlgorithm {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updateSettings(plugin: SRPlugin, settings: any) {
+    updateSettings(settings: any) {
         this.settings = MiscUtils.assignOnly(this.defaultSettings(), settings);
-        this.plugin = plugin;
-        SrsAlgorithm.instance = plugin.algorithm;
+        // this.plugin = plugin;
+        SrsAlgorithm.instance = this;
     }
-
-    getDueDates(itemType: RPITEMTYPE) {
-        const dueDates =
-            itemType === RPITEMTYPE.NOTE
-                ? this.plugin.noteStats.delayedDays.dict
-                : this.plugin.cardStats.delayedDays.dict;
-        return dueDates;
+    setDueDates(notedueDates: Record<number, number>, carddueDates: Record<number, number>) {
+        this.dueDates = {};
+        this.dueDates[RPITEMTYPE.NOTE] = notedueDates;
+        this.dueDates[RPITEMTYPE.CARD] = carddueDates;
+    }
+    getDueDates(itemType: string) {
+        return this.dueDates[itemType];
     }
 
     abstract defaultSettings(): unknown;

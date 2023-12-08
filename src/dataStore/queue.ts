@@ -1,13 +1,13 @@
 import { isArray } from "src/util/utils_recall";
 import { DataStore } from "./data";
-import { RepetitionItem } from "./repetitionItem";
 import { TrackedFile } from "./trackedFile";
+import { RepetitionItem } from "./repetitionItem";
 
-interface IQueue {
+export interface IQueue {
     /**
      * @type {number[]}
      */
-    queue: number[];
+    queue: Record<string, number[]>;
     /**
      * @type {number[]}
      */
@@ -32,12 +32,42 @@ interface IQueue {
      */
     newAdded: 0;
 }
+
+export const DEFAULT_QUEUE_DATA: IQueue = {
+    /**
+     * @type {number[]}
+     */
+    queue: {},
+    /**
+     * @type {number[]}
+     */
+    repeatQueue: [],
+    /**
+     * @type {number[]}
+     */
+    cardQueue: [],
+    /**
+     * @type {number[]}
+     */
+    cardRepeatQueue: [],
+    toDayAllQueue: {},
+    toDayLatterQueue: {},
+    /**
+     * @type {number}
+     */
+    lastQueue: 0,
+    /**
+     * @type {0}
+     */
+    newAdded: 0,
+};
+
 export class Queue implements IQueue {
     static instance: Queue;
     /**
      * @type {number[]}
      */
-    queue: number[];
+    queue: Record<string, number[]>;
     /**
      * @type {number[]}
      */
@@ -53,8 +83,7 @@ export class Queue implements IQueue {
     toDayAllQueue: Record<number, string>;
     toDayLatterQueue: Record<number, string>;
 
-    items: RepetitionItem[];
-    maxNewPerDay: number;
+    // maxNewPerDay: number;
     lastQueue: number;
     /**
      * @type {0}
@@ -74,8 +103,7 @@ export class Queue implements IQueue {
         return que;
     }
     constructor() {
-        this.items = [];
-        this.queue = [];
+        this.queue = {};
         this.repeatQueue = [];
         this.cardQueue = [];
         this.cardRepeatQueue = [];
@@ -92,8 +120,11 @@ export class Queue implements IQueue {
      *
      * @returns {number}
      */
-    queueSize(): number {
-        return this.queue.length;
+    queueSize(key?: string): number {
+        if (key == undefined) {
+            key = DataStore.getInstance().defaultDackName;
+        }
+        return this.queue[key]?.length ?? 0;
     }
     /**
      * repeatQueueSize.
@@ -108,9 +139,9 @@ export class Queue implements IQueue {
      *
      * @returns {number | null}
      */
-    getNextId(): number | null {
-        if (this.queueSize() > 0) {
-            return this.queue[0];
+    getNextId(key?: string): number | null {
+        if (this.queueSize(key) > 0) {
+            return this.queue[key][0];
         } else if (this.repeatQueue.length > 0) {
             return this.repeatQueue[0];
         } else {
@@ -124,7 +155,7 @@ export class Queue implements IQueue {
     async buildQueue() {
         // console.log("Building queue...");
         const store = DataStore.getInstance();
-        const maxNew = this.maxNewPerDay;
+        const maxNew = store.settings.maxNewPerDay;
         const now: Date = new Date();
 
         if (now.getDate() != new Date(this.lastQueue).getDate()) {
@@ -141,7 +172,7 @@ export class Queue implements IQueue {
         let removedItems = 0;
         const bUnTfiles = new Set<TrackedFile>();
         await Promise.all(
-            this.items.map(async (item, _idx) => {
+            store.items.map(async (item, _idx) => {
                 if (item != null && item.isTracked) {
                     const file = store.getFileByIndex(item.fileIndex);
                     if (file?.path == undefined) return;
@@ -151,13 +182,15 @@ export class Queue implements IQueue {
                         exists = store.findMovedFile(file);
                     }
                     if (!exists) {
-                        console.debug("untrackfile by buildqueue:", file);
-                        bUnTfiles.add(file);
-                        // new Notice("untrackfile by buildqueue:" + file);
+                        if (!bUnTfiles.has(file)) {
+                            console.debug("untrackfile by buildqueue:", file);
+                            bUnTfiles.add(file);
+                            untrackedFiles += 1;
+                            // new Notice("untrackfile by buildqueue:" + file);
+                        }
                         // removedItems += this.untrackFile(file.path, false);
                         item.setUntracked();
                         removedItems += 1;
-                        untrackedFiles += 1;
                     } else if (file.noteId !== item.ID) {
                         // card Queue
                         if (item.isNew) {
@@ -168,24 +201,23 @@ export class Queue implements IQueue {
                                 newAdd_card += 1;
                             }
                         } else if (item.nextReview <= now.getTime()) {
-                            this.remove(item.ID, this.cardRepeatQueue);
+                            this.remove(item, this.cardRepeatQueue);
                             oldAdd_card += this.push(this.cardQueue, item.ID);
                         }
                     } else {
                         // note Queue
+                        if (this.queueSize(item.deckName) === 0) {
+                            this.queue[item.deckName] = [];
+                        }
                         if (item.isNew) {
                             // This is a new item.
-                            if (
-                                !this.isQueued(this.queue, item.ID) &&
-                                (maxNew == -1 || newAdd < maxNew)
-                            ) {
+                            if (maxNew == -1 || newAdd < maxNew) {
                                 // data.newAdded += 1;
-                                this.queue.push(item.ID);
-                                newAdd += 1;
+                                newAdd += this.push(this.queue[item.deckName], item.ID);
                             }
                         } else if (item.nextReview <= now.getTime()) {
-                            this.remove(item.ID, this.repeatQueue);
-                            oldAdd += this.push(this.queue, item.ID);
+                            this.remove(item, this.repeatQueue);
+                            oldAdd += this.push(this.queue[item.deckName], item.ID);
                         }
                     }
                 }
@@ -221,11 +253,12 @@ export class Queue implements IQueue {
     }
 
     buildQueueAll() {
-        this.queue = [];
-        const items = DataStore.getInstance().data.items;
+        const store = DataStore.getInstance();
+        this.queue[store.defaultDackName] = [];
+        const items = store.data.items;
         for (let i = 0; i < items.length; i++) {
             if (items[i] != null || items[i].isTracked) {
-                this.queue.push(i);
+                this.queue[store.defaultDackName].push(i);
             }
         }
     }
@@ -248,7 +281,7 @@ export class Queue implements IQueue {
 
     clearQueue(queue: unknown = null) {
         if (queue == null) {
-            this.queue = [];
+            this.queue = {};
             this.repeatQueue = [];
             this.cardQueue = [];
             this.cardRepeatQueue = [];
@@ -265,11 +298,11 @@ export class Queue implements IQueue {
     /**
      * isQueued.
      *
-     * @param {number} item
+     * @param {number} id
      * @returns {boolean}
      */
-    isQueued(queue: number[], item: number): boolean {
-        return queue.includes(item);
+    isQueued(queue: number[], id: number): boolean {
+        return queue?.includes(id) ?? false;
     }
 
     /**
@@ -282,26 +315,40 @@ export class Queue implements IQueue {
         return this.repeatQueue.includes(item) || this.cardRepeatQueue.includes(item);
     }
 
-    remove(id: number, queue?: number[]) {
-        if (queue == undefined) {
-            this.remove(id, this.queue);
-            this.remove(id, this.repeatQueue);
+    updateWhenReview(item: RepetitionItem, correct: boolean, repeatItems: boolean) {
+        if (this.isInRepeatQueue(item.ID)) {
+            this.remove(item, this.repeatQueue);
+        } else {
+            this.remove(item, this.queue[item.deckName]);
+        }
+        if (repeatItems && !correct) {
+            this.push(this.repeatQueue, item.ID); // Re-add until correct.
+        }
+    }
 
-            if (this.toDayLatterQueue[id] !== null) {
-                delete this.toDayLatterQueue[id];
+    remove(item: RepetitionItem, queue?: number[]) {
+        if (queue == undefined) {
+            if (this.isQueued(this.queue[item.deckName], item.ID)) {
+                this.remove(item, this.queue[item.deckName]);
+                this.remove(item, this.repeatQueue);
+            }
+
+            if (this.toDayLatterQueue[item.ID] !== null) {
+                delete this.toDayLatterQueue[item.ID];
             }
         } else {
-            if (this.isQueued(queue, id)) {
-                queue.remove(id);
+            if (this.isQueued(queue, item.ID)) {
+                queue.remove(item.ID);
             }
         }
     }
     push(queue: number[], id: number) {
         let cnt = 0;
-        if (!this.isQueued(queue, id)) {
-            queue.push(id);
-            cnt++;
+        if (this.isQueued(queue, id)) {
+            return cnt;
         }
+        queue.push(id);
+        cnt++;
         return cnt;
     }
 }

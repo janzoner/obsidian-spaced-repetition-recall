@@ -11,12 +11,13 @@ import SRPlugin from "src/main";
 import { isIgnoredPath } from "src/reviewNote/review-note";
 import { SRSettings } from "src/settings";
 import { escapeRegexString } from "src/util/utils";
-import { DataStore, RPITEMTYPE } from "./data";
+import { DataStore } from "./data";
 import { Tags } from "src/tags";
 import { DataSyncer } from "./dataSyncer";
 
 import { Stats } from "src/stats";
 import { DateUtils } from "src/util/utils_recall";
+import { RPITEMTYPE } from "./repetitionItem";
 
 const ROOT_DATA_PATH = "./tracked_files.json";
 // const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";

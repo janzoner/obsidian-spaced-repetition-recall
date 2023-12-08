@@ -20,10 +20,9 @@ import { Note } from "src/Note";
 import { RenderMarkdownWrapper } from "src/util/RenderMarkdownWrapper";
 import { CardScheduleInfo } from "src/CardSchedule";
 import { TopicPath } from "src/TopicPath";
-import { RPITEMTYPE } from "src/dataStore/data";
 import { DataLocation } from "src/dataStore/location_switch";
 import { SrTFile } from "src/SRFile";
-import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { RepetitionItem, RPITEMTYPE } from "src/dataStore/repetitionItem";
 
 export enum FlashcardModalMode {
     DecksList,
@@ -487,7 +486,12 @@ export class FlashcardModal extends Modal {
     }
 
     private processReviewbyAlgo(response: ReviewResponse) {
-        const opt = this.plugin.algorithm.srsOptions()[response];
+        const algo = this.plugin.algorithm;
+        algo.setDueDates(
+            this.plugin.noteStats.delayedDays.dict,
+            this.plugin.noteStats.delayedDays.dict,
+        );
+        const opt = algo.srsOptions()[response];
         const store = this.plugin.store;
         const id = this.currentCard.Id;
 

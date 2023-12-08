@@ -152,11 +152,6 @@ export class AnkiAlgorithm extends SrsAlgorithm {
     }
 
     private importer_Fsrs(items: RepetitionItem[]): void {
-        // const plugin = this.plugin;
-        // this.updateSettings(
-        //     plugin,
-        //     plugin.data.settings.algorithmSettings[algorithmNames.Anki],
-        // );
         items.forEach((item) => {
             if (item != null && item.data != null) {
                 const data = item.data as FsrsData;

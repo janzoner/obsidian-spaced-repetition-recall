@@ -1,9 +1,8 @@
-import { DateUtils } from "src/util/utils_recall";
+import { MiscUtils } from "src/util/utils_recall";
 import { SRSettings } from "../settings";
 
 import { TFile, TFolder, Notice, getAllTags } from "obsidian";
 
-import deepcopy from "deepcopy";
 import { FsrsData } from "src/algorithms/fsrs";
 import { AnkiData } from "src/algorithms/anki";
 
@@ -12,8 +11,8 @@ import { getStorePath } from "src/dataStore/location_switch";
 import { Tags } from "src/tags";
 import SrsAlgorithm from "src/algorithms/algorithms";
 import { CardInfo, TrackedFile } from "./trackedFile";
-import { RepetitionItem } from "./repetitionItem";
-import { Queue } from "./queue";
+import { RPITEMTYPE, RepetitionItem } from "./repetitionItem";
+import { DEFAULT_QUEUE_DATA, Queue } from "./queue";
 
 /**
  * SrsData.
@@ -47,11 +46,6 @@ export interface SrsData {
     mtime: number;
 }
 
-export enum RPITEMTYPE {
-    NOTE = "note",
-    CARD = "card",
-}
-
 export type ReviewedCounts = Record<string, { new: number; due: number }>;
 
 /**
@@ -69,7 +63,7 @@ export interface ReviewResult {
 }
 
 const DEFAULT_SRS_DATA: SrsData = {
-    queues: new Queue(),
+    queues: Object.assign({}, DEFAULT_QUEUE_DATA) as Queue,
     reviewedCounts: {},
     reviewedCardCounts: {},
     items: [],
@@ -218,8 +212,15 @@ export class DataStore {
      * Returns total number of items tracked by the SRS.
      * @returns {number}
      */
-    items(): number {
+    get itemSize(): number {
         return this.data.items.length;
+    }
+    /**
+     * Returns all items tracked by the SRS.
+     * @returns {RepetitionItem}
+     */
+    get items(): RepetitionItem[] {
+        return this.data.items;
     }
 
     /**
@@ -351,8 +352,8 @@ export class DataStore {
      *
      * @returns {RepetitionItem | null}
      */
-    getNext(): RepetitionItem | null {
-        const id = this.data.queues.getNextId();
+    getNext(key?: string): RepetitionItem | null {
+        const id = this.data.queues.getNextId(key);
         if (id != null) {
             return this.getItembyID(id);
         }
@@ -387,35 +388,19 @@ export class DataStore {
      */
     reviewId(itemId: number, option: string) {
         const item = this.getItembyID(itemId);
+        let result: ReviewResult;
         if (item == null) {
             return -1;
         }
 
         const algorithm = SrsAlgorithm.getInstance();
         if (this.data.queues.isInRepeatQueue(itemId)) {
-            const result = algorithm.onSelection(item, option, true);
-
-            this.data.queues.repeatQueue.remove(itemId);
-            if (!result.correct) {
-                this.data.queues.repeatQueue.push(itemId); // Re-add until correct.
-            }
+            result = algorithm.onSelection(item, option, true);
         } else {
-            const result = algorithm.onSelection(item, option, false);
-
-            item.nextReview = DateUtils.fromNow(result.nextReview).getTime();
-            item.timesReviewed += 1;
-            this.data.queues.queue.remove(itemId);
-            if (result.correct) {
-                item.timesCorrect += 1;
-                item.errorStreak = 0;
-            } else {
-                item.errorStreak += 1;
-
-                if (this.settings.repeatItems) {
-                    this.data.queues.repeatQueue.push(itemId);
-                }
-            }
+            result = algorithm.onSelection(item, option, false);
+            item.reviewUpdate(result);
         }
+        this.data.queues.updateWhenReview(item, result.correct, this.settings.repeatItems);
     }
 
     /**
@@ -607,8 +592,8 @@ export class DataStore {
     }
 
     unTrackItem(id: number) {
-        this.data.queues.remove(id);
         const item = this.getItembyID(id);
+        this.data.queues.remove(item);
         item.setUntracked();
     }
 
@@ -896,11 +881,7 @@ export class DataStore {
         const nullItemList: number[] = [];
         const nullItemList_del: number[] = [];
 
-        // if (this.settings.algorithm === "Fsrs") {
-        //     new Notice("因涉及到revlog.csv, 暂不可精简清除无效数据");
-        //     return;
-        //     //用 固定 id
-        // }
+        this.data = MiscUtils.assignOnly(DEFAULT_SRS_DATA, this.data);
         tracked_files.map((tf, ind) => {
             if (tf == null) {
                 nullFileList.push(ind);

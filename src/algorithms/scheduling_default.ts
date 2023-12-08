@@ -197,8 +197,6 @@ export class DefaultAlgorithm extends SrsAlgorithm {
     }
 
     private importer_Fsrs(items: RepetitionItem[]) {
-        // const plugin = this.plugin;
-        // this.updateSettings(plugin, plugin.data.settings.algorithmSettings[algorithmNames.Default]);
         items.forEach((item) => {
             if (item != null && item.data != null) {
                 const data = item.data as FsrsData;
@@ -252,9 +250,10 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.baseEase = DEFAULTSETTINGS.baseEase;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(() => {
+                            this.settings.baseEase = DEFAULTSETTINGS.baseEase;
+                            update(this.settings);
+                        });
                     });
             });
 
@@ -276,9 +275,11 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.lapsesIntervalChange = DEFAULTSETTINGS.lapsesIntervalChange;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(async () => {
+                            this.settings.lapsesIntervalChange =
+                                DEFAULTSETTINGS.lapsesIntervalChange;
+                            update(this.settings);
+                        });
                     });
             });
 
@@ -309,9 +310,10 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.easyBonus = DEFAULTSETTINGS.easyBonus;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(async () => {
+                            this.settings.easyBonus = DEFAULTSETTINGS.easyBonus;
+                            update(this.settings);
+                        });
                     });
             });
 
@@ -342,9 +344,10 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.maximumInterval = DEFAULTSETTINGS.maximumInterval;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(async () => {
+                            this.settings.maximumInterval = DEFAULTSETTINGS.maximumInterval;
+                            update(this.settings);
+                        });
                     });
             });
 
@@ -366,9 +369,10 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.settings.maxLinkFactor = DEFAULTSETTINGS.maxLinkFactor;
-                        update(this.settings);
-                        this.plugin.settingTab.display();
+                        applySettingsUpdate(async () => {
+                            this.settings.maxLinkFactor = DEFAULTSETTINGS.maxLinkFactor;
+                            update(this.settings);
+                        });
                     });
             });
         return;

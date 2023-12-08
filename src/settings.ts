@@ -824,7 +824,6 @@ export class SRSettingTab extends PluginSettingTab {
                             plugin.data.settings.algorithm = newValue;
                             plugin.algorithm = algorithms[plugin.data.settings.algorithm];
                             plugin.algorithm.updateSettings(
-                                plugin,
                                 plugin.data.settings.algorithmSettings[newValue],
                             );
                             await plugin.savePluginData();

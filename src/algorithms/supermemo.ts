@@ -101,7 +101,7 @@ export class Sm2Algorithm extends SrsAlgorithm {
 
     importer(fromAlgo: algorithmNames, items: RepetitionItem[]): void {
         const anki = new AnkiAlgorithm();
-        anki.updateSettings(this.plugin, this.settings);
+        anki.updateSettings(this.settings);
         anki.importer(fromAlgo, items);
     }
 
@@ -111,7 +111,7 @@ export class Sm2Algorithm extends SrsAlgorithm {
             '用于间隔重复的算法. 目前与Anki算法共用参数（仅算法处理方式不同），更多信息请查阅 <a href="https://www.supermemo.com/en/archives1990-2015/english/ol/sm2">sm2算法</a>.';
 
         const anki = new AnkiAlgorithm();
-        anki.updateSettings(this.plugin, this.settings);
+        anki.updateSettings(this.settings);
         anki.displaySettings(containerEl, (settings) => {
             update((this.settings = settings));
         });

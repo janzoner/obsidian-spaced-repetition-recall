@@ -82,20 +82,17 @@ export class ReviewNote {
         const item = store.getNext();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const state: any = { mode: "empty" };
-        if (item != null) {
+        if (item != null && item.isTracked) {
             this.itemId = item.ID;
             console.debug("item:", item, que.queueSize());
             const path = store.getFilePath(item);
             if (path != null) {
                 state.file = path;
                 state.item = que.getNextId();
-                // state.mode = "note";
                 // state.mode = "question";
-                // const fid = store.getFileId(path);
-                // const item = store.getItembyID(fid);
 
                 reviewFloatBar.algoDisplay(true, item, (opt) => {
-                    this.recallReviewResponse(this.itemId, opt, settings.autoNextNote);
+                    this.recallReviewResponse(this.itemId, opt);
                     if (settings.autoNextNote) {
                         this.recallReviewNote(settings);
                     }
@@ -112,6 +109,8 @@ export class ReviewNote {
         app.workspace.setActiveLeaf(leaf);
 
         if (item != null) {
+            const newstate = leaf.getViewState();
+            console.debug(newstate);
             return;
         }
 
@@ -120,23 +119,17 @@ export class ReviewNote {
         // plugin.updateStatusBar();
 
         reviewFloatBar.selfDestruct();
-        // plugin.sync_Algo();
         new Notice(t("ALL_CAUGHT_UP"));
     }
 
-    static recallReviewResponse(itemId: number, response: string, autoNextNote: boolean = true) {
+    static recallReviewResponse(itemId: number, response: string) {
         const store = DataStore.getInstance();
         const item = store.getItembyID(itemId);
         // console.debug("itemId: ", itemId);
         store.updateReviewedCounts(itemId);
         store.reviewId(itemId, response);
         store.save();
-
         this.minNextView = this.updateminNextView(this.minNextView, item.nextReview);
-
-        if (!autoNextNote) {
-            new Notice(t("RESPONSE_RECEIVED"));
-        }
     }
 
     static getDeckNameForReviewDirectly(reviewDecks: {
@@ -175,7 +168,7 @@ export class ReviewNote {
 
     static updateminNextView(minNextView: number, nextReview: number): number {
         const now = Date.now();
-        const nowToday: number = window.moment().endOf("day").valueOf();
+        const nowToday: number = DateUtils.EndofToday;
 
         if (nextReview <= nowToday) {
             if (minNextView == undefined || minNextView < now || minNextView > nextReview) {

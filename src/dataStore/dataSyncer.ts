@@ -4,7 +4,7 @@ import { Note } from "src/Note";
 import { ReviewDeck } from "src/ReviewDeck";
 import { SrTFile } from "src/SRFile";
 import { TopicPath } from "src/TopicPath";
-import { DataStore, RPITEMTYPE } from "src/dataStore/data";
+import { DataStore } from "src/dataStore/data";
 import { Stats } from "src/stats";
 import { getKeysPreserveType } from "src/util/utils";
 import { BlockUtils, DateUtils } from "src/util/utils_recall";
@@ -74,6 +74,7 @@ export class DataSyncer {
         // const plugin = plugin;
         // const rdeck = reviewDecks[deckName];
         const store = DataStore.getInstance();
+        const queue = store.data.queues;
         const ind = store.getFileIndex(note.path);
         const trackedFile = store.getTrackedFile(note.path);
         const fileid = store.getFileId(note.path);
@@ -95,16 +96,15 @@ export class DataSyncer {
             getKeysPreserveType(store.data.queues.toDayLatterQueue).forEach((idStr, _idx, _arr) => {
                 const id: number = Number(idStr);
                 const item = store.getItembyID(id);
-                if (now - item.nextReview > 0) {
-                    // const dname = item.deckName;
-                    // reviewDecks[dname].dueNotesCount++;
+                if (item.deckName === rdeck.deckName && item.nextReview - now < 0) {
+                    rdeck.dueNotesCount++;
                     delete store.data.queues.toDayLatterQueue[id];
                 }
             });
+        }
 
-            if (item.nextReview <= nowToday) {
-                store.data.queues.toDayLatterQueue[fileid] = rdeck.deckName;
-            }
+        if (item.nextReview - now_number > 0 && item.nextReview <= nowToday) {
+            store.data.queues.toDayLatterQueue[fileid] = rdeck.deckName;
         }
 
         let dueNotesCount: number = 0;
@@ -113,6 +113,9 @@ export class DataSyncer {
             if (item.nextReview <= now_number) {
                 rdeck.dueNotesCount++;
                 dueNotesCount = 1;
+                if (now == null) {
+                    queue.push(queue.queue[item.deckName], item.ID);
+                }
             }
         } else {
             rdeck.newNotes.push(note);

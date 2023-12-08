@@ -1,6 +1,12 @@
 import { AnkiData } from "src/algorithms/anki";
-import { RPITEMTYPE } from "./data";
 import { FsrsData } from "src/algorithms/fsrs";
+import { ReviewResult } from "./data";
+import { DateUtils } from "src/util/utils_recall";
+
+export enum RPITEMTYPE {
+    NOTE = "note",
+    CARD = "card",
+}
 
 /**
  * RepetitionItem.

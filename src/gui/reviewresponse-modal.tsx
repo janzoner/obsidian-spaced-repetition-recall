@@ -59,7 +59,7 @@ export class reviewResponseModal {
         if (!show) {
             this.selfDestruct();
             return;
-        } else if (!reviewResponseModalBar) {
+        } else if (!reviewResponseModalBar || !this.buttons) {
             const buttonClick = (s: string) => {
                 // this.mode = FlashcardModalMode.Front;
 

@@ -36,7 +36,7 @@ import { NoteEaseList } from "./NoteEaseList";
 import { QuestionPostponementList } from "./QuestionPostponementList";
 
 // https://github.com/martin-jw/obsidian-recall
-import { DataStore, RPITEMTYPE } from "./dataStore/data";
+import { DataStore } from "./dataStore/data";
 import Commands from "./commands";
 import SrsAlgorithm from "./algorithms/algorithms";
 import { algorithms } from "src/settings";
@@ -52,6 +52,7 @@ import { Tags } from "./tags";
 import { DataSyncer } from "./dataStore/dataSyncer";
 import { calcLinkContribution, updategraphLink } from "./algorithms/priorities/linkPageranks";
 import { Queue } from "./dataStore/queue";
+import { RPITEMTYPE } from "./dataStore/repetitionItem";
 
 interface PluginData {
     settings: SRSettings;
@@ -128,7 +129,7 @@ export default class SRPlugin extends Plugin {
 
         const settings = this.data.settings;
         this.algorithm = algorithms[settings.algorithm];
-        this.algorithm.updateSettings(this, settings.algorithmSettings[settings.algorithm]);
+        this.algorithm.updateSettings(settings.algorithmSettings[settings.algorithm]);
         settings.algorithmSettings[settings.algorithm] = this.algorithm.settings;
         this.savePluginData();
 
@@ -535,6 +536,7 @@ export default class SRPlugin extends Plugin {
         }
         this.syncLock = true;
         const store = this.store;
+        store.data.queues.buildQueue();
 
         // reset notes stuff
         graph.reset();
@@ -560,7 +562,7 @@ export default class SRPlugin extends Plugin {
         const todayDate: string = now.format("YYYY-MM-DD");
         // clear bury list if we've changed dates
         if (todayDate !== this.data.buryDate) {
-            now_number = DateUtils.EndofToday;
+            now_number = null;
             this.data.buryDate = todayDate;
             this.questionPostponementList.clear();
         }
@@ -612,7 +614,7 @@ export default class SRPlugin extends Plugin {
                 const result = DataSyncer.syncRCDataToSRrevDeck(
                     this.reviewDecks[deckname],
                     noteFile,
-                    now_number,
+                    // now_number,
                 );
                 this.dueNotesCount += result;
 
@@ -671,6 +673,10 @@ export default class SRPlugin extends Plugin {
         const calc: DeckTreeStatsCalculator = new DeckTreeStatsCalculator();
         this.cardStats = calc.calculate(this.deckTree);
         // this.noteStats = calc.calculate(this.deckTree);
+        this.algorithm.setDueDates(
+            this.noteStats.delayedDays.dict,
+            this.cardStats.delayedDays.dict,
+        );
 
         if (this.data.settings.showDebugMessages) {
             this.showSyncInfo();
@@ -917,6 +923,7 @@ export default class SRPlugin extends Plugin {
 
         this.lastSelectedReviewDeck = deckKey;
         const deck = this.reviewDecks[deckKey];
+        const queue = this.store.data.queues;
         let show = false;
         let path = "";
         let index = -1;
@@ -930,6 +937,18 @@ export default class SRPlugin extends Plugin {
             path = deck.scheduledNotes[index].note.path;
             show = true;
             // return;
+        } else if (queue.queueSize(deckKey) > 0) {
+            const item = this.store.getNext(deckKey);
+            if (item != null && item.isTracked) {
+                const path = this.store.getFilePath(item);
+                if (path != null) {
+                    const note = app.vault.getAbstractFileByPath(path) as TFile;
+                    if (note instanceof TFile) {
+                        await this.app.workspace.getLeaf().openFile(note);
+                        show = true;
+                    }
+                }
+            }
         } else if (deck.newNotes.length > 0) {
             const index = this.data.settings.openRandomNote
                 ? Math.floor(Math.random() * deck.newNotes.length)
