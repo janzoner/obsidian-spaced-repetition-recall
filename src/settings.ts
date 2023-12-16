@@ -12,9 +12,11 @@ import QR_alipay from ".github/funding/QR_alipay.png";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import QR_wechat from ".github/funding/QR_wechat.png";
-import { algorithmNames, algorithmSwitchData, algorithms } from "./algorithms/algorithms_switch";
+import { algorithmSwitchData, algorithms } from "./algorithms/algorithms_switch";
 import { DataLocation, LocationSwitch, locationMap } from "./dataStore/location_switch";
 import deepcopy from "deepcopy";
+import { addResponseFloatBarSetting } from "src/settings/responseBarSetting";
+import { algorithmNames } from "./algorithms/algorithms";
 
 export interface SRSettings {
     // flashcards
@@ -46,6 +48,7 @@ export interface SRSettings {
     openRandomNote: boolean;
     autoNextNote: boolean;
     reviewResponseFloatBar: boolean;
+    responseBarPositionPercentage: number;
     reviewingNoteDirectly: boolean;
     disableFileMenuReviewOptions: boolean;
     maxNDaysNotesReviewQueue: number;
@@ -108,6 +111,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
     openRandomNote: false,
     autoNextNote: false,
     reviewResponseFloatBar: false,
+    responseBarPositionPercentage: 5,
     reviewingNoteDirectly: false,
     disableFileMenuReviewOptions: false,
     maxNDaysNotesReviewQueue: 365,
@@ -135,7 +139,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
 let applyDebounceTimer = 0;
-function applySettingsUpdate(callback: () => void): void {
+export function applySettingsUpdate(callback: () => void): void {
     clearTimeout(applyDebounceTimer);
     applyDebounceTimer = window.setTimeout(callback, 512);
 }
@@ -174,7 +178,7 @@ export class SRSettingTab extends PluginSettingTab {
         // this.addNewPerDaySetting(containerEl);
         this.addRepeatItemsSetting(containerEl);
         this.addTrackedNoteToDecksSetting(containerEl);
-        this.addReviewResponseFloatBarSetting(containerEl);
+        addResponseFloatBarSetting(containerEl, this.plugin);
 
         new Setting(containerEl)
             .setName(t("FOLDERS_TO_IGNORE"))
@@ -616,9 +620,15 @@ export class SRSettingTab extends PluginSettingTab {
                                     plugin,
                                     desc_toNote +
                                         "### review Notes\n" +
-                                        locSwitch.createTable(noteStats, plugin.noteStats) +
+                                        locSwitch.createTable(
+                                            locSwitch.beforenoteStats,
+                                            locSwitch.afternoteStats,
+                                        ) +
                                         "\n---\n### flashcards\n" +
-                                        locSwitch.createTable(cardStats, plugin.cardStats),
+                                        locSwitch.createTable(
+                                            locSwitch.beforecardStats,
+                                            locSwitch.aftercardStats,
+                                        ),
                                     async (confirm) => {
                                         if (confirm) {
                                             await locSwitch.converteTrackfileToNoteSched();
@@ -644,9 +654,15 @@ export class SRSettingTab extends PluginSettingTab {
                                 plugin,
                                 desc_toTrackedFiles +
                                     "### review Notes\n" +
-                                    locSwitch.createTable(noteStats, plugin.noteStats) +
+                                    locSwitch.createTable(
+                                        locSwitch.beforenoteStats,
+                                        locSwitch.afternoteStats,
+                                    ) +
                                     "\n---\n### flashcards\n" +
-                                    locSwitch.createTable(cardStats, plugin.cardStats),
+                                    locSwitch.createTable(
+                                        locSwitch.beforecardStats,
+                                        locSwitch.aftercardStats,
+                                    ),
                                 async (confirm) => {
                                     if (confirm) {
                                         await plugin.sync();
@@ -684,21 +700,12 @@ export class SRSettingTab extends PluginSettingTab {
                         console.debug("finish location change.");
 
                         await plugin.sync();
-
-                        if (
-                            locSwitch.compare(noteStats, plugin.noteStats, "note") ||
-                            locSwitch.compare(cardStats, plugin.cardStats, "card")
-                        ) {
-                            console.log(
-                                "before chang noteStats, cardStats:\n",
-                                noteStats,
-                                cardStats,
-                                "\nafter change:\n",
-                                plugin.noteStats,
-                                plugin.cardStats,
-                            );
-                            new Notice("have some data lost, see console for detials.");
-                        }
+                        locSwitch.resultCheck(
+                            noteStats,
+                            cardStats,
+                            plugin.noteStats,
+                            plugin.cardStats,
+                        );
                         // this.display();
                     }
                 });
@@ -848,10 +855,10 @@ export class SRSettingTab extends PluginSettingTab {
     addAlgorithmSpecificDisplaySetting(containerEl: HTMLElement) {
         const plugin = this.plugin;
 
-        plugin.algorithm.displaySettings(containerEl, (settings: unknown) => {
+        plugin.algorithm.displaySettings(containerEl, (settings: unknown, refresh) => {
             plugin.data.settings.algorithmSettings[plugin.data.settings.algorithm] = settings;
             plugin.savePluginData();
-            // this.display(); // 容易导致失去输入焦点
+            if (refresh) this.display(); // 容易导致失去输入焦点, 只在重置时刷新界面
         });
     }
 
@@ -866,22 +873,6 @@ export class SRSettingTab extends PluginSettingTab {
                     plugin.data.settings.trackedNoteToDecks = newValue;
                     plugin.savePluginData();
                 });
-            });
-    }
-
-    addReviewResponseFloatBarSetting(containerEl: HTMLElement) {
-        const plugin = this.plugin;
-
-        new Setting(containerEl)
-            .setName(t("REVIEW_FLOATBAR"))
-            .setDesc(t("REVIEW_FLOATBAR_DESC"))
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(plugin.data.settings.reviewResponseFloatBar)
-                    .onChange((newValue) => {
-                        plugin.data.settings.reviewResponseFloatBar = newValue;
-                        plugin.savePluginData();
-                    });
             });
     }
 
@@ -983,4 +974,3 @@ export function buildDonation(containerEl: HTMLElement): void {
     anchor.appendChild(image2);
     div.appendChild(anchor);
 }
-export { algorithms };

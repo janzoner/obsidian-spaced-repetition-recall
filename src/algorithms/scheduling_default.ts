@@ -3,14 +3,12 @@ import { Notice, Setting } from "obsidian";
 import { t } from "src/lang/helpers";
 
 import { DateUtils } from "src/util/utils_recall";
-import SrsAlgorithm from "./algorithms";
-import { ReviewResult } from "src/dataStore/data";
+import { SrsAlgorithm, algorithmNames } from "./algorithms";
 import deepcopy from "deepcopy";
-import { algorithmNames } from "./algorithms_switch";
 import { AnkiData } from "./anki";
 import { FsrsData } from "./fsrs";
 import { balance } from "./balance/balance";
-import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { RepetitionItem, ReviewResult } from "src/dataStore/repetitionItem";
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
 let applyDebounceTimer = 0;
@@ -213,7 +211,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
 
     displaySettings(
         containerEl: HTMLElement,
-        update: (settings: DefaultAlgoSettings) => void,
+        update: (settings: DefaultAlgoSettings, refresh?: boolean) => void,
     ): void {
         containerEl.createDiv().innerHTML = t("CHECK_ALGORITHM_WIKI", {
             algo_url: "https://www.stephenmwangi.com/obsidian-spaced-repetition/algorithms/",
@@ -252,7 +250,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .onClick(async () => {
                         applySettingsUpdate(() => {
                             this.settings.baseEase = DEFAULTSETTINGS.baseEase;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             });
@@ -278,7 +276,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                         applySettingsUpdate(async () => {
                             this.settings.lapsesIntervalChange =
                                 DEFAULTSETTINGS.lapsesIntervalChange;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             });
@@ -312,7 +310,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .onClick(async () => {
                         applySettingsUpdate(async () => {
                             this.settings.easyBonus = DEFAULTSETTINGS.easyBonus;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             });
@@ -346,7 +344,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .onClick(async () => {
                         applySettingsUpdate(async () => {
                             this.settings.maximumInterval = DEFAULTSETTINGS.maximumInterval;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             });
@@ -371,7 +369,7 @@ export class DefaultAlgorithm extends SrsAlgorithm {
                     .onClick(async () => {
                         applySettingsUpdate(async () => {
                             this.settings.maxLinkFactor = DEFAULTSETTINGS.maxLinkFactor;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             });

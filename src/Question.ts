@@ -1,6 +1,7 @@
 import { Card } from "./Card";
 import { CardScheduleInfo, NoteCardScheduleParser } from "./CardSchedule";
 import { SR_HTML_COMMENT_BEGIN, SR_HTML_COMMENT_END } from "./constants";
+import { DataLocation } from "./dataStore/location_switch";
 import { Note } from "./Note";
 import { SRSettings } from "./settings";
 import { TopicPath } from "./TopicPath";
@@ -152,6 +153,9 @@ export class Question {
 
     formatForNote(settings: SRSettings): string {
         let result: string = this.questionText.formatForNote();
+        if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+            return result;
+        }
         if (this.cards.some((card) => card.hasSchedule)) {
             result +=
                 this.getHtmlCommentSeparator(settings) + this.formatScheduleAsHtmlComment(settings);

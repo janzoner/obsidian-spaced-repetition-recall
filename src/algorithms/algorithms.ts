@@ -1,11 +1,15 @@
-import { algorithmNames } from "./algorithms_switch";
-import { ReviewResult } from "src/dataStore/data";
 import { MiscUtils } from "src/util/utils_recall";
-import { RPITEMTYPE, RepetitionItem } from "src/dataStore/repetitionItem";
+import { RPITEMTYPE, RepetitionItem, ReviewResult } from "src/dataStore/repetitionItem";
 
-export default abstract class SrsAlgorithm {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    settings: any;
+export enum algorithmNames {
+    Default = "Default",
+    Anki = "Anki",
+    Fsrs = "Fsrs",
+    SM2 = "SM2",
+}
+
+export abstract class SrsAlgorithm {
+    settings: unknown;
     // plugin: SRPlugin;
     private dueDates: { [type: string]: Record<number, number> };
     public static instance: SrsAlgorithm;
@@ -18,8 +22,7 @@ export default abstract class SrsAlgorithm {
         return SrsAlgorithm.instance;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updateSettings(settings: any) {
+    updateSettings(settings: unknown) {
         this.settings = MiscUtils.assignOnly(this.defaultSettings(), settings);
         // this.plugin = plugin;
         SrsAlgorithm.instance = this;
@@ -30,7 +33,7 @@ export default abstract class SrsAlgorithm {
         this.dueDates[RPITEMTYPE.CARD] = carddueDates;
     }
     getDueDates(itemType: string) {
-        return this.dueDates[itemType];
+        return this.dueDates && itemType in this.dueDates ? this.dueDates[itemType] : undefined;
     }
 
     abstract defaultSettings(): unknown;
@@ -39,6 +42,8 @@ export default abstract class SrsAlgorithm {
     abstract calcAllOptsIntervals(item: RepetitionItem): number[];
     abstract srsOptions(): string[];
     abstract importer(fromAlgo: algorithmNames, items: RepetitionItem[]): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    abstract displaySettings(containerEl: HTMLElement, update: (settings: any) => void): void;
+    abstract displaySettings(
+        containerEl: HTMLElement,
+        update: (settings: unknown, refresh?: boolean) => void,
+    ): void;
 }

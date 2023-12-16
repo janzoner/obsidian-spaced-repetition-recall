@@ -1,12 +1,10 @@
 import { Setting, Notice } from "obsidian";
 import { DateUtils, MiscUtils } from "src/util/utils_recall";
-import SrsAlgorithm from "./algorithms";
-import { ReviewResult } from "src/dataStore/data";
+import { SrsAlgorithm, algorithmNames } from "./algorithms";
 import deepcopy from "deepcopy";
-import { algorithmNames } from "./algorithms_switch";
 import { FsrsData } from "./fsrs";
 import { balance } from "./balance/balance";
-import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { RepetitionItem, ReviewResult } from "src/dataStore/repetitionItem";
 
 export interface AnkiData {
     ease: number;
@@ -170,8 +168,10 @@ export class AnkiAlgorithm extends SrsAlgorithm {
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    displaySettings(containerEl: HTMLElement, update: (settings: any) => void) {
+    displaySettings(
+        containerEl: HTMLElement,
+        update: (settings: AnkiSettings, refresh?: boolean) => void,
+    ) {
         containerEl.createDiv().innerHTML =
             '用于间隔重复的算法. 更多信息请查阅 <a href="https://faqs.ankiweb.net/what-spaced-repetition-algorithm.html">Anki算法</a>.';
         new Setting(containerEl)

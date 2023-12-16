@@ -1,11 +1,9 @@
 import { DateUtils, MiscUtils } from "src/util/utils_recall";
-import SrsAlgorithm from "./algorithms";
-import { ReviewResult } from "src/dataStore/data";
+import { SrsAlgorithm, algorithmNames } from "./algorithms";
 import deepcopy from "deepcopy";
 import { AnkiAlgorithm, AnkiSettings } from "./anki";
-import { algorithmNames } from "./algorithms_switch";
 import { balance } from "./balance/balance";
-import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { RepetitionItem, ReviewResult } from "src/dataStore/repetitionItem";
 
 interface Sm2Data {
     ease: number;
@@ -105,15 +103,17 @@ export class Sm2Algorithm extends SrsAlgorithm {
         anki.importer(fromAlgo, items);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-    displaySettings(containerEl: HTMLElement, update: (settings: any) => void): void {
+    displaySettings(
+        containerEl: HTMLElement,
+        update: (settings: AnkiSettings, refresh?: boolean) => void,
+    ): void {
         containerEl.createDiv().innerHTML =
             '用于间隔重复的算法. 目前与Anki算法共用参数（仅算法处理方式不同），更多信息请查阅 <a href="https://www.supermemo.com/en/archives1990-2015/english/ol/sm2">sm2算法</a>.';
 
         const anki = new AnkiAlgorithm();
         anki.updateSettings(this.settings);
-        anki.displaySettings(containerEl, (settings) => {
-            update((this.settings = settings));
+        anki.displaySettings(containerEl, (settings, refresh?: boolean) => {
+            update((this.settings = settings), refresh);
         });
     }
 }

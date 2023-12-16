@@ -2,6 +2,7 @@ import {
     updateNoteSchedFrontHeader,
     updateCardSchedXml,
     delDefaultTag,
+    cardTextReplace,
 } from "src/dataStore/location_switch";
 
 describe("updateNoteSchedFrontHeader", () => {
@@ -161,5 +162,58 @@ sr-ease: 231
 Obsidian`;
         const result = delDefaultTag(fileText, "review/default");
         expect(result).toEqual(expectedText);
+    });
+});
+
+describe("cardTextReplace", () => {
+    it("missing", async () => {
+        const originalStr: string = "A very boring string";
+        const searchStr: string = "missing";
+        const replacementStr: string = "replacement";
+        const expectedStr: string = originalStr;
+
+        const actual: string = cardTextReplace(originalStr, searchStr, replacementStr);
+        expect(actual).toEqual(expectedStr);
+    });
+    it("normal", async () => {
+        const originalStr: string = `---
+---
+        A very boring string`;
+
+        const searchStr: string = "string";
+        const replacementStr: string = "replacement";
+        const expectedStr: string = `---
+---
+        A very boring replacement`;
+
+        const actual: string = cardTextReplace(originalStr, searchStr, replacementStr);
+        expect(actual).toEqual(expectedStr);
+    });
+
+    it("duplicate", async () => {
+        const originalStr: string = `---
+---
+A very boring string
+with other stuff.
+
+A very boring string
+
+`;
+
+        const searchStr: string = "A very boring string";
+
+        const replacementStr: string = "replacement";
+
+        const expectedStr: string = `---
+---
+A very boring string
+with other stuff.
+
+replacement
+
+`;
+
+        const actual: string = cardTextReplace(originalStr, searchStr, replacementStr);
+        expect(actual).toEqual(expectedStr);
     });
 });

@@ -54,6 +54,10 @@ Add a label corresponding to a review card to your notes, or convert review note
 
 Review notes can be opened from the command line, or from your computer by clicking Notes in the status bar/right sidebar. Feedback on memorization level is available via command line, hover bar or menu bar
 
+-   On computer , right-click on the floating bar, you can close it, set time interval visible/hidden;
+-   On mobile, swipup from the floating bar, close it , long press the floating bar to setting time interval visible/hidden;
+-   time interval visible/hidden Suggestion: review is not shown, progressive summary/incremental writing is shown;
+
 #### Review Cards
 
 Review is available via the command line, or on the computer by clicking on the cards in the left side navigation bar.
@@ -73,7 +77,7 @@ Via command line, `SR Item Info`, you can view review information for current/al
 
 Different algorithms have different parameters, please try to use one algorithm instead of switching algorithms repeatedly.
 [Algorithms desc](. /en/algorithms.md)
-default(Anki modified)、Anki: [Algorithms desc](./en/algorithms.md)
+[default(Anki modified)](./en/algorithms.md)、[Anki](https://github.com/martin-jw/obsidian-recall#currently-available-algorithms) 、
 [FSRS](https://github.com/open-spaced-repetition/fsrs.js)
 
 #### Experimental function

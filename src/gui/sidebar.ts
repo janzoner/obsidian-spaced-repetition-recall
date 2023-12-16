@@ -2,7 +2,7 @@ import { ItemView, WorkspaceLeaf, Menu, TFile } from "obsidian";
 
 import type SRPlugin from "src/main";
 import { COLLAPSE_ICON } from "src/constants";
-import { ReviewDeck } from "src/ReviewDeck";
+import { ReviewDeck, SchedNote } from "src/ReviewDeck";
 import { t } from "src/lang/helpers";
 import { DataLocation } from "src/dataStore/location_switch";
 import { DateUtils } from "src/util/utils_recall";
@@ -71,7 +71,7 @@ export class ReviewQueueListView extends ItemView {
                 );
 
                 for (const newFile of deck.newNotes) {
-                    const fileIsOpen = activeFile && newFile.path === activeFile.path;
+                    const fileIsOpen = activeFile && newFile.note.path === activeFile.path;
                     if (fileIsOpen) {
                         deck.activeFolders.add(deck.deckName);
                         deck.activeFolders.add(t("NEW"));
@@ -146,7 +146,7 @@ export class ReviewQueueListView extends ItemView {
 
                     this.createRightPaneFile(
                         schedFolderEl,
-                        sNote.note,
+                        sNote,
                         fileIsOpen,
                         !deck.activeFolders.has(folderTitle),
                         deck,
@@ -206,7 +206,7 @@ export class ReviewQueueListView extends ItemView {
 
     private createRightPaneFile(
         folderEl: HTMLElement,
-        file: TFile,
+        file: SchedNote,
         fileElActive: boolean,
         hidden: boolean,
         deck: ReviewDeck,
@@ -224,17 +224,15 @@ export class ReviewQueueListView extends ItemView {
             navFileTitle.addClass("is-active");
         }
 
-        navFileTitle.createDiv("nav-file-title-content").setText(file.basename);
+        navFileTitle.createDiv("nav-file-title-content").setText(file.note.basename);
         navFileTitle.addEventListener(
             "click",
             async (event: MouseEvent) => {
                 event.preventDefault();
                 plugin.lastSelectedReviewDeck = deck.deckName;
-                await this.app.workspace.getLeaf().openFile(file);
+                await this.app.workspace.getLeaf().openFile(file.note);
                 if (plugin.data.settings.dataLocation !== DataLocation.SaveOnNoteFile) {
-                    const fid = this.plugin.store.getFileId(file.path);
-                    const item = plugin.store.getItembyID(fid);
-                    plugin.reviewFloatBar.algoDisplay(true, item);
+                    plugin.reviewFloatBar.display(file.item);
                 }
                 return false;
             },

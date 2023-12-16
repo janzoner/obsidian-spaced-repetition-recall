@@ -1,11 +1,24 @@
 import { AnkiData } from "src/algorithms/anki";
 import { FsrsData } from "src/algorithms/fsrs";
-import { ReviewResult } from "./data";
 import { DateUtils } from "src/util/utils_recall";
 
 export enum RPITEMTYPE {
     NOTE = "note",
     CARD = "card",
+}
+
+/**
+ * ReviewResult.
+ */
+export interface ReviewResult {
+    /**
+     * @type {boolean}
+     */
+    correct: boolean;
+    /**
+     * @type {number}
+     */
+    nextReview: number;
 }
 
 /**
@@ -48,7 +61,6 @@ export class RepetitionItem {
      * @type {any}
      */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: unknown; // Additional data, determined by the selected algorithm.
 
     static create(item: RepetitionItem) {
@@ -92,41 +104,39 @@ export class RepetitionItem {
 
     /**
      *
-     * @param isFsrs
-     * @param isNumDue  default is true.
-     * @returns
+     * @returns ["due-interval-ease00", dueString, interval, ease] | null for new
      */
-    getSched(isFsrs?: boolean, isNumDue = true): RegExpMatchArray | null {
+    getSched(): RegExpMatchArray | null {
         if (this.nextReview === 0 || this.nextReview === null || this.timesReviewed === 0) {
             return null; // new card doesn't need schedinfo
         }
 
         let ease: number;
         let interval: number;
-        if (isFsrs == undefined) {
-            if (Object.prototype.hasOwnProperty.call(this.data, "state")) {
-                isFsrs = true;
-            } else {
-                isFsrs = false;
-            }
-        }
-        if (!isFsrs) {
-            const data: AnkiData = this.data as AnkiData;
-            ease = data.ease;
-            interval = data.lastInterval;
-            // const interval = this.data.iteration;
-        } else {
+
+        const isFsrs: boolean = Object.prototype.hasOwnProperty.call(this.data, "state");
+        if (isFsrs) {
             const data = this.data as FsrsData;
             interval = data.scheduled_days;
             // ease just used for StatsChart, not review scheduling.
             ease = data.state;
+        } else {
+            const data: AnkiData = this.data as AnkiData;
+            ease = data.ease;
+            interval = data.lastInterval;
+            // const interval = this.data.iteration;
         }
 
         const sched = [this.ID, this.nextReview, interval, ease] as unknown as RegExpMatchArray;
-        if (!isNumDue) {
-            const due = window.moment(this.nextReview);
-            sched[1] = due.format("YYYY-MM-DD");
-        }
+        return sched;
+    }
+
+    getSchedDurAsStr() {
+        const sched = this.getSched();
+        if (sched == null) return null;
+
+        const due = window.moment(this.nextReview);
+        sched[1] = due.format("YYYY-MM-DD");
         return sched;
     }
 
@@ -186,6 +196,10 @@ export class RepetitionItem {
 
     get isTracked() {
         return this.fileIndex >= 0;
+    }
+
+    get isCard() {
+        return this.itemType === RPITEMTYPE.CARD;
     }
 
     setTracked(fileIndex: number) {

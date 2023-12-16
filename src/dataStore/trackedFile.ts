@@ -3,6 +3,7 @@ import { BlockUtils } from "src/util/utils_recall";
 import { CardType } from "src/Question";
 import { parse } from "src/parser";
 import { RPITEMTYPE } from "./repetitionItem";
+import { DEFAULT_DECKNAME } from "src/constants";
 
 /**
  * TrackedFile.
@@ -67,6 +68,7 @@ export class TrackedFile implements ITrackedFile {
      * @type {string[]}
      */
     tags: string[];
+    private _isTracked?: boolean;
 
     static create(trackedfile: ITrackedFile): TrackedFile {
         let tf: TrackedFile;
@@ -82,13 +84,14 @@ export class TrackedFile implements ITrackedFile {
     constructor(path: string = "", type: RPITEMTYPE = RPITEMTYPE.NOTE, dname?: string) {
         this.path = path;
         this.items = {};
-        this.tags = [type];
         if (type === RPITEMTYPE.CARD) {
             this.cardItems = [];
         }
-        if (dname !== undefined) {
-            this.tags.push(dname);
-        }
+        this.setTracked(type, dname);
+    }
+
+    static isDefaultDackName(tag: string) {
+        return tag === DEFAULT_DECKNAME;
     }
 
     /**
@@ -109,19 +112,36 @@ export class TrackedFile implements ITrackedFile {
      * @returns {CardInfo} cardinfo | null: didn't have cardInfo
      */
     getSyncCardInfo(lineNo: number, cardTextHash?: string): CardInfo {
+        const cardinfo = this.getCardInfo(lineNo, cardTextHash);
+        if (cardinfo !== null) {
+            if (cardinfo.lineNo !== lineNo) {
+                cardinfo.lineNo = lineNo;
+                // console.debug("syncCardInfo, change line");
+            }
+            if (cardTextHash != undefined && cardinfo.cardTextHash !== cardTextHash) {
+                cardinfo.cardTextHash = cardTextHash;
+                // console.debug("syncCardInfo, change hash");
+            }
+        }
+        return cardinfo;
+    }
+    /**
+     * getCardInfoIndex
+     * @param lineNo
+     * @param cardTextHash
+     * @returns {CardInfo} cardinfo | null: didn't have cardInfo
+     */
+    getCardInfo(lineNo: number, cardTextHash?: string): CardInfo {
         let cardind = -2;
         if (this.cardItems != undefined) {
-            cardind = this.cardItems.findIndex((cinfo: CardInfo, _ind, _obj) => {
-                let res = false;
-                if (cardTextHash != null && cinfo.cardTextHash === cardTextHash) {
-                    cinfo.lineNo = lineNo;
-                    res = true;
-                } else if (cinfo.lineNo === lineNo) {
-                    cinfo.cardTextHash = cardTextHash;
-                    res = true;
-                }
-                return res;
+            cardind = this.cardItems.findIndex((cinfo, _ind) => {
+                return cardTextHash != null && cinfo.cardTextHash === cardTextHash;
             });
+            if (cardind < 0) {
+                cardind = this.cardItems.findIndex((cinfo, _ind) => {
+                    return cinfo.lineNo === lineNo;
+                });
+            }
         }
         return cardind >= 0 ? this.cardItems[cardind] : null;
     }
@@ -206,6 +226,9 @@ export class TrackedFile implements ITrackedFile {
         const carditems = this?.cardItems;
         if (lines.length === carditems.length && negIndFlag) {
             for (let i = 0; i < lines.length; i++) {
+                // fix: don't match
+                // if (this.getSyncCardInfo(lines[i], cardHashList[lines[i]]) == null) {
+                // }
                 if (lines[i] !== carditems[i].lineNo) {
                     carditems[i].lineNo = lines[i];
                     this.getSyncCardInfo(lines[i], cardHashList[lines[i]]);
@@ -232,8 +255,33 @@ export class TrackedFile implements ITrackedFile {
         }
     }
 
-    get noteId() {
+    get isTracked(): boolean {
+        return this.tags.length > 0 && this._isTracked !== false;
+    }
+
+    get isDefault() {
+        return TrackedFile.isDefaultDackName(this.lastTag);
+    }
+
+    get noteID(): number {
         return this.items.file;
+    }
+
+    get cardIDs(): number[] {
+        return this.hasCards
+            ? this.cardItems
+                  .map((cinfo) => {
+                      return cinfo.itemIds;
+                  })
+                  .flat()
+            : [];
+    }
+
+    /**
+     * [this.noteID, ...this.cardIDs]
+     */
+    get itemIDs(): number[] {
+        return [this.noteID, ...this.cardIDs];
     }
 
     get hasCards() {
@@ -266,5 +314,19 @@ export class TrackedFile implements ITrackedFile {
             return a.lineNo - b.lineNo;
         });
         return newcardItem;
+    }
+    setTracked(type: RPITEMTYPE, dname?: string) {
+        this.tags = [type];
+        if (dname !== undefined) {
+            this.tags.push(dname);
+        } else if (type === RPITEMTYPE.NOTE) {
+            this.tags.push(DEFAULT_DECKNAME);
+        }
+        if (this._isTracked === false) {
+            this._isTracked = true;
+        }
+    }
+    setUnTracked() {
+        this._isTracked = false;
     }
 }

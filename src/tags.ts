@@ -36,17 +36,6 @@ export class Tags {
     }
 
     /**
-     * isTagedDeckName, if deckName is in flashcardTags, return true.
-     * @param deckName
-     * @returns
-     */
-    static getCardDeckName(note: TFile, settings: SRSettings): string | null {
-        const tags = this.getFileTags(note);
-        const dn = this.getTagFromSettingTags(tags, settings.flashcardTags);
-        return dn;
-    }
-
-    /**
      * select a tag in tags , which is also in tagsToReview. If not, return null.
      * @param tags tags from note file.
      * @returns

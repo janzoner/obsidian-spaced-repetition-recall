@@ -50,7 +50,9 @@ export class Stats {
         this.intervals.incrementCount(interval);
         this.eases.incrementCount(ease);
         this.delayedDays.incrementCount(delayedDays);
-
+        if (delayedDays <= 0) {
+            this.incrementOnDue();
+        }
         if (interval >= 32) {
             this.matureCount++;
         } else {
@@ -65,11 +67,10 @@ export class Stats {
             return;
         }
         if (now == undefined) {
+            // now = DateUtils.EndofToday;
             now = Date.now();
         }
-        if (item.nextReview - now < 0) {
-            this.incrementOnDue();
-        }
+
         const interval: number = parseInt(scheduling[2]),
             ease: number = parseFloat(scheduling[3]);
         const delayedDays: number = Math.ceil(
@@ -105,6 +106,8 @@ export class Stats {
             this.decrementOnDue();
         } else if (item.isNew) {
             this.decrementNew();
+            return;
+        } else {
             return;
         }
 

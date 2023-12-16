@@ -22,7 +22,7 @@ import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
 import { ReviewedCounts } from "src/dataStore/data";
 import { State } from "fsrs.js";
-import { algorithmNames } from "src/algorithms/algorithms_switch";
+import { algorithmNames } from "src/algorithms/algorithms";
 import { Stats } from "src/stats";
 import { CardListType } from "src/Deck";
 import { RPITEMTYPE } from "src/dataStore/repetitionItem";

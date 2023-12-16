@@ -1,11 +1,13 @@
 // https://img.shields.io/github/v/release/chetachiezikeuzor/cMenu-Plugin
-import { MarkdownView, Platform, TFile, setIcon } from "obsidian";
+import { MarkdownView, Menu, MenuItem, Platform, TFile } from "obsidian";
 import { textInterval } from "src/scheduling";
 import { SRSettings } from "src/settings";
 import { t } from "src/lang/helpers";
 // import { FlashcardModalMode } from "src/gui/flashcard-modal";
-import SrsAlgorithm from "src/algorithms/algorithms";
+import { SrsAlgorithm } from "src/algorithms/algorithms";
 import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { debug } from "src/util/utils_recall";
+import { TouchOnMobile } from "src/Events/touchEvent";
 
 export class reviewResponseModal {
     private static instance: reviewResponseModal;
@@ -26,22 +28,22 @@ export class reviewResponseModal {
     buttonTexts: string[];
     options: string[];
 
+    respCallback: (s: string) => void;
+
     static getInstance() {
         return reviewResponseModal.instance;
     }
 
-    constructor(settings: SRSettings, options: string[]) {
+    constructor(settings: SRSettings) {
         this.settings = settings;
         const algo = settings.algorithm;
         this.buttonTexts = settings.responseOptionBtnsText[algo];
-        this.options = options;
         this.algorithm = SrsAlgorithm.getInstance();
+        this.options = this.algorithm.srsOptions();
         reviewResponseModal.instance = this;
-        // this.display(show, responseInterval);
     }
 
-    public algoDisplay(
-        show = true,
+    public display(
         item?: RepetitionItem,
         callback?: (opt: string) => void,
         // mode?: FlashcardModalMode,
@@ -55,29 +57,12 @@ export class reviewResponseModal {
         } else {
             this.responseInterval = null;
         }
-        const reviewResponseModalBar = document.getElementById(this.id);
-        if (!show) {
-            this.selfDestruct();
-            return;
-        } else if (!reviewResponseModalBar || !this.buttons) {
-            const buttonClick = (s: string) => {
-                // this.mode = FlashcardModalMode.Front;
-
-                if (callback) {
-                    callback(s);
-                    return;
-                }
-
-                const openFile: TFile | null = app.workspace.getActiveFile();
-                if (openFile && openFile.extension === "md") {
-                    if (this.submitCallback) {
-                        this.submitCallback(openFile, this.options.indexOf(s));
-                    }
-                }
-            };
-
-            this.build(buttonClick);
+        const rrBar = document.getElementById(this.id);
+        if (!rrBar || !this.buttons) {
+            this.build();
         }
+
+        this.respCallback = callback;
 
         // update show text
         // if (this.mode == null || this.mode == FlashcardModalMode.Front) {
@@ -114,7 +99,7 @@ export class reviewResponseModal {
  */
     }
 
-    private build(buttonClick: (opt: string) => void) {
+    private build() {
         // const options = this.plugin.algorithm.srsOptions();
         const optBtnCounts = this.options.length;
         let btnCols = 4;
@@ -125,7 +110,7 @@ export class reviewResponseModal {
         this.containerEl.setAttribute("id", this.id);
         this.containerEl.addClass("ResponseFloatBarDefaultAesthetic");
         // this.containerEl.setAttribute("style", `grid-template-columns: ${"1fr ".repeat(btnCols)}`);
-        this.containerEl.setAttribute("style", `grid-template-rows: ${"1fr ".repeat(2)}`);
+        this.containerEl.setAttribute("style", `grid-template-rows: ${"1fr ".repeat(1)}`);
         this.containerEl.style.visibility = "visible"; // : "hidden"
         document.body
             .querySelector(".mod-vertical.mod-root")
@@ -136,6 +121,33 @@ export class reviewResponseModal {
         this.responseDiv.setAttribute("style", `grid-template-columns: ${"1fr ".repeat(btnCols)}`);
 
         this.buttons = [];
+        this.createButtons_responses();
+        // this.responseDiv.style.display = "none";
+
+        this.createButton_showAnswer();
+
+        this.addMenuEvent();
+        this.addTouchEvent();
+        this.autoClose();
+    }
+
+    private buttonClick(s: string) {
+        // this.mode = FlashcardModalMode.Front;
+
+        if (this.respCallback) {
+            this.respCallback(s);
+            return;
+        }
+
+        const openFile: TFile | null = app.workspace.getActiveFile();
+        if (openFile && openFile.extension === "md") {
+            if (this.submitCallback) {
+                this.submitCallback(openFile, this.options.indexOf(s));
+            }
+        }
+    }
+
+    private createButtons_responses() {
         this.options.forEach((opt: string, index) => {
             const btn = document.createElement("button");
             btn.setAttribute("id", "sr-" + opt.toLowerCase() + "-btn");
@@ -146,12 +158,13 @@ export class reviewResponseModal {
             // let text = btnText[algo][index];
             const text = this.getTextWithInterval(index);
             btn.setText(text);
-            btn.addEventListener("click", () => buttonClick(opt));
+            btn.addEventListener("click", () => this.buttonClick(opt));
             this.buttons.push(btn);
             this.responseDiv.appendChild(btn);
         });
-        // this.responseDiv.style.display = "none";
+    }
 
+    private createButton_showAnswer() {
         this.answerBtn = this.contentEl.createDiv();
         this.answerBtn.setAttribute("id", "sr-show-answer");
         this.answerBtn.setText(t("SHOW_ANSWER"));
@@ -159,31 +172,74 @@ export class reviewResponseModal {
             this.showAnswer();
         });
         // this.answerBtn.style.display = "block";
+    }
 
-        const showCloseDiv = this.containerEl.createDiv("sr-show-close");
-        showCloseDiv.setAttribute("style", "display: flex; width: 64px"); // position:relative;
-
-        const showIntvlBtn = document.createElement("button");
+    private addMenuEvent() {
+        this.containerEl.addEventListener("mouseup", showCloseMenuCB);
         const showcb = () => {
-            if (this.showInterval) {
-                this.showInterval = false;
-                setIcon(showIntvlBtn, "alarm-clock-off");
-            } else {
-                this.showInterval = true;
-                setIcon(showIntvlBtn, "alarm-clock");
-            }
+            this.toggleShowInterval();
             this.showAnswer();
         };
-        addButton_showInterval(this, showIntvlBtn, showcb);
-        this.buttons.push(showIntvlBtn);
-        // this.containerEl.appendChild(showIntvlBtn);
-        showCloseDiv.appendChild(showIntvlBtn);
+        const closecb = () => {
+            this.selfDestruct();
+        };
+        const menu = new Menu();
+        let showitem: MenuItem;
+        const isShow = () => this.showInterval;
 
-        const closeBtn = document.createElement("button");
-        addButton_close(this, closeBtn);
-        this.buttons.push(closeBtn);
-        this.containerEl.appendChild(closeBtn);
-        showCloseDiv.appendChild(closeBtn);
+        menu.addItem((item) => {
+            showitem = item;
+            item.onClick(showcb);
+        });
+
+        menu.addItem((item) => {
+            item.setIcon("lucide-x");
+            item.setTitle("Close");
+            item.onClick(closecb);
+        });
+        function showCloseMenuCB(evt: MouseEvent) {
+            evt.cancelable && evt.preventDefault();
+            if (isShow()) {
+                showitem.setIcon("alarm-clock-off");
+                showitem.setTitle("Hide Intervals");
+            } else {
+                showitem.setIcon("alarm-clock");
+                showitem.setTitle("Show Intervals");
+            }
+            if (typeof evt === "object") {
+                if (evt.button === 2) {
+                    // right-click
+                    menu.showAtMouseEvent(evt);
+                }
+            }
+        }
+    }
+    private addTouchEvent() {
+        if (!Platform.isMobile) {
+            return;
+        }
+        const touch = TouchOnMobile.create();
+        touch.showcb = () => {
+            this.toggleShowInterval();
+            this.showAnswer();
+        };
+        touch.closecb = () => {
+            this.selfDestruct();
+        };
+
+        this.containerEl.addEventListener("touchstart", (evt) => touch.handleStart(evt), {
+            passive: true,
+        });
+        this.containerEl.addEventListener("touchmove", (evt) => touch.handleMove(evt), {
+            passive: true,
+        });
+        this.containerEl.addEventListener("touchend", (evt) => touch.handleEnd(evt), {
+            passive: false,
+        });
+    }
+
+    private toggleShowInterval() {
+        this.showInterval = this.showInterval ? false : true;
     }
 
     private showAnswer() {
@@ -227,57 +283,28 @@ export class reviewResponseModal {
     }
 
     selfDestruct() {
-        const reviewResponseModalBar = document.getElementById(this.id);
-        if (reviewResponseModalBar) {
-            reviewResponseModalBar.style.visibility = "hidden";
-            if (reviewResponseModalBar.firstChild) {
-                reviewResponseModalBar.removeChild(reviewResponseModalBar.firstChild);
+        const rrBar = document.getElementById(this.id);
+        if (rrBar) {
+            rrBar.style.visibility = "hidden";
+            if (rrBar.firstChild) {
+                rrBar.removeChild(rrBar.firstChild);
             }
-            reviewResponseModalBar.remove();
+            rrBar.remove();
         }
     }
 
     autoClose() {
         //after review
+        const tout = Platform.isMobile ? 5000 : 10000;
         const timmer = setInterval(() => {
-            const reviewResponseModalBar = document.getElementById(this.id);
+            const rrBar = document.getElementById(this.id);
             const Markdown = app.workspace.getActiveViewOfType(MarkdownView);
-            if (reviewResponseModalBar) {
+            if (rrBar) {
                 if (!Markdown) {
-                    reviewResponseModalBar.style.visibility = "hidden";
                     this.selfDestruct();
                     clearInterval(timmer);
                 }
             }
-        }, 10000);
+        }, tout);
     }
-}
-
-function addButton_showInterval(
-    rrBar: reviewResponseModal,
-    showIntvlBtn: HTMLElement,
-    showCb: () => void,
-) {
-    showIntvlBtn.setAttribute("id", "sr-showintvl-btn");
-    showIntvlBtn.setAttribute("class", "ResponseFloatBarCommandItem");
-    showIntvlBtn.setAttribute(
-        "aria-label",
-        "时间间隔显隐,\n建议：复习类不显示，渐进总结/增量写作显示",
-    );
-    // showIntvlBtn.setText("Show");
-    setIcon(showIntvlBtn, "alarm-clock");
-    showIntvlBtn.addEventListener("click", showCb);
-}
-
-function addButton_close(rrBar: reviewResponseModal, closeBtn: HTMLElement) {
-    closeBtn.setAttribute("id", "sr-close-btn");
-    closeBtn.setAttribute("class", "ResponseFloatBarCommandItem");
-    closeBtn.setAttribute("aria-label", "关闭浮栏显示");
-    // closeBtn.setAttribute("style", `width: calc(95%/${buttonCounts});`);
-    // setIcon(closeBtn, "lucide-x");
-    closeBtn.setText("X");
-    closeBtn.addEventListener("click", () => {
-        rrBar.containerEl.style.visibility = "hidden";
-        rrBar.selfDestruct();
-    });
 }

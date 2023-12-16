@@ -1,5 +1,5 @@
 import { ButtonComponent, Modal, Setting, TFile } from "obsidian";
-import { algorithmNames } from "src/algorithms/algorithms_switch";
+import { algorithmNames } from "src/algorithms/algorithms";
 import { AnkiData } from "src/algorithms/anki";
 import { FsrsData } from "src/algorithms/fsrs";
 import { DataStore } from "src/dataStore/data";

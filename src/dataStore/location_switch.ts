@@ -1,9 +1,12 @@
 import { CachedMetadata, FrontMatterCache, Notice, TFile } from "obsidian";
 import { TopicPath } from "src/TopicPath";
 import {
+    DEFAULT_DECKNAME,
     LEGACY_SCHEDULING_EXTRACTOR,
     MULTI_SCHEDULING_EXTRACTOR,
     SCHEDULING_INFO_REGEX,
+    SR_HTML_COMMENT_BEGIN,
+    SR_HTML_COMMENT_END,
     YAML_FRONT_MATTER_REGEX,
     YAML_TAGS_REGEX,
 } from "src/constants";
@@ -13,11 +16,12 @@ import { SRSettings } from "src/settings";
 import { escapeRegexString } from "src/util/utils";
 import { DataStore } from "./data";
 import { Tags } from "src/tags";
-import { DataSyncer } from "./dataSyncer";
 
 import { Stats } from "src/stats";
 import { DateUtils } from "src/util/utils_recall";
 import { RPITEMTYPE } from "./repetitionItem";
+import deepcopy from "deepcopy";
+import { NoteCardScheduleParser } from "src/CardSchedule";
 
 const ROOT_DATA_PATH = "./tracked_files.json";
 // const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";
@@ -40,15 +44,16 @@ export const locationMap: Record<string, DataLocation> = {
 export class LocationSwitch {
     public plugin: SRPlugin;
     private settings: SRSettings;
-
+    public beforenoteStats: Stats;
+    public afternoteStats: Stats;
+    public beforecardStats: Stats;
+    public aftercardStats: Stats;
     revTag: string;
 
     constructor(plugin: SRPlugin, settings: SRSettings) {
         this.plugin = plugin;
         this.settings = settings;
-        this.revTag = [this.settings.tagsToReview[0], plugin.store.defaultDackName]
-            .join("/")
-            .substring(1);
+        this.revTag = this.converteTag();
     }
 
     /**
@@ -77,7 +82,6 @@ export class LocationSwitch {
         store.verify(newPath).then(async (v) => {
             exist = v;
             if (exist) {
-                const adapter = app.vault.adapter;
                 const suffix = "-" + new Date().toISOString().replace(/[:.]/g, "");
                 await adapter.rename(newPath, newPath + suffix).then(() => {
                     console.debug("orginal file: " + newPath + " renamed to: " + newPath + suffix);
@@ -107,6 +111,13 @@ export class LocationSwitch {
         }
     }
 
+    converteTag(tag?: string): string {
+        if (tag == undefined) {
+            tag = DEFAULT_DECKNAME;
+        }
+        return [this.settings.tagsToReview[0], tag].join("/").substring(1);
+    }
+
     /**
      * converteNoteSchedToTrackfile
      *
@@ -116,30 +127,30 @@ export class LocationSwitch {
         // const store = plugin.store;
         const store = DataStore.getInstance();
         const settings = plugin.data.settings;
-        // const orgLocation = settings.dataLocation;
+        this.initStats();
+        this.setBeforeStats();
         if (dryrun) {
             if (newLocation) {
                 settings.dataLocation = newLocation;
             }
         }
-        await store.load();
+        await store.save();
 
         // await plugin.sync_Algo();
 
-        const notes: TFile[] = app.vault.getMarkdownFiles();
+        let notes: TFile[] = app.vault.getMarkdownFiles();
+        notes = notes.filter(
+            (noteFile) => !isIgnoredPath(settings.noteFoldersToIgnore, noteFile.path),
+        );
         for (const noteFile of notes) {
-            if (isIgnoredPath(this.settings.noteFoldersToIgnore, noteFile.path)) {
-                continue;
-            }
-
             let deckname = Tags.getNoteDeckName(noteFile, this.settings);
             let topicPath: TopicPath = plugin.findTopicPath(plugin.createSrTFile(noteFile));
             let fileText: string = "";
             let fileChanged = false;
             if (topicPath.hasPath) {
-                fileText = await app.vault.read(noteFile);
+                fileText = await noteFile.vault.read(noteFile);
                 if (topicPath.formatAsTag().includes(this.revTag)) {
-                    deckname = store.defaultDackName;
+                    deckname = DEFAULT_DECKNAME;
                     topicPath = new TopicPath([deckname]);
                     fileText = delDefaultTag(fileText, this.revTag);
                     fileChanged = true;
@@ -150,16 +161,16 @@ export class LocationSwitch {
                 const fileCachedData = app.metadataCache.getFileCache(noteFile) || {};
                 fileText = await _convertFrontMatter(noteFile, fileCachedData, deckname, fileText);
                 if (fileText == null) {
-                    console.debug("_convertFrontMatter: fileText null: ");
-                    throw new Error("_convertFrontMatter fileText null: " + fileText);
+                    console.warn("_convertFrontMatter: fileText null: ");
+                    // throw new Error("_convertFrontMatter fileText null: " + fileText);
                 }
                 if (SCHEDULING_INFO_REGEX.test(fileText)) {
-                    console.error(
+                    console.warn(
                         "still have SCHEDULING_INFO_REGEX in fileText:\n",
                         noteFile.path,
                         fileText,
                     );
-                    throw new Error("_convertFrontMatter failed: \n" + fileText);
+                    // throw new Error("_convertFrontMatter failed: \n" + fileText);
                 }
                 fileChanged = true;
             }
@@ -167,7 +178,7 @@ export class LocationSwitch {
             if (topicPath.hasPath) {
                 fileText = await _convertCardsSched(noteFile, fileText, topicPath.path[0]);
                 if (fileText == null) {
-                    console.debug("fileText null");
+                    console.warn("fileText null");
                     throw new Error(fileText);
                 }
                 if (
@@ -175,17 +186,17 @@ export class LocationSwitch {
                     LEGACY_SCHEDULING_EXTRACTOR.test(fileText)
                 ) {
                     console.error("still have cardsched in fileText:\n", noteFile.path, fileText);
-                    throw new Error("_convertCardsSched failed: \n" + fileText);
+                    // throw new Error("_convertCardsSched failed: \n" + fileText);
                 }
                 fileChanged = true;
             }
 
             if (!dryrun && fileChanged) {
                 if (fileText == null) {
-                    console.debug("fileText null");
+                    console.error("fileText null");
                     throw new Error(fileText);
                 }
-                await app.vault.modify(noteFile, fileText);
+                await noteFile.vault.modify(noteFile, fileText);
                 // console.debug("_convert fileChanged end :\n", fileText);
             }
         }
@@ -193,8 +204,15 @@ export class LocationSwitch {
         const msg = "converteNoteSchedToTrackfile success!";
         if (dryrun) {
             await plugin.sync();
-            await store.load();
+            this.setAfterStats();
+            // await store.load();
             settings.dataLocation = DataLocation.SaveOnNoteFile;
+            this.resultCheck(
+                this.beforenoteStats,
+                this.beforecardStats,
+                this.afternoteStats,
+                this.aftercardStats,
+            );
         } else {
             await store.save();
             new Notice(msg);
@@ -204,7 +222,7 @@ export class LocationSwitch {
         async function _convertCardsSched(note: TFile, fileText: string, deckName: string) {
             // console.debug("_convertCardsSched: ", note.basename);
             const trackedFile = store.getTrackedFile(note.path);
-            // let fileText: string = await app.vault.read(note);
+            // let fileText: string = await note.vault.read(note);
             let fileChanged = false;
             trackedFile.syncNoteCardsIndex(fileText, settings, (cardText, cardinfo) => {
                 let scheduling: RegExpMatchArray[] = [
@@ -213,28 +231,27 @@ export class LocationSwitch {
                 if (scheduling.length === 0)
                     scheduling = [...cardText.matchAll(LEGACY_SCHEDULING_EXTRACTOR)];
                 if (scheduling.length > 0) {
-                    DataSyncer.setTrackfileCardSched(
-                        trackedFile,
-                        deckName,
-                        cardinfo.lineNo,
-                        cardinfo.cardTextHash,
-                        scheduling.length,
-                        scheduling,
-                    );
+                    store.updateCardItems(trackedFile, cardinfo, scheduling.length, deckName);
+                    const schedInfoList = NoteCardScheduleParser.createInfoList_algo(scheduling);
+                    scheduling.forEach((sched: RegExpMatchArray, index) => {
+                        if (!schedInfoList[index].isDummyScheduleForNewCard) {
+                            store.getItembyID(cardinfo.itemIds[index])?.updateSched(sched, true);
+                        }
+                    });
+
                     // console.debug(cardinfo.lineNo, scheduling);
 
                     const newCardText = updateCardSchedXml(
                         cardText,
                         settings.cardCommentOnSameLine,
                     );
-                    const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
-                    fileText = fileText.replace(replacementRegex, () => newCardText);
+                    fileText = cardTextReplace(fileText, cardText, newCardText);
                     fileChanged = true;
                 }
             });
 
             // if (fileChanged) {
-            //     // await app.vault.modify(note, fileText);
+            //     // await note.vault.modify(note, fileText);
             //     console.debug("_convertCardsSched end :\n", fileText);
             // }
             return fileText;
@@ -246,7 +263,7 @@ export class LocationSwitch {
             deckname: string,
             fileText: string,
         ) {
-            console.debug("_convertFrontMatter");
+            // console.debug("_convertFrontMatter");
             // const fileCachedData = app.metadataCache.getFileCache(note) || {};
             const frontmatter: FrontMatterCache | Record<string, unknown> =
                 fileCachedData.frontmatter || {};
@@ -256,8 +273,8 @@ export class LocationSwitch {
                 if (!store.isTracked(note.path)) {
                     store.trackFile(note.path, deckname, false);
                 }
-                const item = store.getItemsOfFile(note.path)[0];
-                // const id = store.getFileId(note.path);
+                const item = store.getItembyID(store.getTrackedFile(note.path).noteID);
+                // const id = store.getTrackedFile(note.path).noteID
                 // store.reviewId(id, opts[1]);
                 item.updateSched(sched, true);
                 fileText = updateNoteSchedFrontHeader(fileText);
@@ -273,135 +290,194 @@ export class LocationSwitch {
     async converteTrackfileToNoteSched(dryrun: boolean = false) {
         const plugin = this.plugin;
         const store = plugin.store;
-
+        this.initStats();
+        this.setBeforeStats();
         plugin.syncLock = true;
-        plugin.noteStats = new Stats();
-        plugin.cardStats = new Stats();
 
-        const tracked_files = store.data.trackedFiles;
-        for (const tkfile of tracked_files) {
-            if (tkfile == null) {
-                continue;
-            }
-            // if (ReviewNote.isIgnored(this.settings.noteFoldersToIgnore, tkfile.path)) {
-            //     continue;
-            // }
+        await store.pruneData();
 
-            let exists = await store.verify(tkfile.path);
-            if (!exists) {
-                // in case file moved away.
-                exists = store.findMovedFile(tkfile);
-            }
-            if (exists) {
-                const id = tkfile.items["file"];
-                const item = store.getItembyID(id);
-                const note = app.vault.getAbstractFileByPath(tkfile.path) as TFile;
-                const deckPath: string[] = plugin.findTopicPath(plugin.createSrTFile(note)).path;
-                let fileText: string = await app.vault.read(note);
-                let fileChanged = false;
-                if (deckPath.length !== 0) {
-                    tkfile.syncNoteCardsIndex(fileText, this.settings, (cardText, cardinfo) => {
-                        if (cardinfo == null || cardinfo?.itemIds == null) {
-                            return;
-                        }
-                        const ids = cardinfo.itemIds;
-                        ids.sort((a: number, b: number) => a - b);
-                        const scheduling: RegExpMatchArray[] = [];
-                        ids.forEach((id: number) => {
-                            const citem = store.getItembyID(id);
-                            const sched = citem.getSched(false, false);
-                            // ignore new add card
-                            if (sched != null) {
-                                scheduling.push(sched);
+        // eslint-disable-next-line prefer-const
+        let tracked_files = store.data.trackedFiles;
+        const dueIds: number[] = [];
+        await Promise.all(
+            tracked_files
+                .filter((tkfile) => tkfile != null)
+                .filter((tkfile) => !isIgnoredPath(this.settings.noteFoldersToIgnore, tkfile.path))
+                .map(async (tkfile) => {
+                    const item = store.getItembyID(tkfile.noteID);
+                    const note = app.vault.getAbstractFileByPath(tkfile.path) as TFile;
+                    if (!(note instanceof TFile)) {
+                        return;
+                    }
+                    const deckPath: string[] = plugin.findTopicPath(
+                        plugin.createSrTFile(note),
+                    ).path;
+                    let fileText: string = await note.vault.read(note);
+                    let fileChanged = false;
+                    if (deckPath.length !== 0) {
+                        tkfile.syncNoteCardsIndex(fileText, this.settings, (cardText, cardinfo) => {
+                            if (cardinfo == null || cardinfo?.itemIds == null) {
+                                return;
                             }
-                            plugin.cardStats.updateStats(citem, DateUtils.EndofToday);
+                            const ids = cardinfo.itemIds;
+                            const scheduling: RegExpMatchArray[] = [];
+                            ids.map((id: number) => store.getItembyID(id))
+                                .filter((citem) => citem.isTracked)
+                                .filter((citem) => {
+                                    // const citem = store.getItembyID(id);
+                                    // if (citem.isTracked) {
+                                    const sched = citem.getSchedDurAsStr();
+                                    if (citem.isDue && sched != null) {
+                                        scheduling.push(sched);
+                                        dueIds.push(citem.ID);
+                                    }
+                                    this.aftercardStats.updateStats(citem, DateUtils.EndofToday);
+                                    // }
+                                });
+                            const newCardText = updateCardSchedXml(
+                                cardText,
+                                this.settings.cardCommentOnSameLine,
+                                scheduling,
+                            );
+                            fileText = cardTextReplace(fileText, cardText, newCardText);
+                            // const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
+                            // fileText = fileText.replace(replacementRegex, () => newCardText);
+                            fileChanged = true;
                         });
-                        const newCardText = updateCardSchedXml(
-                            cardText,
-                            this.settings.cardCommentOnSameLine,
-                            scheduling,
-                        );
-                        const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
-                        fileText = fileText.replace(replacementRegex, () => newCardText);
-                        fileChanged = true;
-                    });
-                }
-                // console.debug("_convert CardsSched end :\n", fileText);
-                if (item?.isDue) {
-                    // let due: number, ease: number, interval: number;
-                    const ret = item.getSched(false, false);
-                    if (ret != null) {
-                        // if(item.deckName === store.defaultDackName){
-
-                        // }
-                        fileText = updateNoteSchedFrontHeader(fileText, ret);
-                        fileChanged = true;
-                        // console.debug("converteTrackfileToNoteSched: " + tkfile.path, fileText);
                     }
-                    plugin.noteStats.updateStats(item, DateUtils.EndofToday);
-                    // console.debug(tkfile.path, plugin.noteStats.youngCount);
-                } else if (item?.isNew) {
-                    plugin.noteStats.incrementNew();
-                }
-                //update tag to note
-                if (item?.itemType === RPITEMTYPE.NOTE) {
-                    const noteTag = Tags.getNoteDeckName(note, this.settings);
-                    if (item.deckName === store.defaultDackName) {
-                        fileText = addDefaultTagtoNote(fileText, this.revTag);
-                        fileChanged = true;
-                    } else if (
-                        noteTag == null &&
-                        this.settings.tagsToReview.includes(item.deckName)
+                    // console.debug("_convert CardsSched end :\n", fileText);
+                    if (
+                        item?.isTracked &&
+                        (tkfile.isDefault || Tags.isTagedNoteDeckName(item.deckName, this.settings))
                     ) {
-                        const tag = [this.settings.tagsToReview[0], item.deckName.substring(1)]
-                            .join("/")
-                            .substring(1);
-                        fileText = addDefaultTagtoNote(fileText, tag);
-                        fileChanged = true;
+                        if (item?.isDue) {
+                            // let due: str, ease: number, interval: number;
+                            const ret = item.getSchedDurAsStr();
+                            if (ret != null) {
+                                fileText = updateNoteSchedFrontHeader(fileText, ret);
+                                fileChanged = true;
+                                // console.debug("converteTrackfileToNoteSched: " + tkfile.path, fileText);
+                            }
+                            // console.debug(tkfile.path, this.afternoteStats.youngCount);
+                        }
+                        this.afternoteStats.updateStats(item, DateUtils.EndofToday);
+                        //update tag to note
+                        if (item?.itemType === RPITEMTYPE.NOTE) {
+                            const noteTag = Tags.getNoteDeckName(note, this.settings);
+                            if (tkfile.isDefault) {
+                                fileText = addDefaultTagtoNote(fileText, this.revTag);
+                                fileChanged = true;
+                            } else if (
+                                noteTag == null &&
+                                this.settings.tagsToReview.includes(item.deckName)
+                            ) {
+                                const tag = this.converteTag(item.deckName.substring(1));
+                                fileText = addDefaultTagtoNote(fileText, tag);
+                                fileChanged = true;
+                            }
+                        }
                     }
-                }
-                if (!dryrun && fileChanged) {
-                    if (fileText == null) {
-                        console.debug("fileText null");
-                        throw new Error(fileText);
+                    if (!dryrun && fileChanged) {
+                        if (fileText == null) {
+                            console.error("fileText null");
+                            throw new Error(fileText);
+                        }
+                        await note.vault.modify(note, fileText);
                     }
-                    await app.vault.modify(note, fileText);
-                }
-            }
-        }
+                }),
+        );
+        store.save();
         plugin.syncLock = false;
         const msg = "converteTrackfileToNoteSched success!";
+        console.debug("dueids after: ", dueIds, store.data.trackedFiles, store.data.items);
         if (dryrun) {
             // const settings = plugin.data.settings;
             // const orgLocation = settings.dataLocation;
             // settings.dataLocation = DataLocation.SaveOnNoteFile;
             // await plugin.sync();
             // settings.dataLocation = orgLocation;
+            this.resultCheck(
+                this.beforenoteStats,
+                this.beforecardStats,
+                this.afternoteStats,
+                this.aftercardStats,
+            );
         } else {
             new Notice(msg);
         }
         console.log(msg);
     }
 
+    private initStats() {
+        this.beforenoteStats = new Stats();
+        this.beforecardStats = new Stats();
+        this.afternoteStats = new Stats();
+        this.aftercardStats = new Stats();
+    }
+
+    private setBeforeStats() {
+        this.beforenoteStats = deepcopy(this.plugin.noteStats);
+        this.beforecardStats = deepcopy(this.plugin.cardStats);
+    }
+    private setAfterStats() {
+        this.afternoteStats = deepcopy(this.plugin.noteStats);
+        this.aftercardStats = deepcopy(this.plugin.cardStats);
+    }
+
+    resultCheck(noteStats: Stats, cardStats: Stats, afternoteStats: Stats, aftercardStats: Stats) {
+        if (
+            this.compare(noteStats, afternoteStats, "note") ||
+            this.compare(cardStats, aftercardStats, "card")
+        ) {
+            console.log(
+                "before chang noteStats, cardStats:\n",
+                noteStats,
+                cardStats,
+                "\nafter change:\n",
+                afternoteStats,
+                aftercardStats,
+            );
+            new Notice("have some data lost, see console for detials.");
+        }
+    }
     compare(before: Stats, after: Stats, prefix: string) {
         let ntc = false;
         for (const keyS in before) {
             const key = keyS as keyof typeof before;
             if (!(before[key] instanceof Object) && before[key] !== after[key]) {
-                console.error("%s %s before: %d, after: %d", prefix, key, before[key], after[key]);
+                console.warn("%s %s before: %d, after: %d", prefix, key, before[key], after[key]);
                 ntc = true;
             }
         }
         return ntc;
     }
 
-    createTable(Stats: Stats, afterStats: Stats) {
+    createTable(Stats: Stats, afterStats: Stats): string {
         const title =
             "Location | new | onDue | yung | mature \n\
             ---|---|---|---|---\n";
         const before = `before|${Stats.newCount} |${Stats.onDueCount} |${Stats.youngCount} |${Stats.matureCount}\n`;
         const after = `after|${afterStats.newCount} |${afterStats.onDueCount} |${afterStats.youngCount} |${afterStats.matureCount}\n`;
         return title + before + after;
+    }
+}
+
+export function cardTextReplace(fileText: string, cardText: string, newCardText: string) {
+    const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
+    const result = replacementRegex.exec(fileText);
+    if (fileText.indexOf(cardText) === fileText.lastIndexOf(cardText)) {
+        return fileText.replace(replacementRegex, () => newCardText);
+    } else {
+        const blanLine = "(\n\\s*?\n)";
+        let rpreg = new RegExp(blanLine + escapeRegexString(cardText), "gm");
+        if (fileText.match(rpreg) !== null) {
+            console.debug("got many: front blank");
+            return fileText.replace(rpreg, `$1${newCardText}`);
+        } else {
+            rpreg = new RegExp(escapeRegexString(cardText) + blanLine, "gm");
+            console.debug("got many: back blank");
+            return fileText.replace(rpreg, `${newCardText}$1`);
+        }
     }
 }
 
@@ -426,10 +502,10 @@ function getReviewNoteHeaderData(frontmatter: FrontMatterCache): number[] {
         const sched = [null, dueUnix, interval, ease];
         return sched;
     } else {
-        console.log(
-            "getReviewNoteHeaderData --> note: %s doesn't have sr frontmatter. ",
-            frontmatter,
-        );
+        // console.log(
+        //     "getReviewNoteHeaderData --> note: %s doesn't have sr frontmatter. ",
+        //     frontmatter,
+        // );
         return null;
     }
 }
@@ -492,24 +568,14 @@ export function updateCardSchedXml(
     cardCount?: number,
 ) {
     let sep: string = cardCommentOnSameLine ? " " : "\n";
-    let schedString = sep + "<!--SR:";
-    const headerReg = /<!--SR:/gm;
-    // const headerReg = new RegExp(schedString, "gm");
-    const hRegex = headerReg.exec(cardText); // .lastIndexOf(sep+"<!--SR:");
-    if (hRegex == null) {
-        // Override separator if last block is a codeblock
-        if (cardText.endsWith("```") && sep !== "\n") {
-            sep = "\n";
-        }
-    } else {
-        // const len = cardText.length - hRegex.index; // .lastIndexOf(sep+"<!--SR:"); < is \x3C escape
-        // Override separator if last block is a codeblock
-        if (cardText.endsWith("```", hRegex.index - 1) && sep !== "\n") {
-            sep = "\n";
-        }
+    let newCardText: string = cardText.replace(/<!--SR:.+-->/gm, "").trimEnd();
+    let schedString: string = "";
+    if (newCardText.endsWith("```") && sep !== "\n") {
+        sep = "\n";
     }
+
     if (scheduling != null && scheduling.length > 0) {
-        schedString = sep + "<!--SR:";
+        schedString = sep + SR_HTML_COMMENT_BEGIN;
 
         if (cardCount == null) {
             cardCount = scheduling.length;
@@ -522,23 +588,12 @@ export function updateCardSchedXml(
                 scheduling[i][3],
             ).toFixed(0)}`;
         }
-        schedString += "-->";
+        schedString += SR_HTML_COMMENT_END;
     } else {
         schedString = "";
     }
 
-    // const idxSched: number = cardText.lastIndexOf(sep + "<!--SR:");
-    let newCardText: string;
-    if (hRegex == null) {
-        newCardText = cardText + schedString;
-    } else {
-        newCardText = cardText.substring(0, hRegex.index).trimEnd();
-        newCardText += schedString;
-    }
-
-    // const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
-    // fileText = fileText.replace(replacementRegex, () => newCardText);
-    // fileChanged = true;
+    newCardText += schedString;
     // console.debug("newCardText: \n", newCardText);
     return newCardText;
 }

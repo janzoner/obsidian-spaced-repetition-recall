@@ -111,7 +111,7 @@ class QuestionType_Cloze implements IQuestionTypeHandler {
                 deletionEnd: number = deletionStart + m[0].length;
             front =
                 questionText.substring(0, deletionStart) +
-                QuestionType_ClozeUtil.renderClozeFront() +
+                QuestionType_ClozeUtil.renderClozeFront(m[0].length) +
                 questionText.substring(deletionEnd);
             front = front
                 .replace(/==/gm, "")
@@ -137,8 +137,9 @@ class QuestionType_Cloze implements IQuestionTypeHandler {
 }
 
 export class QuestionType_ClozeUtil {
-    static renderClozeFront(): string {
-        return "<span style='color:#2196f3'>[...]</span>";
+    static renderClozeFront(len:number=3): string {
+        const rpt = Math.round(len/3);
+        return "<span style='color:#2196f3'>["+"...".repeat(rpt)+"]</span>";
     }
 
     static renderClozeBack(str: string): string {

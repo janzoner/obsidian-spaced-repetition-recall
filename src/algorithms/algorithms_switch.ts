@@ -1,5 +1,5 @@
 import { Notice } from "obsidian";
-import SrsAlgorithm from "src/algorithms/algorithms";
+import { SrsAlgorithm, algorithmNames } from "src/algorithms/algorithms";
 import SRPlugin from "src/main";
 import { AnkiAlgorithm } from "./anki";
 import { FsrsAlgorithm } from "./fsrs";
@@ -12,13 +12,6 @@ export const algorithms: Record<string, SrsAlgorithm | null> = {
     Fsrs: new FsrsAlgorithm(),
     SM2: new Sm2Algorithm(),
 };
-
-export enum algorithmNames {
-    Default = "Default",
-    Anki = "Anki",
-    Fsrs = "Fsrs",
-    SM2 = "SM2",
-}
 
 /**
  * algorithmSwitchData

@@ -23,6 +23,7 @@ import { TopicPath } from "src/TopicPath";
 import { DataLocation } from "src/dataStore/location_switch";
 import { SrTFile } from "src/SRFile";
 import { RepetitionItem, RPITEMTYPE } from "src/dataStore/repetitionItem";
+import { debug } from "src/util/utils_recall";
 
 export enum FlashcardModalMode {
     DecksList,
@@ -545,6 +546,10 @@ export class FlashcardModal extends Modal {
             }
         } else if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
             this.setupResponseBtns(btnTexts);
+            const item = this.plugin.store.getItembyID(this.currentCard.Id);
+            if (item.nextReview > Date.now()) {
+                debug("复习了还没到期的卡片" + item);
+            }
         } else {
             this.setupEaseButton(
                 this.hardBtn,

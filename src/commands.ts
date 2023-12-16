@@ -3,6 +3,7 @@ import ObsidianSrsPlugin from "./main";
 import { ReviewNote } from "src/reviewNote/review-note";
 import { ItemInfoModal } from "src/gui/info";
 import { Queue } from "./dataStore/queue";
+import { debug } from "./util/utils_recall";
 
 export default class Commands {
     plugin: ObsidianSrsPlugin;
@@ -22,6 +23,16 @@ export default class Commands {
                 if (file) {
                     if (plugin.store.isTracked(file.path)) {
                         if (!checking) {
+                            const store = this.plugin.store;
+                            const deckname = store.getTrackedFile(file.path).lastTag;
+                            const deck = this.plugin.reviewDecks[deckname];
+                            const msg = `${deckname} has ${deck.dueNotesCount} dueCount(till today end),\n note onDueC ${this.plugin.noteStats.onDueCount} (till now).`;
+                            debug("itemInfo", 0, {
+                                msg,
+                                noteStats: this.plugin.noteStats,
+                                // decks: deck.scheduledNotes.map((sn) => [sn.note.path, sn.item]),
+                                que: store.data.queues,
+                            });
                             new ItemInfoModal(plugin.data.settings, file).open();
                         }
                         return true;

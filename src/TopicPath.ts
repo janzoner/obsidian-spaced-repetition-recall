@@ -1,5 +1,5 @@
 import { SRSettings } from "src/settings";
-import { OBSIDIAN_TAG_AT_STARTOFLINE_REGEX } from "./constants";
+import { DEFAULT_DECKNAME, OBSIDIAN_TAG_AT_STARTOFLINE_REGEX } from "./constants";
 import { ISRFile } from "./SRFile";
 import { DataStore } from "src/dataStore/data";
 import { DataLocation } from "src/dataStore/location_switch";
@@ -82,9 +82,9 @@ export class TopicPath {
                 if (settings.dataLocation !== DataLocation.SaveOnNoteFile && store != undefined) {
                     if (result.isEmptyPath) {
                         if (store.isTracked(noteFile.path)) {
-                            let deckName = store.getFileLasTag(noteFile.path);
+                            let deckName = store.getTrackedFile(noteFile.path).lastTag;
                             if (deckName == null) {
-                                deckName = store.defaultDackName;
+                                deckName = DEFAULT_DECKNAME;
                             } else if (TopicPath.isValidTag(deckName)) {
                                 deckName = deckName.slice(1);
                             }

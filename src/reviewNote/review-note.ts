@@ -1,6 +1,6 @@
 import { Notice, TFile } from "obsidian";
 import { DataStore } from "src/dataStore/data";
-import { DataSyncer } from "src/dataStore/dataSyncer";
+import { ItemToDecks } from "src/dataStore/itemToDecks";
 import { reviewResponseModal } from "src/gui/reviewresponse-modal";
 import { t } from "src/lang/helpers";
 import { ReviewDeck } from "src/ReviewDeck";
@@ -13,6 +13,7 @@ export class ReviewNote {
     static minNextView: number;
 
     /**
+     * 231215-not used yet.
      * after checking ignored folder, get note deckname from review tag and trackedfile.
      * @param settings SRSettings
      * @param note TFile
@@ -33,7 +34,7 @@ export class ReviewNote {
             new Notice(t("PLEASE_TAG_NOTE"));
             return;
         } else if (deckName == null) {
-            deckName = store.getFileLasTag(note.path);
+            deckName = store.getTrackedFile(note.path)?.lastTag ?? null;
         }
         return deckName;
     }
@@ -48,7 +49,7 @@ export class ReviewNote {
         const store = DataStore.getInstance();
         const now = Date.now();
 
-        const fileId = store.getFileId(note.path);
+        const fileId = store.getTrackedFile(note.path).noteID;
         const item = store.getItembyID(fileId);
         if (item.isNew && ease != null) {
             // new note
@@ -66,10 +67,9 @@ export class ReviewNote {
 
         ReviewNote.recallReviewResponse(fileId, option);
 
-        let dueNotesCount = 0;
-        dueNotesCount -= preUpdateDeck(deck, note);
-        dueNotesCount += DataSyncer.syncRCDataToSRrevDeck(deck, note, now);
-        return { buryList, dueNotesCount };
+        preUpdateDeck(deck, note);
+        ItemToDecks.syncRCDataToSRrevDeck(deck, note, now);
+        return { buryList };
     }
 
     static recallReviewNote(settings: SRSettings) {
@@ -91,13 +91,12 @@ export class ReviewNote {
                 state.item = que.getNextId();
                 // state.mode = "question";
 
-                reviewFloatBar.algoDisplay(true, item, (opt) => {
+                reviewFloatBar.display(item, (opt) => {
                     this.recallReviewResponse(this.itemId, opt);
                     if (settings.autoNextNote) {
                         this.recallReviewNote(settings);
                     }
                 });
-                // plugin.reviewFloatBar.algoDisplay(true, store.calcReviewInterval(fid));
             }
         }
         const leaf = app.workspace.getLeaf();
@@ -139,7 +138,14 @@ export class ReviewNote {
         const rdnames: string[] = [];
         reviewDeckNames.some((dkey: string) => {
             const ndeck = reviewDecks[dkey];
-            const ncount = ndeck.dueNotesCount + ndeck.newNotes.length;
+            const ncount = ndeck.dueNotesCount;
+            if (ncount > 0) {
+                rdnames.push(dkey);
+            }
+        });
+        reviewDeckNames.some((dkey: string) => {
+            const ndeck = reviewDecks[dkey];
+            const ncount = ndeck.newNotes.length;
             if (ncount > 0) {
                 rdnames.push(dkey);
             }
@@ -201,10 +207,12 @@ export function isIgnoredPath(noteFoldersToIgnore: string[], path: string) {
 }
 
 function preUpdateDeck(deck: ReviewDeck, note: TFile) {
-    let dueNotesCount = 0;
-    if (deck.newNotes.includes(note)) {
+    const newindex = deck.newNotes.findIndex((sNote, _index) => {
+        return sNote.note === note;
+    });
+    if (newindex >= 0) {
         // isNew
-        deck.newNotes.remove(note);
+        deck.newNotes.splice(newindex, 1);
     } else {
         //isDued
         const index = deck.scheduledNotes.findIndex((sNote, _index) => {
@@ -213,10 +221,9 @@ function preUpdateDeck(deck: ReviewDeck, note: TFile) {
         deck.scheduledNotes.splice(index, 1);
         if (index < deck.dueNotesCount) {
             deck.dueNotesCount--;
-            dueNotesCount--;
         }
     }
-    return dueNotesCount;
+    return;
 }
 
 export function updatenDays(dueDates: Record<number, number>, dueUnix: number) {

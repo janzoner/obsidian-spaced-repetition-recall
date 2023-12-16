@@ -1,17 +1,16 @@
 import { MiscUtils } from "src/util/utils_recall";
 import { SRSettings } from "../settings";
 
-import { TFile, TFolder, Notice, getAllTags } from "obsidian";
+import { TFile, TFolder, getAllTags } from "obsidian";
 
 import { FsrsData } from "src/algorithms/fsrs";
 import { AnkiData } from "src/algorithms/anki";
 
-import { algorithmNames } from "src/algorithms/algorithms_switch";
 import { getStorePath } from "src/dataStore/location_switch";
 import { Tags } from "src/tags";
-import SrsAlgorithm from "src/algorithms/algorithms";
+import { SrsAlgorithm, algorithmNames } from "src/algorithms/algorithms";
 import { CardInfo, TrackedFile } from "./trackedFile";
-import { RPITEMTYPE, RepetitionItem } from "./repetitionItem";
+import { RPITEMTYPE, RepetitionItem, ReviewResult } from "./repetitionItem";
 import { DEFAULT_QUEUE_DATA, Queue } from "./queue";
 
 /**
@@ -48,21 +47,7 @@ export interface SrsData {
 
 export type ReviewedCounts = Record<string, { new: number; due: number }>;
 
-/**
- * ReviewResult.
- */
-export interface ReviewResult {
-    /**
-     * @type {boolean}
-     */
-    correct: boolean;
-    /**
-     * @type {number}
-     */
-    nextReview: number;
-}
-
-const DEFAULT_SRS_DATA: SrsData = {
+export const DEFAULT_SRS_DATA: SrsData = {
     queues: Object.assign({}, DEFAULT_QUEUE_DATA) as Queue,
     reviewedCounts: {},
     reviewedCardCounts: {},
@@ -77,10 +62,6 @@ const DEFAULT_SRS_DATA: SrsData = {
 export class DataStore {
     static instance: DataStore;
 
-    /**
-     * @type {string}
-     */
-    private _defaultDeckname = "default";
     /**
      * @type {SrsData}
      */
@@ -104,10 +85,6 @@ export class DataStore {
         return DataStore.instance;
     }
 
-    get defaultDackName() {
-        return this._defaultDeckname;
-    }
-
     /**
      *
      * @param settings
@@ -122,20 +99,8 @@ export class DataStore {
     }
 
     toInstances() {
-        this.data.trackedFiles.forEach((tf, idx) => {
-            tf = TrackedFile.create(tf);
-            this.data.trackedFiles[idx] = tf;
-            if (tf != null) {
-                this.getItembyID(tf.noteId);
-                if (tf.hasCards) {
-                    tf.cardItems.forEach((cinfo: CardInfo) => {
-                        cinfo.itemIds.forEach((id) => {
-                            this.getItembyID(id);
-                        });
-                    });
-                }
-            }
-        });
+        this.data.trackedFiles = this.data.trackedFiles.map(TrackedFile.create);
+        this.data.items = this.data.items.map(RepetitionItem.create);
         this.data.queues = Queue.create(this.data.queues);
     }
 
@@ -143,20 +108,29 @@ export class DataStore {
      * load.
      */
     async load(path = this.dataPath) {
-        const adapter = app.vault.adapter;
+        try {
+            const adapter = app.vault.adapter;
 
-        if (await adapter.exists(path)) {
-            const data = await adapter.read(path);
-            if (data == null) {
-                console.log("Unable to read SRS data!");
-                this.data = Object.assign({}, DEFAULT_SRS_DATA);
+            if (await adapter.exists(path)) {
+                const data = await adapter.read(path);
+                if (data == null) {
+                    console.log("Unable to read SRS data!");
+                    this.data = Object.assign({}, DEFAULT_SRS_DATA);
+                } else {
+                    console.log("Reading tracked files...");
+                    this.data = Object.assign(
+                        Object.assign({}, DEFAULT_SRS_DATA),
+                        JSON.parse(data),
+                    );
+                    this.data.mtime = await this.getmtime();
+                }
             } else {
-                console.log("Reading tracked files...");
-                this.data = Object.assign(Object.assign({}, DEFAULT_SRS_DATA), JSON.parse(data));
-                this.data.mtime = await this.getmtime();
+                console.log("Tracked files not found! Creating new file...");
+                this.data = Object.assign({}, DEFAULT_SRS_DATA);
+                await this.save();
             }
-        } else {
-            console.log("Tracked files not found! Creating new file...");
+        } catch (error) {
+            console.log(error + "Tracked files not found! Creating new file...");
             this.data = Object.assign({}, DEFAULT_SRS_DATA);
             await this.save();
         }
@@ -182,15 +156,14 @@ export class DataStore {
      * save.
      */
     async save(path = this.dataPath) {
-        await app.vault.adapter.write(path, JSON.stringify(this.data)).catch((e) => {
-            new Notice("Unable to save data file!");
-            console.log(e);
+        try {
+            await app.vault.adapter.write(path, JSON.stringify(this.data));
+        } catch (error) {
+            MiscUtils.notice("Unable to save data file!");
+            console.log(error);
             return;
-        });
+        }
         this.data.mtime = await this.getmtime();
-        // if (path !== this.dataPath) {
-        //     this.dataPath = path;
-        // }
     }
 
     /**
@@ -235,25 +208,12 @@ export class DataStore {
         });
     }
 
-    getFileId(path: string): number {
-        const fileInd = this.getFileIndex(path);
-        if (fileInd == -1) {
-            return -1;
-        }
-        const fileId = this.data.trackedFiles[fileInd].items["file"];
-        return fileId;
-    }
-
     getTrackedFile(path: string): TrackedFile {
         const ind = this.getFileIndex(path);
         if (ind < 0) {
             return null;
         }
-        let tf: TrackedFile = this.data.trackedFiles[ind];
-        if (!(tf instanceof TrackedFile)) {
-            tf = this.data.trackedFiles[ind] = TrackedFile.create(tf);
-        }
-        return tf;
+        return this.data.trackedFiles[ind];
     }
 
     /**
@@ -263,7 +223,8 @@ export class DataStore {
      */
     isTracked(path: string): boolean {
         const ind = this.getFileIndex(path);
-        const fid = this.getFileId(path);
+        if (ind < 0) return false;
+        const fid = this.getFileByIndex(ind).noteID;
 
         return ind >= 0 && fid >= 0;
     }
@@ -289,7 +250,7 @@ export class DataStore {
     isCardItem(id: number) {
         const item = this.getItembyID(id);
         const file = this.getFileByIndex(item.fileIndex);
-        return file.items.file !== id;
+        return file.noteID !== id;
     }
 
     /**
@@ -312,39 +273,31 @@ export class DataStore {
     }
 
     getItembyID(id: number): RepetitionItem {
-        if (id < 0) {
-            return null;
-        }
-        let ind = -1;
-        let item = this.data.items.find((item: RepetitionItem, idx) => {
-            if (item != null && item.ID === id) {
-                ind = idx;
-                return true;
-            }
-        });
-        if (item != undefined && !(item instanceof RepetitionItem)) {
-            item = this.data.items[ind] = RepetitionItem.create(item);
-        }
-        return item;
+        return id < 0
+            ? null
+            : this.data.items.find((item: RepetitionItem, _idx) => {
+                  if (item != null && item.ID === id) {
+                      return true;
+                  }
+              });
     }
 
     getFileByIndex(idx: number): TrackedFile {
+        // assert(idx >= 0);
         return this.data.trackedFiles[idx];
     }
 
     /**
      * getItemsOfFile.
-     * todo: note item and cards items?
      * @param {string} path
      * @returns {RepetitionItem[]}
      */
     getItemsOfFile(path: string): RepetitionItem[] {
-        const result: RepetitionItem[] = [];
         const file = this.getTrackedFile(path);
-        Object.values(file.items).forEach((itemIdx) => {
-            result.push(this.getItembyID(itemIdx));
-        });
-        return result;
+        return file?.isTracked ? file.itemIDs.map(this.getItembyID, this) : [];
+    }
+    getNoteItem(path: string): RepetitionItem {
+        return this.getItembyID(this.getTrackedFile(path)?.noteID) ?? null;
     }
 
     /**
@@ -445,7 +398,7 @@ export class DataStore {
         });
         if (firstCalled) {
             const msg = `在文件夹 ${folder.path} 下，共有 ${totalRemoved} 个文件不再跟踪重复了`;
-            new Notice(msg);
+            MiscUtils.notice(msg);
             console.log(msg);
         }
         return totalRemoved;
@@ -490,7 +443,7 @@ export class DataStore {
             }
         });
 
-        new Notice("Added " + totalAdded + " new items, removed " + totalRemoved + " items.");
+        MiscUtils.notice("Added " + totalAdded + " new items, removed " + totalRemoved + " items.");
     }
 
     /**
@@ -508,19 +461,24 @@ export class DataStore {
     ): { added: number; removed: number } | null {
         let dname: string;
         let itemtype: RPITEMTYPE = RPITEMTYPE.NOTE;
-
+        // fix: type?
         if (type === RPITEMTYPE.CARD) {
             itemtype = RPITEMTYPE.CARD;
         } else if (type == undefined || type === RPITEMTYPE.NOTE) {
             itemtype = RPITEMTYPE.NOTE;
-            dname = this.defaultDackName;
         } else {
             dname = type as string;
         }
         const trackedFile = new TrackedFile(path, itemtype, dname);
 
-        if (this.getFileIndex(path) < 0) {
+        const ind = this.getFileIndex(path);
+        if (ind < 0) {
             this.data.trackedFiles.push(trackedFile);
+        } else {
+            const tkfile = this.getFileByIndex(ind);
+            if (!tkfile.isTracked) {
+                tkfile.setTracked(itemtype, dname);
+            }
         }
         const data = this.updateItems(path, itemtype, dname, notice);
         console.log("Tracked: " + path);
@@ -552,10 +510,10 @@ export class DataStore {
             const tags = getAllTags(fileCachedData) || [];
             const deckname = Tags.getNoteDeckName(note, this.settings);
             const cardName = Tags.getTagFromSettingTags(tags, this.settings.flashcardTags);
-            if (deckname !== null || cardName !== null) {
+            if (deckname !== null || cardName !== null || this.settings.convertFoldersToDecks) {
                 // it's taged file, can't untrack by this.
                 console.log(path + " is taged file, can't untrack by this.");
-                new Notice(
+                MiscUtils.notice(
                     "it is taged file, can't untrack by this. You can delete the #review tag in note file.",
                 );
                 return 0;
@@ -564,6 +522,7 @@ export class DataStore {
 
         let numItems = 0;
 
+        trackedFile.setUnTracked();
         for (const key in trackedFile.items) {
             const ind = trackedFile.items[key];
             this.unTrackItem(ind);
@@ -571,20 +530,16 @@ export class DataStore {
 
         //  when file not exist, or doesn't have carditems, del it.
         let nulrstr: string;
+        this.data.trackedFiles[index] = null;
+        numItems++;
         if (note == null) {
-            this.data.trackedFiles[index] = null;
             nulrstr = ", because it not exist.";
-            numItems++;
-        } else {
-            // still have cards items, just set fileId = -1
-            this.data.trackedFiles[index].items.file = -1;
-            numItems++;
         }
         // this.save();         // will be used when plugin.sync_Algo(), which shouldn't
         // this.plugin.updateStatusBar();
 
         if (notice) {
-            new Notice("Untracked " + numItems + " items!");
+            MiscUtils.notice("Untracked " + numItems + " items!");
         }
 
         console.log("Untracked: " + path + nulrstr);
@@ -654,13 +609,11 @@ export class DataStore {
      */
     updateItems(
         path: string,
-        type?: RPITEMTYPE,
-        dname?: string,
+        type: RPITEMTYPE,
+        dname: string,
         notice?: boolean,
     ): { added: number; removed: number } | null {
         if (notice == null) notice = true;
-        if (type == null) type = RPITEMTYPE.NOTE;
-        if (dname == null) dname = this.defaultDackName;
 
         const ind = this.getFileIndex(path);
         if (ind == -1) {
@@ -669,18 +622,13 @@ export class DataStore {
         }
         const trackedFile = this.getFileByIndex(ind);
 
-        const file = app.vault.getAbstractFileByPath(path) as TFile;
-        if (!file) {
-            console.log("Could not find file: " + path);
-            return;
-        }
-
         let added = 0;
         let removed = 0;
 
         const newItems: Record<string, number> = {};
-        if ("file" in trackedFile.items) {
+        if ("file" in trackedFile.items && trackedFile.noteID > 0) {
             newItems["file"] = trackedFile.items["file"];
+            this.getItembyID(trackedFile.noteID).setTracked(ind);
         } else if (type === RPITEMTYPE.NOTE) {
             const ID = this._updateItem(undefined, ind, type, dname);
             newItems["file"] = ID;
@@ -701,7 +649,7 @@ export class DataStore {
         // this.save();     // will be used when plugin.sync_Algo(), which shouldn't
 
         if (notice) {
-            new Notice("Added " + added + " new items, removed " + removed + " items.");
+            MiscUtils.notice("Added " + added + " new items, removed " + removed + " items.");
         }
         return { added, removed };
     }
@@ -710,39 +658,44 @@ export class DataStore {
         trackedFile: TrackedFile,
         cardinfo: CardInfo,
         count: number,
-        deckName: string = this.defaultDackName,
+        deckName: string,
         notice?: boolean,
     ): { added: number; removed: number } | null {
         if (notice == null) notice = false;
-        const len = cardinfo.itemIds.length;
-        for (const id of cardinfo.itemIds) {
-            const item = this.getItembyID(id);
-            item.updateDeckName(deckName, true);
-        }
-        if (len === count) {
+        const idsLen = cardinfo.itemIds.length;
+        const ind = this.getFileIndex(trackedFile.path);
+        cardinfo.itemIds.map(this.getItembyID, this).filter((item, _idx) => {
+            if (_idx < count) {
+                item.setTracked(ind);
+                item.updateDeckName(deckName, true);
+                return true;
+            }
+        });
+        if (idsLen === count) {
             return;
         }
 
-        const ind = this.getFileIndex(trackedFile.path);
         let added = 0;
         let removed = 0;
 
         const newitemIds: number[] = cardinfo.itemIds.slice();
 
-        //delete extra items data
-        if (count < len) {
-            const rmvIds = newitemIds.slice(count);
-            rmvIds.forEach((id) => {
-                this.unTrackItem(id);
-                removed++;
-            });
-            newitemIds.splice(count, len - count);
-            console.debug("delete %d ids:", removed, rmvIds);
+        if (count < idsLen) {
+            const untrackExtraItems = () => {
+                const rmvIds = newitemIds.slice(count);
+                rmvIds.forEach((id) => {
+                    this.unTrackItem(id);
+                    removed++;
+                });
+                newitemIds.splice(count, idsLen - count);
+                console.debug("delete %d ids:", removed, rmvIds);
+            };
+            untrackExtraItems();
             // len = newitemIds.length;
         } else {
             // count > len
             // add new card data
-            for (let i = 0; i < count - len; i++) {
+            for (let i = 0; i < count - idsLen; i++) {
                 const cardId = this._updateItem(undefined, ind, RPITEMTYPE.CARD, deckName);
                 newitemIds.push(cardId);
                 added += 1;
@@ -754,27 +707,11 @@ export class DataStore {
         cardinfo.itemIds = newitemIds;
         // this.save();
 
-        // console.log(
-        //     trackedFile.path +
-        //         " update - lineNo:" +
-        //         cardinfo.lineNo +
-        //         "\n Added: " +
-        //         added +
-        //         " new card items, removed " +
-        //         removed +
-        //         " card items.",
-        // );
+        const msg = `${trackedFile.path} update - lineNo: ${cardinfo.lineNo}  \n Added: ${added} new card items, removed \
+        ${removed}  card items.`;
+        console.debug(msg);
         if (notice) {
-            new Notice(
-                trackedFile.path +
-                    " update - lineNo:" +
-                    cardinfo.lineNo +
-                    "\n Added: " +
-                    added +
-                    " new card items, removed " +
-                    removed +
-                    " card items.",
-            );
+            MiscUtils.notice(msg);
         }
         return { added, removed };
     }
@@ -790,7 +727,7 @@ export class DataStore {
                 }
             }),
         );
-        new Notice("all items have been updated.");
+        MiscUtils.notice("all items have been updated.");
     }
 
     updateReviewedCounts(id: number, type: RPITEMTYPE = RPITEMTYPE.NOTE) {
@@ -824,9 +761,8 @@ export class DataStore {
         }
     }
 
-    findMovedFile(trackedFile: TrackedFile): boolean {
-        let exists = false;
-        const pathArr = trackedFile.path.split("/");
+    findMovedFile(path: string): string {
+        const pathArr = path.split("/");
         const name = pathArr.last().replace(".md", "");
         const notes: TFile[] = app.vault.getMarkdownFiles();
         const result: string[] = [];
@@ -836,11 +772,19 @@ export class DataStore {
             }
         });
         if (result.length > 0) {
-            exists = true;
-            console.debug("find file: %s has been moved. %d", trackedFile.path, result.length);
-            trackedFile.rename(result[0]);
+            console.debug("find file: %s has been moved. %d", path, result.length);
+            return result[0];
         }
-        return exists;
+        return null;
+    }
+
+    updateMovedFile(trackedFile: TrackedFile): boolean {
+        const newpath = this.findMovedFile(trackedFile.path);
+        if (newpath !== null) {
+            trackedFile.rename(newpath);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -872,144 +816,48 @@ export class DataStore {
      * @returns
      */
     async pruneData() {
-        const items = this.data.items;
         const tracked_files = this.data.trackedFiles;
-        let removedNulltFiles = 0;
-        let removedNullItems = 0;
-        const nullFileList: number[] = [];
-        const nullFileList_del: number[] = [];
-        const nullItemList: number[] = [];
-        const nullItemList_del: number[] = [];
+        let removedItems = this.itemSize;
+        let removedtkfiles = tracked_files.length;
 
         this.data = MiscUtils.assignOnly(DEFAULT_SRS_DATA, this.data);
-        tracked_files.map((tf, ind) => {
-            if (tf == null) {
-                nullFileList.push(ind);
-                nullFileList_del.push(ind - nullFileList_del.length);
-                removedNulltFiles++;
+
+        this.data.trackedFiles = this.data.trackedFiles.filter((tkfile, _idx) => {
+            if (tkfile == null || !tkfile.isTracked) {
+                return false;
             }
-        });
-        for (let i = 0; i < nullFileList_del.length; i++) {
-            tracked_files.splice(nullFileList_del[i], 1);
-        }
-        const nflMin = Math.min(...nullFileList);
-        items.map((item, id) => {
-            if (item != null && item.fileIndex >= nflMin) {
-                const ifind = item.fileIndex;
-                for (let nli = nullFileList.length - 1; nli >= 0; nli--) {
-                    if (ifind > nullFileList[nli]) {
-                        item.fileIndex -= nli + 1;
-                        break;
-                    } else if (ifind === nullFileList[nli]) {
-                        item = null;
-                        console.debug("pruneData: item null: " + ifind);
-                        break;
-                    }
-                }
-            }
-            if (item == null) {
-                nullItemList.push(id);
-                nullItemList_del.push(id - nullItemList_del.length);
-                removedNullItems++;
-            }
+            return (
+                tkfile.itemIDs.map(this.getItembyID, this).filter((item) => item?.isTracked)
+                    .length > 0
+            ); // this tkfile has tracked items
         });
 
-        for (let i = 0; i < nullItemList_del.length; i++) {
-            items.splice(nullItemList_del[i], 1);
-        }
+        this.data.items = this.data.trackedFiles
+            .map((tkfile, idx) => {
+                return (
+                    tkfile.itemIDs
+                        .map(this.getItembyID, this)
+                        // .filter((item) => item?.isTracked)   //dont have to tkfile already have filtered.
+                        .filter((item) => {
+                            item.fileIndex = idx;
+                            return true;
+                        })
+                );
+            })
+            .flat();
 
-        // const nlMin = Math.min(...nullItemList);
-        // for (const trackedFile of tracked_files) {
-        //     if (trackedFile == null) continue;
-        //     const oldId = trackedFile.noteId;
-        //     let newId = -1;
-        //     if (oldId >= nlMin) {
-        //         for (let nli = nullItemList.length - 1; nli >= 0; nli--) {
-        //             if (oldId >= nullItemList[nli]) {
-        //                 newId = oldId > nullItemList[nli] ? oldId - (nli + 1) : -1;
-        //                 trackedFile.items.file = newId;
-        //                 this.getItembyID(newId).ID = newId;
-        //                 // console.debug("change file: id%d to id%d", oldId, newId, trackedFile);
-        //                 break;
-        //             }
-        //         }
-        //     }
-
-        //     // loop itemIds, if has some id point to null, change it.
-        //     if (!Object.prototype.hasOwnProperty.call(trackedFile, "cardItems")) {
-        //         continue;
-        //     }
-        //     for (const carditem of trackedFile.cardItems) {
-        //         if (Math.max(...carditem.itemIds) >= nlMin) {
-        //             for (let idi = 0; idi < carditem.itemIds.length; idi++) {
-        //                 const oldId = carditem.itemIds[idi];
-        //                 let newId = -1;
-        //                 if (oldId >= nlMin) {
-        //                     nlfor: for (let nli = nullItemList.length - 1; nli >= 0; nli--) {
-        //                         if (oldId >= nullItemList[nli]) {
-        //                             newId = oldId > nullItemList[nli] ? oldId - (nli + 1) : newId;
-        //                             carditem.itemIds.splice(idi, 1, newId);
-        //                             this.getItembyID(newId).ID = newId;
-        //                             break nlfor;
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //             console.debug("changed card:%s by %s", carditem.itemIds, nullFileList);
-        //         }
-        //     }
-        // }
-
-        // console.debug("after delete nullitems:", items);
+        removedtkfiles = removedtkfiles - this.data.trackedFiles.length;
+        removedItems = removedItems - this.itemSize;
         this.data.queues.clearQueue();
         this.save();
 
         console.log(
             "removed " +
-                removedNulltFiles +
+                removedtkfiles +
                 " nullTrackedfile(s), removed " +
-                removedNullItems +
+                removedItems +
                 " nullitem(s).",
         );
         return;
-    }
-
-    /**
-     * @description: getSchedbyId , give returns to scheduling
-     * @param {number} id
-     * @return {[]}  ["due-interval-ease00", dueString, interval, ease] | null for new
-     */
-    getSchedbyId(id: number, isNumDue?: boolean): RegExpMatchArray {
-        const item: RepetitionItem = this.getItembyID(id);
-        return item.getSched(this.settings.algorithm === algorithmNames.Fsrs, isNumDue);
-    }
-
-    /**
-     * setSchedbyId: set sched into items
-     * @param id
-     * @param sched RegExpMatchArray
-     * @param correct user response
-     * @returns
-     */
-    setSchedbyId(id: number, sched: RegExpMatchArray | number[] | string[], correct?: boolean) {
-        const item: RepetitionItem = this.getItembyID(id);
-        if (item == null) {
-            console.warn("setSchedbyId failed: item === null");
-            // this.updateItemById(id);     //not work well yet.
-            return;
-        }
-        sched[0] = id;
-        // console.debug("setSchedbyId:", sched);
-        item.updateSched(sched, correct);
-    }
-
-    /**
-     * getFileLast Tag
-     * @param path
-     * @returns tf.tags.last()
-     */
-    getFileLasTag(path: string) {
-        const tf = this.getTrackedFile(path);
-        return tf?.lastTag ?? null;
     }
 }

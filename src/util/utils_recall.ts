@@ -1,3 +1,4 @@
+import { Notice, Platform } from "obsidian";
 import { cyrb53 } from "src/util/utils";
 
 export class DateUtils {
@@ -5,14 +6,11 @@ export class DateUtils {
      * ms
      * @type {number}
      */
-    static _EndofToday: number = 0;
-
+    static get StartofToday() {
+        return window.moment().startOf("day").valueOf();
+    }
     static get EndofToday() {
-        if (DateUtils._EndofToday === 0) {
-            const nowToday = window.moment().endOf("day").valueOf();
-            DateUtils._EndofToday = nowToday;
-        }
-        return DateUtils._EndofToday;
+        return window.moment().endOf("day").valueOf();
     }
 
     static addTime(date: Date, time: number): Date {
@@ -114,6 +112,18 @@ export class MiscUtils {
         const p: number = Math.pow(10, point);
         return Math.round(value * p) / p;
     }
+
+    static /**
+     * @param message
+     */
+    // fix: with try-catch for unit test.
+    notice(message: string | DocumentFragment, duration?: number): void {
+        try {
+            new Notice(message, duration);
+        } catch (error) {
+            console.debug(message);
+        }
+    }
 }
 
 // https://github.com/chartjs/Chart.js/blob/master/src/helpers/helpers.core.ts
@@ -145,17 +155,65 @@ export const isVersionNewerThanOther = (version: string, otherVersion: string): 
             o.length >= 4 &&
             !(isNaN(parseInt(v[1])) || isNaN(parseInt(v[2])) || isNaN(parseInt(v[3]))) &&
             !(isNaN(parseInt(o[1])) || isNaN(parseInt(o[2])) || isNaN(parseInt(o[3]))) &&
-            (parseInt(v[1]) > parseInt(o[1]) ||
-                (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) > parseInt(o[2])) ||
-                (parseInt(v[1]) >= parseInt(o[1]) &&
-                    parseInt(v[2]) >= parseInt(o[2]) &&
-                    parseInt(v[3]) > parseInt(o[3])) ||
-                (v.length > 4 && o.length === 4) ||
-                (v.length > 4 && o.length > 4 && parseInt(v[4]) > parseInt(o[4]))),
+            (newer(1) ||
+                newer(2) ||
+                newer(3) ||
+                (!isNaN(parseInt(v[4])) && isNaN(parseInt(o[4]))) ||
+                (!(isNaN(parseInt(v[4])) || isNaN(parseInt(o[4]))) && newer(4))),
     );
+
+    function newer(idx: number): boolean {
+        return (
+            v
+                .slice(1, idx)
+                .every((_vstr, _idx) => parseInt(v[_idx + 1]) >= parseInt(o[_idx + 1])) &&
+            parseInt(v[idx]) > parseInt(o[idx])
+        );
+    }
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export const errorlog = (data: {}) => {
     console.error({ plugin: "Spaced-rep-recall:", ...data });
+};
+
+export const debug = (functionname: string, duration?: number, ...data: unknown[]) => {
+    const msg = { plugin: "SRR", func: functionname, ...data };
+    console.debug(msg);
+    if (Platform.isMobile) {
+        MiscUtils.notice(JSON.stringify(msg), duration);
+    }
+};
+
+/**
+ * target: 当前对象的原型，假设 TestClass 是对象，那么 target 就是 TestClass.prototype
+ *
+ * propertyKey: 方法的名称
+ *
+ * descriptor: 方法的属性描述符，即 Object.getOwnPropertyDescriptor(TestClass.prototype, propertyKey)
+ *
+ * 链接：https://juejin.cn/post/7059737328394174501
+ * @returns
+ */
+export const logExecutionTime = () => {
+    return function (
+        target: object,
+        propertyKey: string | symbol,
+        propertyDescriptor: PropertyDescriptor,
+    ) {
+        const originalFunc = propertyDescriptor.value;
+
+        // 修改原有function的定义
+        propertyDescriptor.value = async function (...args: unknown[]) {
+            // const startTime = new Date().getTime();
+            const startTime = performance.now();
+            const results = await originalFunc.apply(this, args);
+            // const endTime = new Date().getTime();
+            const endTime = performance.now();
+            const msg = `*** ${propertyKey.toString()} took ${endTime - startTime} msec to run ***`;
+            if (endTime - startTime > 10) debug(originalFunc.name, undefined, { msg });
+            return results;
+        };
+        return propertyDescriptor;
+    };
 };

@@ -1,16 +1,15 @@
 import { Setting, Notice } from "obsidian";
 import { DateUtils } from "src/util/utils_recall";
-import SrsAlgorithm from "./algorithms";
-import { DataStore, ReviewResult } from "../dataStore/data";
+import { SrsAlgorithm, algorithmNames } from "./algorithms";
+import { DataStore } from "../dataStore/data";
 
 import * as fsrsjs from "fsrs.js";
 import { t } from "src/lang/helpers";
 import deepcopy from "deepcopy";
-import { algorithmNames } from "./algorithms_switch";
 import { AnkiData } from "./anki";
 import { Rating, ReviewLog } from "fsrs.js";
 import { balance } from "./balance/balance";
-import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { RepetitionItem, ReviewResult } from "src/dataStore/repetitionItem";
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
 let applyDebounceTimer = 0;
@@ -320,7 +319,10 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         });
     }
 
-    displaySettings(containerEl: HTMLElement, update: (settings: FsrsSettings) => void) {
+    displaySettings(
+        containerEl: HTMLElement,
+        update: (settings: FsrsSettings, refresh?: boolean) => void,
+    ) {
         if (!this.initFlag) {
             this.getLogfilepath();
             this.updateFsrsParams();
@@ -367,7 +369,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                             this.settings.request_retention =
                                 this.defaultSettings().request_retention;
                             this.fsrs.p.request_retention = this.settings.request_retention;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             });
@@ -404,7 +406,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         applySettingsUpdate(async () => {
                             this.settings.maximum_interval = this.fsrs.p.maximum_interval =
                                 this.defaultSettings().maximum_interval;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             });
@@ -439,7 +441,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .onClick(async () => {
                         applySettingsUpdate(async () => {
                             this.settings.w = this.fsrs.p.w = this.defaultSettings().w;
-                            update(this.settings);
+                            update(this.settings, true);
                         });
                     });
             })
