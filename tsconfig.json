@@ -2,9 +2,7 @@
     "compilerOptions": {
         "baseUrl": "./",
         "paths": {
-            "src/*": [
-                "src/*"
-            ]
+            "src/*": ["src/*"]
         },
         "emitDecoratorMetadata": true, // optional, 使Reflect类可以添加或读取metadata
         "experimentalDecorators": true, // required
@@ -17,23 +15,10 @@
         "moduleResolution": "node",
         "esModuleInterop": true,
         "importHelpers": true,
-        "lib": [
-            "dom",
-            "dom.Iterable",
-            "scripthost",
-            "ES5",
-            "ES6",
-            "ES7",
-            "ES2021"
-        ],
+        "lib": ["dom", "dom.Iterable", "scripthost", "ES5", "ES6", "ES7", "ES2021"],
         "jsx": "react",
         "jsxFactory": "h"
     },
-    "include": [
-        "**/*.ts",
-        "**/*.tsx"
-    ],
-    "files": [
-        "node_modules/jest-expect-message/types/index.d.ts"
-    ]
+    "include": ["**/*.ts", "**/*.tsx"],
+    "files": ["node_modules/jest-expect-message/types/index.d.ts"]
 }

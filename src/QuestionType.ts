@@ -137,9 +137,9 @@ class QuestionType_Cloze implements IQuestionTypeHandler {
 }
 
 export class QuestionType_ClozeUtil {
-    static renderClozeFront(len:number=3): string {
-        const rpt = Math.round(len/3);
-        return "<span style='color:#2196f3'>["+"...".repeat(rpt)+"]</span>";
+    static renderClozeFront(len: number = 3): string {
+        const rpt = Math.round(len / 3);
+        return "<span style='color:#2196f3'>[" + "...".repeat(rpt) + "]</span>";
     }
 
     static renderClozeBack(str: string): string {
