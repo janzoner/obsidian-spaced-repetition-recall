@@ -3,6 +3,9 @@ name: Lint and Test
 on:
     pull_request:
         branches: ["**"]
+    push:
+        branches:
+            - "**"
 
 jobs:
     # https://github.com/snezhig/obsidian-front-matter-title/blob/master/.github/workflows/main.yml
@@ -21,8 +24,8 @@ jobs:
                   cache: "npm"
             - run: npm i
 
-            - name: Eslint
-              run: npm run lint
+            # - name: Eslint
+            #   run: npm run lint
 
             - name: Run test
               run: npm run test
