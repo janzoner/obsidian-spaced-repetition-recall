@@ -4,6 +4,7 @@ import { CardType } from "src/Question";
 import { parse } from "src/parser";
 import { RPITEMTYPE } from "./repetitionItem";
 import { DEFAULT_DECKNAME } from "src/constants";
+import { Tags } from "src/tags";
 
 /**
  * TrackedFile.
@@ -22,7 +23,7 @@ export interface ITrackedFile {
      */
     cardItems?: CardInfo[];
     /**
-     * @type {string[]}
+     * @type {string[]} only save reviewnote tags, exclude flashcards tags.
      */
     tags: string[];
 }
@@ -68,7 +69,7 @@ export class TrackedFile implements ITrackedFile {
      * @type {string[]}
      */
     tags: string[];
-    private _isTracked?: boolean;
+    // private _isTracked?: boolean;
 
     static create(trackedfile: ITrackedFile): TrackedFile {
         let tf: TrackedFile;
@@ -88,10 +89,6 @@ export class TrackedFile implements ITrackedFile {
             this.cardItems = [];
         }
         this.setTracked(type, dname);
-    }
-
-    static isDefaultDackName(tag: string) {
-        return tag === DEFAULT_DECKNAME;
     }
 
     /**
@@ -135,7 +132,7 @@ export class TrackedFile implements ITrackedFile {
         let cardind = -2;
         if (this.cardItems != undefined) {
             cardind = this.cardItems.findIndex((cinfo, _ind) => {
-                return cardTextHash != null && cinfo.cardTextHash === cardTextHash;
+                return cardTextHash != null && cinfo.cardTextHash.includes(cardTextHash);
             });
             if (cardind < 0) {
                 cardind = this.cardItems.findIndex((cinfo, _ind) => {
@@ -250,17 +247,26 @@ export class TrackedFile implements ITrackedFile {
     }
 
     updateTags(deckName: string) {
-        if (!this.tags.includes(deckName)) {
+        if (!this.tags.includes(deckName) || this.lastTag !== deckName) {
+            this.tags.remove(deckName);
             this.tags.push(deckName);
         }
     }
 
     get isTracked(): boolean {
-        return this.tags.length > 0 && this._isTracked !== false;
+        return this.isTrackedCards || this.isTrackedNote;
+    }
+
+    get isTrackedNote(): boolean {
+        return this.tags.length > 1;
+    }
+
+    private get isTrackedCards(): boolean {
+        return this.tags.length > 0 && this.hasCards;
     }
 
     get isDefault() {
-        return TrackedFile.isDefaultDackName(this.lastTag);
+        return Tags.isDefaultDackName(this.lastTag);
     }
 
     get noteID(): number {
@@ -322,11 +328,12 @@ export class TrackedFile implements ITrackedFile {
         } else if (type === RPITEMTYPE.NOTE) {
             this.tags.push(DEFAULT_DECKNAME);
         }
-        if (this._isTracked === false) {
-            this._isTracked = true;
-        }
+        // if (this._isTracked === false) {
+        //     this._isTracked = true;
+        // }
     }
     setUnTracked() {
-        this._isTracked = false;
+        this.tags = [this.tags[0]];
+        // this._isTracked = false;
     }
 }

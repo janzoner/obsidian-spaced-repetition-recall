@@ -4,7 +4,7 @@ import type SRPlugin from "src/main";
 import { COLLAPSE_ICON } from "src/constants";
 import { ReviewDeck, SchedNote } from "src/ReviewDeck";
 import { t } from "src/lang/helpers";
-import { DataLocation } from "src/dataStore/location_switch";
+import { DataLocation } from "src/dataStore/dataLocation";
 import { DateUtils } from "src/util/utils_recall";
 
 export const REVIEW_QUEUE_VIEW_TYPE = "review-queue-list-view";

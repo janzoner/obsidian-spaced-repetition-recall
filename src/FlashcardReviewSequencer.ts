@@ -8,7 +8,7 @@ import { CardScheduleInfo, ICardScheduleCalculator } from "./CardSchedule";
 import { Note } from "./Note";
 import { IDeckTreeIterator } from "./DeckTreeIterator";
 import { IQuestionPostponementList } from "./QuestionPostponementList";
-import { DataLocation } from "src/dataStore/location_switch";
+import { DataLocation } from "src/dataStore/dataLocation";
 
 export interface IFlashcardReviewSequencer {
     get hasCurrentCard(): boolean;

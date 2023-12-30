@@ -1,4 +1,4 @@
-import { MiscUtils } from "src/util/utils_recall";
+import { MiscUtils, debug } from "src/util/utils_recall";
 import { SRSettings } from "../settings";
 
 import { TFile, TFolder, getAllTags } from "obsidian";
@@ -6,7 +6,7 @@ import { TFile, TFolder, getAllTags } from "obsidian";
 import { FsrsData } from "src/algorithms/fsrs";
 import { AnkiData } from "src/algorithms/anki";
 
-import { getStorePath } from "src/dataStore/location_switch";
+import { getStorePath } from "src/dataStore/dataLocation";
 import { Tags } from "src/tags";
 import { SrsAlgorithm, algorithmNames } from "src/algorithms/algorithms";
 import { CardInfo, TrackedFile } from "./trackedFile";
@@ -140,14 +140,13 @@ export class DataStore {
     /**
      * re load if tracked_files.json updated by other device.
      */
-    reLoad() {
+    async reLoad() {
         // const now: Date = new Date().getTime();
-        this.getmtime().then((mtime) => {
-            if (mtime - this.data.mtime > 10) {
-                console.debug("reload newer tracked_files.json: ", mtime, mtime - this.data.mtime);
-                this.load();
-            }
-        });
+        const mtime = await this.getmtime();
+        if (mtime - this.data.mtime > 10) {
+            console.debug("reload newer tracked_files.json: ", mtime, mtime - this.data.mtime);
+            await this.load();
+        }
     }
     setdataPath(path = this.dataPath) {
         this.dataPath = path;
@@ -221,12 +220,8 @@ export class DataStore {
      * @param {string} path
      * @returns {boolean}
      */
-    isTracked(path: string): boolean {
-        const ind = this.getFileIndex(path);
-        if (ind < 0) return false;
-        const fid = this.getFileByIndex(ind).noteID;
-
-        return ind >= 0 && fid >= 0;
+    isInTrackedFiles(path: string): boolean {
+        return this.getFileIndex(path) >= 0;
     }
 
     /**
@@ -236,15 +231,7 @@ export class DataStore {
      * @returns {boolean}
      */
     isTrackedCardfile(path: string): boolean {
-        const ind = this.getFileIndex(path);
-        let cardLen = 0;
-        if (ind >= 0) {
-            const file = this.getFileByIndex(ind);
-            if (Object.keys(file).includes("cardItems")) {
-                cardLen = file.cardItems.length;
-            }
-        }
-        return cardLen > 0;
+        return this.getTrackedFile(path)?.hasCards ?? false;
     }
 
     isCardItem(id: number) {
@@ -294,8 +281,11 @@ export class DataStore {
      */
     getItemsOfFile(path: string): RepetitionItem[] {
         const file = this.getTrackedFile(path);
-        return file?.isTracked ? file.itemIDs.map(this.getItembyID, this) : [];
+        return file?.isTracked ? this.getItems(file.itemIDs) : [];
     }
+    getItems = (ids: number[]): RepetitionItem[] => {
+        return ids.map(this.getItembyID.bind(this));
+    };
     getNoteItem(path: string): RepetitionItem {
         return this.getItembyID(this.getTrackedFile(path)?.noteID) ?? null;
     }
@@ -354,6 +344,9 @@ export class DataStore {
             item.reviewUpdate(result);
         }
         this.data.queues.updateWhenReview(item, result.correct, this.settings.repeatItems);
+        if (item.timesReviewed < 1) {
+            debug("save review data error when reviewId");
+        }
     }
 
     /**
@@ -390,7 +383,7 @@ export class DataStore {
                     totalRemoved += this.untrackFilesInFolder(child, recursive);
                 }
             } else if (child instanceof TFile) {
-                if (this.isTracked(child.path)) {
+                if (this.getTrackedFile(child.path)?.isTrackedNote) {
                     const removed = this.untrackFile(child.path, false);
                     totalRemoved += removed;
                 }
@@ -435,7 +428,7 @@ export class DataStore {
                     this.trackFilesInFolder(child, recursive);
                 }
             } else if (child instanceof TFile && child.extension === "md") {
-                if (!this.isTracked(child.path)) {
+                if (!this.getTrackedFile(child.path)?.isTrackedNote) {
                     const { added, removed } = this.trackFile(child.path, RPITEMTYPE.NOTE, false);
                     totalAdded += added;
                     totalRemoved += removed;
@@ -459,16 +452,9 @@ export class DataStore {
         type?: RPITEMTYPE | string,
         notice?: boolean,
     ): { added: number; removed: number } | null {
-        let dname: string;
-        let itemtype: RPITEMTYPE = RPITEMTYPE.NOTE;
-        // fix: type?
-        if (type === RPITEMTYPE.CARD) {
-            itemtype = RPITEMTYPE.CARD;
-        } else if (type == undefined || type === RPITEMTYPE.NOTE) {
-            itemtype = RPITEMTYPE.NOTE;
-        } else {
-            dname = type as string;
-        }
+        const isType = Object.values(RPITEMTYPE).includes(type as RPITEMTYPE);
+        const itemtype = isType ? (type as RPITEMTYPE) : RPITEMTYPE.NOTE;
+        const dname = !isType ? type : undefined;
         const trackedFile = new TrackedFile(path, itemtype, dname);
 
         const ind = this.getFileIndex(path);
@@ -476,7 +462,7 @@ export class DataStore {
             this.data.trackedFiles.push(trackedFile);
         } else {
             const tkfile = this.getFileByIndex(ind);
-            if (!tkfile.isTracked) {
+            if (!tkfile.isTrackedNote) {
                 tkfile.setTracked(itemtype, dname);
             }
         }
@@ -505,12 +491,13 @@ export class DataStore {
         const trackedFile = this.getTrackedFile(path);
         const note = app.vault.getAbstractFileByPath(path) as TFile;
 
-        if (note != null && trackedFile?.tags.length > 0) {
-            const fileCachedData = app.metadataCache.getFileCache(note) || {};
-            const tags = getAllTags(fileCachedData) || [];
+        if (note != null && trackedFile.tags.length > 0) {
+            // const fileCachedData = app.metadataCache.getFileCache(note) || {};
+            // const tags = getAllTags(fileCachedData) || [];
             const deckname = Tags.getNoteDeckName(note, this.settings);
-            const cardName = Tags.getTagFromSettingTags(tags, this.settings.flashcardTags);
-            if (deckname !== null || cardName !== null || this.settings.convertFoldersToDecks) {
+            // const cardName = Tags.getTagFromSettingTags(tags, this.settings.flashcardTags);
+            if (deckname !== null || this.settings.convertFoldersToDecks) {
+                // || cardName !== null
                 // it's taged file, can't untrack by this.
                 console.log(path + " is taged file, can't untrack by this.");
                 MiscUtils.notice(
@@ -521,25 +508,37 @@ export class DataStore {
         }
 
         let numItems = 0;
-
+        const lastTag = trackedFile.lastTag;
         trackedFile.setUnTracked();
         for (const key in trackedFile.items) {
             const ind = trackedFile.items[key];
             this.unTrackItem(ind);
+            numItems++;
+        }
+        const fileCachedData = app.metadataCache.getFileCache(note) || {};
+        const tags = getAllTags(fileCachedData) || [];
+        const cardName = Tags.getTagFromSettingTags(tags, this.settings.flashcardTags);
+        if (cardName == null && this.settings.trackedNoteToDecks) {
+            trackedFile.cardIDs.forEach(this.unTrackItem, this);
+            numItems += trackedFile.cardIDs.length;
         }
 
         //  when file not exist, or doesn't have carditems, del it.
-        let nulrstr: string;
-        this.data.trackedFiles[index] = null;
-        numItems++;
+        let nulrstr: string = "";
+        // this.data.trackedFiles[index] = null;
         if (note == null) {
             nulrstr = ", because it not exist.";
+        } else if (
+            this.settings.tagsToReview.includes(lastTag) &&
+            this.settings.untrackWithReviewTag
+        ) {
+            nulrstr = ", because you have delete the reviewTag in note.";
         }
         // this.save();         // will be used when plugin.sync_Algo(), which shouldn't
         // this.plugin.updateStatusBar();
 
         if (notice) {
-            MiscUtils.notice("Untracked " + numItems + " items!");
+            MiscUtils.notice("Untracked " + numItems + " items" + nulrstr);
         }
 
         console.log("Untracked: " + path + nulrstr);
@@ -664,7 +663,7 @@ export class DataStore {
         if (notice == null) notice = false;
         const idsLen = cardinfo.itemIds.length;
         const ind = this.getFileIndex(trackedFile.path);
-        cardinfo.itemIds.map(this.getItembyID, this).filter((item, _idx) => {
+        this.getItems(cardinfo.itemIds).filter((item, _idx) => {
             if (_idx < count) {
                 item.setTracked(ind);
                 item.updateDeckName(deckName, true);
@@ -826,23 +825,17 @@ export class DataStore {
             if (tkfile == null || !tkfile.isTracked) {
                 return false;
             }
-            return (
-                tkfile.itemIDs.map(this.getItembyID, this).filter((item) => item?.isTracked)
-                    .length > 0
-            ); // this tkfile has tracked items
+            return this.getItems(tkfile.itemIDs).filter((item) => item?.isTracked).length > 0; // this tkfile has tracked items
         });
 
         this.data.items = this.data.trackedFiles
             .map((tkfile, idx) => {
-                return (
-                    tkfile.itemIDs
-                        .map(this.getItembyID, this)
-                        // .filter((item) => item?.isTracked)   //dont have to tkfile already have filtered.
-                        .filter((item) => {
-                            item.fileIndex = idx;
-                            return true;
-                        })
-                );
+                return this.getItems(tkfile.itemIDs)
+                    .filter((item) => item != null) //dont have to tkfile already have filtered.
+                    .filter((item) => {
+                        item.fileIndex = idx;
+                        return true;
+                    });
             })
             .flat();
 

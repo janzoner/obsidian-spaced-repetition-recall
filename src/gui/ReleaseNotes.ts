@@ -12,7 +12,7 @@ import README_ZH from "docs/README_ZH.md";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import RELEASE_changelog from "docs/changelog.md";
-import { buildDonation } from "src/settings";
+import { buildDonation } from "src/settings/donation";
 
 // const fmd = fs.readFileSync("CHANGELOG.md", "utf8");
 
@@ -60,9 +60,9 @@ export class ReleaseNotes extends Modal {
         await this.plugin.savePluginData();
     }
 
-    async createForm() {
+    createForm() {
         const FIRST_RUN = [readme[0]].join("\n\n---\n");
-        let instro: string = FIRST_RUN.match(/^(?:.|\r?\n)+?(?=\r\n## Feat)/gm).join("\n\n---\n");
+        let instro: string = FIRST_RUN.match(/^(?:.|\r?\n)+?(?=\r?\n## Feat)/gm).join("\n\n---\n");
         // const release_note = await this.getReleaseNote();
         // const notes: string[] = [];
         // if (release_note == null) {
@@ -87,9 +87,9 @@ export class ReleaseNotes extends Modal {
             : "";
         instro = this.version ? instro : FIRST_RUN;
         message = this.version ? "## What's New:\n---\n" + message : message;
-        await MarkdownRenderer.render(this.plugin.app, instro, this.contentEl, "", this.plugin);
+        MarkdownRenderer.render(this.plugin.app, instro, this.contentEl, "", this.plugin);
         buildDonation(this.contentEl);
-        await MarkdownRenderer.render(this.plugin.app, message, this.contentEl, "", this.plugin);
+        MarkdownRenderer.render(this.plugin.app, message, this.contentEl, "", this.plugin);
 
         this.contentEl.createEl("p", { text: "" }, (el) => {
             //files manually follow one of two options:

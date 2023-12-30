@@ -6,7 +6,7 @@ import { t } from "src/lang/helpers";
 import { ReviewDeck } from "src/ReviewDeck";
 import { SRSettings } from "src/settings";
 import { Tags } from "src/tags";
-import { DateUtils } from "src/util/utils_recall";
+import { DateUtils, isIgnoredPath } from "src/util/utils_recall";
 
 export class ReviewNote {
     static itemId: number;
@@ -30,7 +30,7 @@ export class ReviewNote {
 
         let deckName = Tags.getNoteDeckName(note, settings);
 
-        if (deckName == null && !store.isTracked(note.path)) {
+        if (deckName == null && !store.getTrackedFile(note.path)?.isTrackedNote) {
             new Notice(t("PLEASE_TAG_NOTE"));
             return;
         } else if (deckName == null) {
@@ -68,7 +68,7 @@ export class ReviewNote {
         ReviewNote.recallReviewResponse(fileId, option);
 
         preUpdateDeck(deck, note);
-        ItemToDecks.syncRCDataToSRrevDeck(deck, note, now);
+        ItemToDecks.toRevDeck(deck, note, now);
         return { buryList };
     }
 
@@ -195,14 +195,6 @@ export class ReviewNote {
                 new Notice("可以在" + interval / 60 + "小时后来复习");
             }
         }
-    }
-}
-
-export function isIgnoredPath(noteFoldersToIgnore: string[], path: string) {
-    if (noteFoldersToIgnore.some((folder) => path.includes(folder))) {
-        return true;
-    } else {
-        return false;
     }
 }
 

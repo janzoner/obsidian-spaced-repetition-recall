@@ -1,28 +1,30 @@
 import { SrsAlgorithm, algorithmNames } from "src/algorithms/algorithms";
 import { DefaultAlgorithm } from "src/algorithms/scheduling_default";
 import { DataStore } from "src/dataStore/data";
-import { DataLocation } from "src/dataStore/location_switch";
+import { DataLocation } from "src/dataStore/dataLocation";
 import { RPITEMTYPE } from "src/dataStore/repetitionItem";
-import { DEFAULT_SETTINGS } from "src/settings";
+import { DEFAULT_SETTINGS, SRSettings } from "src/settings";
 import { Stats } from "src/stats";
+
+const settings_tkfile = Object.assign({}, DEFAULT_SETTINGS);
+settings_tkfile.dataLocation = DataLocation.PluginFolder;
 
 export class SampleDataStore {
     static roundInt = (num: number) => Math.round(Math.random() * num);
-    static async create() {
-        const settings_tkfile = Object.assign({}, DEFAULT_SETTINGS);
-        settings_tkfile.dataLocation = DataLocation.PluginFolder;
+
+    static async create(settings: SRSettings) {
         let store: DataStore;
         let algo: SrsAlgorithm;
         let arr: number[];
         // const roundInt = (num: number) => Math.round(Math.random() * num);
         // beforeEach(async () => {
         // eslint-disable-next-line prefer-const
-        store = new DataStore(DEFAULT_SETTINGS, "./");
+        store = new DataStore(settings, "./");
         await store.load();
         // store.toInstances();
         // eslint-disable-next-line prefer-const
         algo = new DefaultAlgorithm();
-        algo.updateSettings(settings_tkfile.algorithmSettings[algorithmNames.Default]);
+        algo.updateSettings(settings.algorithmSettings[algorithmNames.Default]);
         const opts = algo.srsOptions();
         // eslint-disable-next-line prefer-const
         arr = Array.from(new Array(50)).map((_v, _idx) => {
@@ -103,7 +105,7 @@ describe("pruneDate", () => {
     // let algo: SrsAlgorithm;
     // let arr: number[];
     beforeEach(async () => {
-        const sample = await SampleDataStore.create();
+        const sample = await SampleDataStore.create(settings_tkfile);
         store = sample.store;
     });
 
@@ -112,8 +114,8 @@ describe("pruneDate", () => {
         const itemResult = store.items.every((item) => item != null && item.isTracked);
         const tkfileResult = store.data.trackedFiles.every((tkfile) => tkfile != null);
         const check =
-            store.data.trackedFiles.map((tkfile) => tkfile?.itemIDs).flat().length ===
-            store.itemSize;
+            store.data.trackedFiles.map((tkfile) => tkfile?.itemIDs.filter((id) => id >= 0)).flat()
+                .length === store.itemSize;
         const checkcard = store.data.trackedFiles.every((tkfile) =>
             tkfile?.hasCards ? tkfile?.cardIDs.length > 0 : tkfile.noteID >= 0,
         );

@@ -1,5 +1,5 @@
 import { Menu, TAbstractFile, TFile, TFolder } from "obsidian";
-import { DataLocation } from "src/dataStore/location_switch";
+import { DataLocation } from "src/dataStore/dataLocation";
 import SRPlugin from "src/main";
 
 export function registerTrackFileEvents(plugin: SRPlugin) {
@@ -64,17 +64,17 @@ export function addFileMenuEvt(plugin: SRPlugin, menu: Menu, fileish: TAbstractF
             });
         });
     } else if (fileish instanceof TFile) {
-        if (store.isTracked(fileish.path)) {
+        if (store.getTrackedFile(fileish.path)?.isTrackedNote) {
             menu.addItem((item) => {
                 item.setIcon("minus-with-circle");
                 item.setTitle("Untrack Note");
                 item.onClick(async (_evt) => {
-                    store.untrackFile(fileish.path);
+                    store.untrackFile(fileish.path, true);
                     await store.save();
                     if (plugin.reviewFloatBar.isDisplay() && plugin.data.settings.autoNextNote) {
                         plugin.reviewNextNote(plugin.lastSelectedReviewDeck);
                     }
-                    // plugin.sync();
+                    await plugin.sync();
                 });
             });
         } else {
@@ -82,7 +82,7 @@ export function addFileMenuEvt(plugin: SRPlugin, menu: Menu, fileish: TAbstractF
                 item.setIcon("plus-with-circle");
                 item.setTitle("Track Note");
                 item.onClick(async (_evt) => {
-                    store.trackFile(fileish.path);
+                    store.trackFile(fileish.path, undefined, true);
                     await store.save();
                     plugin.sync();
                 });

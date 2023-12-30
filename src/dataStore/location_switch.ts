@@ -11,35 +11,17 @@ import {
     YAML_TAGS_REGEX,
 } from "src/constants";
 import SRPlugin from "src/main";
-import { isIgnoredPath } from "src/reviewNote/review-note";
 import { SRSettings } from "src/settings";
 import { escapeRegexString } from "src/util/utils";
 import { DataStore } from "./data";
 import { Tags } from "src/tags";
 
 import { Stats } from "src/stats";
-import { DateUtils } from "src/util/utils_recall";
+import { DateUtils, isIgnoredPath } from "src/util/utils_recall";
 import { RPITEMTYPE } from "./repetitionItem";
 import deepcopy from "deepcopy";
 import { NoteCardScheduleParser } from "src/CardSchedule";
-
-const ROOT_DATA_PATH = "./tracked_files.json";
-// const PLUGIN_DATA_PATH = "./.obsidian/plugins/obsidian-spaced-repetition-recall/tracked_files.json";
-
-// recall trackfile
-export enum DataLocation {
-    PluginFolder = "In Plugin Folder",
-    RootFolder = "In Vault Folder",
-    SpecifiedFolder = "In the folder specified below",
-    SaveOnNoteFile = "Save On Note File",
-}
-
-export const locationMap: Record<string, DataLocation> = {
-    "In Vault Folder": DataLocation.RootFolder,
-    "In Plugin Folder": DataLocation.PluginFolder,
-    "In the folder specified below": DataLocation.SpecifiedFolder,
-    "Save On Note File": DataLocation.SaveOnNoteFile,
-};
+import { DataLocation, getStorePath } from "./dataLocation";
 
 export class LocationSwitch {
     public plugin: SRPlugin;
@@ -223,7 +205,7 @@ export class LocationSwitch {
             // console.debug("_convertCardsSched: ", note.basename);
             const trackedFile = store.getTrackedFile(note.path);
             // let fileText: string = await note.vault.read(note);
-            let fileChanged = false;
+            // let fileChanged = false;
             trackedFile.syncNoteCardsIndex(fileText, settings, (cardText, cardinfo) => {
                 let scheduling: RegExpMatchArray[] = [
                     ...cardText.matchAll(MULTI_SCHEDULING_EXTRACTOR),
@@ -246,7 +228,7 @@ export class LocationSwitch {
                         settings.cardCommentOnSameLine,
                     );
                     fileText = cardTextReplace(fileText, cardText, newCardText);
-                    fileChanged = true;
+                    // fileChanged = true;
                 }
             });
 
@@ -270,7 +252,7 @@ export class LocationSwitch {
             const sched = getReviewNoteHeaderData(frontmatter);
             if (sched != null) {
                 // console.debug("converteNoteSchedToTrackfile find:", note.path);
-                if (!store.isTracked(note.path)) {
+                if (!store.getTrackedFile(note.path)?.isTrackedNote) {
                     store.trackFile(note.path, deckname, false);
                 }
                 const item = store.getItembyID(store.getTrackedFile(note.path).noteID);
@@ -323,7 +305,7 @@ export class LocationSwitch {
                             const scheduling: RegExpMatchArray[] = [];
                             ids.map((id: number) => store.getItembyID(id))
                                 .filter((citem) => citem.isTracked)
-                                .filter((citem) => {
+                                .forEach((citem) => {
                                     // const citem = store.getItembyID(id);
                                     // if (citem.isTracked) {
                                     const sched = citem.getSchedDurAsStr();
@@ -464,7 +446,6 @@ export class LocationSwitch {
 
 export function cardTextReplace(fileText: string, cardText: string, newCardText: string) {
     const replacementRegex = new RegExp(escapeRegexString(cardText), "gm");
-    const result = replacementRegex.exec(fileText);
     if (fileText.indexOf(cardText) === fileText.lastIndexOf(cardText)) {
         return fileText.replace(replacementRegex, () => newCardText);
     } else {
@@ -665,25 +646,4 @@ export function delDefaultTag(fileText: string, revTag: string) {
         }
     }
     return fileText;
-}
-
-/**
- * getStorePath.
- *
- * @returns {string}
- */
-export function getStorePath(manifestDir: string, settings: SRSettings): string {
-    const dir = manifestDir;
-    const dataLocation = settings.dataLocation;
-    if (dataLocation == DataLocation.PluginFolder) {
-        // return PLUGIN_DATA_PATH;
-        return dir + ROOT_DATA_PATH.substring(1);
-    } else if (dataLocation == DataLocation.RootFolder) {
-        return ROOT_DATA_PATH;
-    } else if (dataLocation == DataLocation.SpecifiedFolder) {
-        return settings.customFolder;
-    } else if (dataLocation == DataLocation.SaveOnNoteFile) {
-        // return PLUGIN_DATA_PATH;
-        return dir + ROOT_DATA_PATH.substring(1);
-    }
 }

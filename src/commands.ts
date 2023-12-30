@@ -21,17 +21,19 @@ export default class Commands {
             checkCallback: (checking: boolean) => {
                 const file = plugin.app.workspace.getActiveFile();
                 if (file) {
-                    if (plugin.store.isTracked(file.path)) {
+                    if (plugin.store.isInTrackedFiles(file.path)) {
                         if (!checking) {
                             const store = this.plugin.store;
-                            const deckname = store.getTrackedFile(file.path).lastTag;
+                            const tkfile = store.getTrackedFile(file.path);
+                            const deckname = tkfile.lastTag;
                             const deck = this.plugin.reviewDecks[deckname];
-                            const msg = `${deckname} has ${deck.dueNotesCount} dueCount(till today end),\n note onDueC ${this.plugin.noteStats.onDueCount} (till now).`;
+                            const msg = `${deckname} has ${deck?.dueNotesCount} dueCount(till today end),\n note onDueC ${this.plugin.noteStats.onDueCount} (till now).`;
                             debug("itemInfo", 0, {
                                 msg,
-                                noteStats: this.plugin.noteStats,
+                                tkfile,
+                                noteDelayed: this.plugin.noteStats.delayedDays.dict,
                                 // decks: deck.scheduledNotes.map((sn) => [sn.note.path, sn.item]),
-                                que: store.data.queues,
+                                que: store.data.queues.toDayLatterQueue,
                             });
                             new ItemInfoModal(plugin.data.settings, file).open();
                         }
@@ -48,10 +50,11 @@ export default class Commands {
             checkCallback: (checking: boolean) => {
                 const file = plugin.app.workspace.getActiveFile();
                 if (file != null) {
-                    if (!plugin.store.isTracked(file.path)) {
+                    if (!plugin.store.getTrackedFile(file.path)?.isTrackedNote) {
                         if (!checking) {
-                            plugin.store.trackFile(file.path);
+                            plugin.store.trackFile(file.path, undefined, true);
                             plugin.store.save();
+                            plugin.sync();
                             // plugin.updateStatusBar();
                         }
                         return true;
@@ -67,10 +70,11 @@ export default class Commands {
             checkCallback: (checking: boolean) => {
                 const file = plugin.app.workspace.getActiveFile();
                 if (file != null) {
-                    if (plugin.store.isTracked(file.path)) {
+                    if (plugin.store.getTrackedFile(file.path)?.isTrackedNote) {
                         if (!checking) {
-                            plugin.store.untrackFile(file.path);
+                            plugin.store.untrackFile(file.path, true);
                             plugin.store.save();
+                            plugin.sync();
                             // plugin.updateStatusBar();
                         }
                         return true;

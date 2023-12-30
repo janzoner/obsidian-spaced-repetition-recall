@@ -1,7 +1,7 @@
 import { Card } from "./Card";
 import { CardScheduleInfo, NoteCardScheduleParser } from "./CardSchedule";
 import { SR_HTML_COMMENT_BEGIN, SR_HTML_COMMENT_END } from "./constants";
-import { DataLocation } from "./dataStore/location_switch";
+import { DataLocation } from "src/dataStore/dataLocation";
 import { Note } from "./Note";
 import { SRSettings } from "./settings";
 import { TopicPath } from "./TopicPath";

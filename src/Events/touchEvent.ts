@@ -8,6 +8,7 @@ interface IminTouch {
 
 export class TouchOnMobile {
     timeStart = 0;
+    timeDiff_longClick = 800; // ms
 
     originTouches: IminTouch[] = [];
     ongoingTouches: IminTouch[] = [];
@@ -28,6 +29,14 @@ export class TouchOnMobile {
             this.originTouches.push(copyTouch(touches[i]));
             this.ongoingTouches.push(copyTouch(touches[i]));
         }
+        setTimeout(() => {
+            console.debug("time up");
+            if (this.isLongClick(0)) {
+                evt.preventDefault();
+                this.showcb();
+                this.handleCancel(evt);
+            }
+        }, this.timeDiff_longClick);
     }
 
     handleMove(evt: TouchEvent) {
@@ -59,9 +68,6 @@ export class TouchOnMobile {
                 if (this.isSwipUp(idx)) {
                     evt.preventDefault();
                     this.closecb();
-                } else if (this.isLongClick(idx)) {
-                    evt.preventDefault();
-                    this.showcb();
                 }
                 // const msg = `移除 ${idx} (${ongoingTouches[idx].pageX}, ${ongoingTouches[idx].pageY}) timeDur: ${getTimeDuration()} `;
 
@@ -108,9 +114,8 @@ export class TouchOnMobile {
 
     isLongClick(idx: number) {
         const longClickDiff = 10;
-        const timeDiff = 800; // ms
         return (
-            this.getTimeDuration() > timeDiff &&
+            this.getTimeDuration() >= this.timeDiff_longClick &&
             this.absXDiff(idx) < longClickDiff &&
             Math.abs(this.actYDiff(idx)) < longClickDiff
         );

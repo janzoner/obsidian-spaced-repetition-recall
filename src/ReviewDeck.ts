@@ -1,4 +1,4 @@
-import { App, FuzzySuggestModal, TFile } from "obsidian";
+import { TFile } from "obsidian";
 
 import { t } from "src/lang/helpers";
 import { RepetitionItem } from "./dataStore/repetitionItem";
@@ -36,28 +36,5 @@ export class ReviewDeck {
             }
             return (pageranks[b.note.path] || 0) - (pageranks[a.note.path] || 0);
         });
-    }
-}
-
-export class ReviewDeckSelectionModal extends FuzzySuggestModal<string> {
-    public deckKeys: string[] = [];
-    public submitCallback: (deckKey: string) => void;
-
-    constructor(app: App, deckKeys: string[]) {
-        super(app);
-        this.deckKeys = deckKeys;
-    }
-
-    getItems(): string[] {
-        return this.deckKeys;
-    }
-
-    getItemText(item: string): string {
-        return item;
-    }
-
-    onChooseItem(deckKey: string, _: MouseEvent | KeyboardEvent): void {
-        this.close();
-        this.submitCallback(deckKey);
     }
 }

@@ -1,5 +1,5 @@
 import { Setting, Notice } from "obsidian";
-import { DateUtils } from "src/util/utils_recall";
+import { DateUtils, MiscUtils } from "src/util/utils_recall";
 import { SrsAlgorithm, algorithmNames } from "./algorithms";
 import { DataStore } from "../dataStore/data";
 
@@ -68,8 +68,6 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     fsrs = new fsrsjs.FSRS();
     card = new fsrsjs.Card();
 
-    initFlag = false;
-
     filename = "ob_revlog.csv";
     logfilepath: string = null;
     REVLOG_sep = ",";
@@ -93,6 +91,12 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             ],
         };
     }
+    updateSettings(settings: unknown) {
+        this.settings = MiscUtils.assignOnly(this.defaultSettings(), settings);
+        SrsAlgorithm.instance = this;
+        this.updateFsrsParams();
+        this.getLogfilepath();
+    }
 
     updateFsrsParams() {
         if (this.settings != undefined) {
@@ -115,12 +119,6 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     calcAllOptsIntervals(item: RepetitionItem) {
-        if (!this.initFlag) {
-            this.getLogfilepath();
-            this.updateFsrsParams();
-            this.initFlag = true;
-        }
-
         const data = item.data as FsrsData;
         data.due = new Date(data.due);
         data.last_review = new Date(data.last_review);
@@ -149,12 +147,6 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         data.last_review = new Date(data.last_review);
         const response = FsrsOptions.indexOf(optionStr) + 1;
 
-        if (!this.initFlag) {
-            this.getLogfilepath();
-            this.updateFsrsParams();
-            this.initFlag = true;
-        }
-
         let correct = true;
         if (response == 1) {
             // Again
@@ -173,6 +165,9 @@ export class FsrsAlgorithm extends SrsAlgorithm {
 
         //Update the card after rating:
         data = item.data = deepcopy(scheduling_cards[response].card) as FsrsData;
+        data.stability = MiscUtils.fixed(data.stability, 5);
+        data.difficulty = MiscUtils.fixed(data.difficulty, 5);
+        data.elapsed_days = MiscUtils.fixed(data.elapsed_days, 3);
 
         //Get the due date for card:
         // const due = card.due;
@@ -233,6 +228,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             data = this.REVLOG_TITLE + data;
         }
         adapter.append(this.logfilepath, data);
+        return data;
     }
 
     /**
@@ -323,11 +319,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         containerEl: HTMLElement,
         update: (settings: FsrsSettings, refresh?: boolean) => void,
     ) {
-        if (!this.initFlag) {
-            this.getLogfilepath();
-            this.updateFsrsParams();
-            this.initFlag = true;
-        }
+        containerEl.empty();
 
         containerEl.createDiv().innerHTML =
             '用于间隔重复的算法. 更多信息请查阅 <a href="https://github.com/open-spaced-repetition/fsrs.js">FSRS算法</a>.';
@@ -369,7 +361,8 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                             this.settings.request_retention =
                                 this.defaultSettings().request_retention;
                             this.fsrs.p.request_retention = this.settings.request_retention;
-                            update(this.settings, true);
+                            update(this.settings);
+                            this.displaySettings(containerEl, update);
                         });
                     });
             });

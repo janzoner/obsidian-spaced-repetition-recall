@@ -6,27 +6,28 @@ import { t } from "src/lang/helpers";
 // import { FlashcardModalMode } from "src/gui/flashcard-modal";
 import { SrsAlgorithm } from "src/algorithms/algorithms";
 import { RepetitionItem } from "src/dataStore/repetitionItem";
-import { debug } from "src/util/utils_recall";
+// import { debug } from "src/util/utils_recall";
 import { TouchOnMobile } from "src/Events/touchEvent";
 
 export class reviewResponseModal {
     private static instance: reviewResponseModal;
     // public plugin: SRPlugin;
-    public settings: SRSettings;
+    private settings: SRSettings;
     public submitCallback: (note: TFile, resp: number) => void;
     private algorithm: SrsAlgorithm;
-    containerEl: HTMLElement;
-    contentEl: HTMLElement;
+    private containerEl: HTMLElement;
+    private contentEl: HTMLElement;
 
-    id = "reviewResponseModalBar";
+    barId = "reviewResponseModalBar";
+    private barItemId: string = "ResponseFloatBarCommandItem";
     // mode: FlashcardModalMode;
-    public answerBtn: HTMLElement;
-    buttons: HTMLButtonElement[];
-    responseDiv: HTMLElement;
-    responseInterval: number[];
-    showInterval = true;
-    buttonTexts: string[];
-    options: string[];
+    private answerBtn: HTMLElement;
+    private buttons: HTMLButtonElement[];
+    private responseDiv: HTMLElement;
+    private responseInterval: number[];
+    private showInterval = true;
+    private buttonTexts: string[];
+    private options: string[];
 
     respCallback: (s: string) => void;
 
@@ -57,7 +58,7 @@ export class reviewResponseModal {
         } else {
             this.responseInterval = null;
         }
-        const rrBar = document.getElementById(this.id);
+        const rrBar = document.getElementById(this.barId);
         if (!rrBar || !this.buttons) {
             this.build();
         }
@@ -70,33 +71,6 @@ export class reviewResponseModal {
         // } else if (this.mode == FlashcardModalMode.Back) {
         //     this.showQuestion();
         // }
-
-        /* const bar = document.getElementById("reviewResponseModalBar");
-        const Markdown = app.workspace.getActiveViewOfType(MarkdownView);
-
-        document.body.onkeydown = (e) => {
-            if (
-                bar &&
-                bar.checkVisibility &&
-                (Markdown.getMode() === "preview" ||
-                    document.activeElement.hasClass("ResponseFloatBarCommandItem"))
-            ) {
-                const consume = () => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                };
-                for (let i = 0; i < options.length; i++) {
-                    const num = "Numpad" + i;
-                    const dig = "Digit" + i;
-                    if (e.code === num || e.code === dig) {
-                        buttonClick(options[0]);
-                        break;
-                    }
-                }
-                consume();
-            }
-        };
- */
     }
 
     private build() {
@@ -107,7 +81,7 @@ export class reviewResponseModal {
             btnCols = optBtnCounts;
         }
         this.containerEl = createEl("div");
-        this.containerEl.setAttribute("id", this.id);
+        this.containerEl.setAttribute("id", this.barId);
         this.containerEl.addClass("ResponseFloatBarDefaultAesthetic");
         // this.containerEl.setAttribute("style", `grid-template-columns: ${"1fr ".repeat(btnCols)}`);
         this.containerEl.setAttribute("style", `grid-template-rows: ${"1fr ".repeat(1)}`);
@@ -127,6 +101,7 @@ export class reviewResponseModal {
         this.createButton_showAnswer();
 
         this.addMenuEvent();
+        this.addKeysEvent();
         this.addTouchEvent();
         this.autoClose();
     }
@@ -151,7 +126,7 @@ export class reviewResponseModal {
         this.options.forEach((opt: string, index) => {
             const btn = document.createElement("button");
             btn.setAttribute("id", "sr-" + opt.toLowerCase() + "-btn");
-            btn.setAttribute("class", "ResponseFloatBarCommandItem");
+            btn.setAttribute("class", this.barItemId);
             // btn.setAttribute("aria-label", "Hotkey: " + (index + 1));
             // btn.setAttribute("style", `width: calc(95%/${buttonCounts});`);
             // setIcon(btn, item.icon);
@@ -227,15 +202,42 @@ export class reviewResponseModal {
             this.selfDestruct();
         };
 
-        this.containerEl.addEventListener("touchstart", (evt) => touch.handleStart(evt), {
+        this.containerEl.addEventListener("touchstart", touch.handleStart.bind(touch), {
             passive: true,
         });
-        this.containerEl.addEventListener("touchmove", (evt) => touch.handleMove(evt), {
+        this.containerEl.addEventListener("touchmove", touch.handleMove.bind(touch), {
             passive: true,
         });
-        this.containerEl.addEventListener("touchend", (evt) => touch.handleEnd(evt), {
+        this.containerEl.addEventListener("touchend", touch.handleEnd.bind(touch), {
             passive: false,
         });
+    }
+
+    private addKeysEvent() {
+        const bar = document.getElementById(this.barId);
+        const Markdown = app.workspace.getActiveViewOfType(MarkdownView);
+
+        document.body.onkeydown = (e) => {
+            if (
+                bar &&
+                bar.checkVisibility() &&
+                this.isDisplay() &&
+                Markdown.getMode() === "preview"
+            ) {
+                const consume = () => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                };
+                this.options.map((_opt, idx) => {
+                    const num = "Numpad" + idx;
+                    const dig = "Digit" + idx;
+                    if (e.code === num || e.code === dig) {
+                        this.buttonClick(this.options[idx]);
+                        consume();
+                    }
+                });
+            }
+        };
     }
 
     private toggleShowInterval() {
@@ -278,12 +280,12 @@ export class reviewResponseModal {
     }
 
     public isDisplay() {
-        return document.getElementById(this.id) != null;
+        return document.getElementById(this.barId) != null;
         // return this.containerEl.style.visibility === "visible";
     }
 
     selfDestruct() {
-        const rrBar = document.getElementById(this.id);
+        const rrBar = document.getElementById(this.barId);
         if (rrBar) {
             rrBar.style.visibility = "hidden";
             if (rrBar.firstChild) {
@@ -293,11 +295,11 @@ export class reviewResponseModal {
         }
     }
 
-    autoClose() {
+    private autoClose() {
         //after review
         const tout = Platform.isMobile ? 5000 : 10000;
         const timmer = setInterval(() => {
-            const rrBar = document.getElementById(this.id);
+            const rrBar = document.getElementById(this.barId);
             const Markdown = app.workspace.getActiveViewOfType(MarkdownView);
             if (rrBar) {
                 if (!Markdown) {

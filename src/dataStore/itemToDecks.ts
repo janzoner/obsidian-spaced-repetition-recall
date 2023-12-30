@@ -7,9 +7,9 @@ import { TopicPath } from "src/TopicPath";
 import { DataStore } from "src/dataStore/data";
 import { getKeysPreserveType } from "src/util/utils";
 import { BlockUtils, DateUtils, debug, logExecutionTime } from "src/util/utils_recall";
-import { CardInfo, TrackedFile } from "./trackedFile";
+import { CardInfo } from "./trackedFile";
 import { Card } from "src/Card";
-import { DataLocation } from "./location_switch";
+import { DataLocation } from "./dataLocation";
 import { RPITEMTYPE } from "./repetitionItem";
 import { Tags } from "src/tags";
 import { SRSettings } from "src/settings";
@@ -29,7 +29,7 @@ export class ItemToDecks {
      * @param rdeck
      * @returns
      */
-    syncRCsrsDataToSRreviewDecks(
+    itemToReviewDecks(
         reviewDecks: { [deckKey: string]: ReviewDeck },
         notes: TFile[],
         easeByPath: INoteEaseList,
@@ -38,11 +38,15 @@ export class ItemToDecks {
         const settings = this.settings;
         // store.data.queues.buildQueue();
         const now = new Date().getTime();
-        notes.map(async (note) => {
+        notes.forEach(async (note) => {
             let deckname = Tags.getNoteDeckName(note, this.settings);
             if (deckname == null) {
                 const tkfile = store.getTrackedFile(note.path);
-                const tag = tkfile?.lastTag;
+                let tag = tkfile?.lastTag;
+                if (settings.tagsToReview.includes(tag) && settings.untrackWithReviewTag) {
+                    store.untrackFile(tkfile.path, false);
+                    tag = tkfile.lastTag;
+                }
                 if (tag != undefined && (settings.tagsToReview.includes(tag) || tkfile.isDefault)) {
                     deckname = tag;
                 }
@@ -52,7 +56,7 @@ export class ItemToDecks {
                     reviewDecks[deckname] = new ReviewDeck(deckname);
                 }
                 // update single note deck data, only tagged reviewnote
-                if (!store.isTracked(note.path)) {
+                if (!store.getTrackedFile(note.path)?.isTrackedNote) {
                     store.trackFile(note.path, deckname, false);
                 }
                 if (
@@ -68,8 +72,7 @@ export class ItemToDecks {
                         }
                     }
                 }
-
-                ItemToDecks.syncRCDataToSRrevDeck(reviewDecks[deckname], note);
+                ItemToDecks.toRevDeck(reviewDecks[deckname], note);
             }
 
             // Add Recall reviewnote deck
@@ -100,11 +103,11 @@ export class ItemToDecks {
      * @param rdeck
      * @returns
      */
-    static syncRCDataToSRrevDeck(rdeck: ReviewDeck, note: TFile, now?: number) {
+    static toRevDeck(rdeck: ReviewDeck, note: TFile, now?: number) {
         // const plugin = plugin;
         // const rdeck = reviewDecks[deckName];
         const store = DataStore.getInstance();
-        const queue = store.data.queues;
+        // const queue = store.data.queues;
         const ind = store.getFileIndex(note.path);
         const trackedFile = store.getTrackedFile(note.path);
         const fileid = store.getTrackedFile(note.path).noteID;
@@ -168,7 +171,7 @@ export class ItemToDecks {
         return;
     }
 
-    static updateCardsSched_algo(note: Note, topicPath: TopicPath) {
+    static updateCardsSchedbyItems(note: Note, topicPath: TopicPath) {
         const store = DataStore.getInstance();
         const settings = store.settings;
         const noteFile: SrTFile = note.file as SrTFile;
@@ -189,10 +192,6 @@ export class ItemToDecks {
         const trackedFile = store.getTrackedFile(noteFile.path);
 
         for (const question of note.questionList) {
-            const deckname = question.topicPath.hasPath
-                ? question.topicPath.path[0]
-                : topicPath.path[0];
-
             const cardText: string = question.questionText.actualQuestion;
             const lineNo: number = question.lineNo;
             const cardTextHash = BlockUtils.getTxtHash(cardText);
@@ -212,19 +211,16 @@ export class ItemToDecks {
             } else {
                 carditem = trackedFile.trackCard(lineNo, cardTextHash);
             }
+
+            let deckname = question.topicPath.hasPath
+                ? question.topicPath.path[0]
+                : topicPath.path[0];
+            deckname = Tags.isDefaultDackName(deckname) ? deckname : "#" + deckname;
             store.updateCardItems(trackedFile, carditem, count, deckname, false);
             updateCardObjs(question.cards, carditem, scheduling);
 
             // update question
             question.hasChanged = false;
-        }
-
-        // update trackfile
-        if (note.questionList.length > 0) {
-            const tag = topicPath.path[0];
-            if (!TrackedFile.isDefaultDackName(tag) && !tag.startsWith("#")) {
-                trackedFile.updateTags("#" + tag);
-            }
         }
     }
 }

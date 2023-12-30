@@ -20,7 +20,7 @@ import { Note } from "src/Note";
 import { RenderMarkdownWrapper } from "src/util/RenderMarkdownWrapper";
 import { CardScheduleInfo } from "src/CardSchedule";
 import { TopicPath } from "src/TopicPath";
-import { DataLocation } from "src/dataStore/location_switch";
+import { DataLocation } from "src/dataStore/dataLocation";
 import { SrTFile } from "src/SRFile";
 import { RepetitionItem, RPITEMTYPE } from "src/dataStore/repetitionItem";
 import { debug } from "src/util/utils_recall";

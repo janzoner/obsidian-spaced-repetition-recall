@@ -37,13 +37,9 @@ export class BlockUtils {
     }
 
     static getTxtHash(cardText: string) {
-        const headerReg = /.<!--SR:/gm;
-        const hRegex = headerReg.exec(cardText); // .lastIndexOf(sep+"<!--SR:");
-        if (hRegex != null) {
-            cardText = cardText.substring(0, hRegex.index);
-        }
+        cardText = cardText.replace(/<!--SR:.+-->/gm, "").trimEnd();
         const cardTextHash: string = cyrb53(cardText);
-        return cardTextHash;
+        return cardTextHash.substring(0, 6);
     }
 }
 
@@ -217,3 +213,11 @@ export const logExecutionTime = () => {
         return propertyDescriptor;
     };
 };
+
+export function isIgnoredPath(noteFoldersToIgnore: string[], path: string) {
+    if (noteFoldersToIgnore.some((folder) => path.includes(folder))) {
+        return true;
+    } else {
+        return false;
+    }
+}

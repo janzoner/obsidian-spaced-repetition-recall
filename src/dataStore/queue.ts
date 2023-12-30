@@ -128,6 +128,14 @@ export class Queue implements IQueue {
         }
         return this.queue[key]?.length ?? 0;
     }
+    todaylatterSize(): number {
+        const keys = Object.keys(this.queue);
+        keys.remove(KEY_ALL);
+        return keys
+            .map((key: string) => this.queueSize(key))
+            .reduce((a: number, b: number) => a + b, 0);
+    }
+
     /**
      * repeatQueueSize.
      *
@@ -187,17 +195,12 @@ export class Queue implements IQueue {
                     // in case file moved away.
                     exists = store.updateMovedFile(file);
                 }
-                if (!exists) {
-                    if (!bUnTfiles.has(file)) {
-                        console.debug("untrackfile by buildqueue:", file);
-                        bUnTfiles.add(file);
-                        file.setUnTracked();
-                        untrackedFiles += 1;
-                        // new Notice("untrackfile by buildqueue:" + file);
-                    }
-                    removedItems += file.itemIDs
-                        .map(store.getItembyID, store)
-                        .map((item) => item?.setUntracked()).length;
+                if (!exists && !bUnTfiles.has(file)) {
+                    console.debug("untrackfile by buildqueue:", file);
+                    bUnTfiles.add(file);
+                    removedItems += store.untrackFile(file.path, false);
+                    untrackedFiles += 1;
+                    // new Notice("untrackfile by buildqueue:" + file);
                 }
                 return exists;
             }),
@@ -205,23 +208,21 @@ export class Queue implements IQueue {
         validItems = store.items.filter((item) => item != null && item.isTracked);
         validItems
             .filter((item) => item.isCard)
-            .filter((item) => {
+            .forEach((item) => {
                 if (item.isNew) {
                     // This is a new item.
                     if (maxNew == -1 || this.newAdded < maxNew) {
                         this.newAdded += 1;
                         newAdd_card += this.push(this.cardQueue, item.ID);
-                        return true;
                     }
                 } else if (item.nextReview <= now.getTime()) {
                     this.remove(item, this.cardRepeatQueue);
                     oldAdd_card += this.push(this.cardQueue, item.ID);
-                    return true;
                 }
             });
         validItems
             .filter((item) => !item.isCard)
-            .map(async (item) => {
+            .forEach(async (item) => {
                 // note Queue
                 if (item.isNew) {
                     // This is a new item.
