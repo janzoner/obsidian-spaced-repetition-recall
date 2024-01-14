@@ -150,3 +150,25 @@ export class TopicPath {
         return new TopicPath(path);
     }
 }
+
+export class TopicPathWithWs {
+    topicPath: TopicPath;
+
+    // The white space prior to the topic path
+    // We keep this so that when a question is updated, we can retain the original spacing
+    preWhitespace: string;
+
+    postWhitespace: string;
+
+    constructor(topicPath: TopicPath, preWhitespace: string, postWhitespace: string) {
+        if (!topicPath || topicPath.isEmptyPath) throw "topicPath null";
+
+        this.topicPath = topicPath;
+        this.preWhitespace = preWhitespace;
+        this.postWhitespace = postWhitespace;
+    }
+
+    formatWithWs(): string {
+        return `${this.preWhitespace}${this.topicPath.formatAsTag()}${this.postWhitespace}`;
+    }
+}
