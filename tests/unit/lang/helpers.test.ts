@@ -87,3 +87,15 @@ test("Test translation with interpolation in German", () => {
         );
     });
 });
+
+test("Test translation not in enum", () => {
+    jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { moment } = require("obsidian");
+        const mockLocale = moment.locale as jest.MockedFunction<() => string>;
+        mockLocale.mockImplementation(() => "en");
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { t } = require("src/lang/helpers");
+        expect(t("notInEnum")).toEqual("notInEnum");
+    });
+});

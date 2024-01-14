@@ -26,9 +26,7 @@ export function addUntrackSetting(containerEl: HTMLElement, plugin: SRPlugin) {
         <b>false</b>：删除复习标签后，需再次untrack，才不再复习该笔记。（同之前版本）";
     });
     new Setting(containerEl)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        .setName(t("UntrackWithReviewTag"))
+        .setName(t("UNTRACK_WITH_REVIEWTAG"))
         .setDesc(desc)
         .addToggle((toggle) =>
             toggle.setValue(settings.untrackWithReviewTag).onChange(async (value) => {
