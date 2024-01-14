@@ -288,4 +288,25 @@ describe("getTopicPathOfFile", () => {
             expect(actual.path).toEqual(expected);
         });
     });
+
+    describe("trackedNoteToDecks: true", () => {
+        let settings_trackedNoteToDecks: SRSettings = { ...DEFAULT_SETTINGS };
+        settings_trackedNoteToDecks.trackedNoteToDecks = true;
+        test("Mixture of irrelevant tags and relevant ones", () => {
+            let ignoredContent: string = `
+            #review
+            #ignored Q1::A1
+            #ignored Q2::A2 <!--SR:!2023-09-02,4,270-->
+            #also-Ignored Q3::A3
+            #science Q4::A4 <!--SR:!2023-09-02,4,270-->
+            #science/physics Q5::A5 <!--SR:!2023-09-02,4,270-->
+            #math Q6::A6`;
+
+            let fakeFilePath: string = "history/modern/Greek.md";
+            let file: ISRFile = new UnitTestSRFile(ignoredContent, fakeFilePath);
+            let expected = ["review"];
+            let actual = TopicPath.getTopicPathOfFile(file, settings_trackedNoteToDecks);
+            expect(actual.path).toEqual(expected);
+        });
+    });
 });

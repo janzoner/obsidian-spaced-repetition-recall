@@ -54,6 +54,7 @@ export class Deck {
     private getQuestionCardCountForCardListType(question: Question, cards: Card[]): number {
         let result: number = 0;
         for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
             if (Object.is(question, cards[i].question)) result++;
         }
         return result;

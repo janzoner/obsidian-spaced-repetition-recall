@@ -2,10 +2,10 @@ import { SRSettings } from "src/settings";
 import { t } from "src/lang/helpers";
 
 export enum ReviewResponse {
-    Easy,
-    Good,
-    Hard,
     Reset,
+    Hard,
+    Good,
+    Easy,
 }
 
 // Flashcards
@@ -77,11 +77,25 @@ export function textInterval(interval: number, isMobile: boolean): string {
     const m: number = Math.round(interval / 3.04375) / 10,
         y: number = Math.round(interval / 36.525) / 10;
 
+    let h = 24,
+        min = 60;
+    if (interval < 1) {
+        h = interval * 24;
+        if (h < 1) {
+            min = Math.round(h * 60 * 10) / 10;
+        } else {
+            h = Math.round(h * 10) / 10;
+        }
+    }
     if (isMobile) {
+        if (h < 1) return t("MINUTES_STR_IVL_MOBILE", { interval: min });
+        if (interval < 1) return t("HOURS_STR_IVL_MOBILE", { interval: h });
         if (m < 1.0) return t("DAYS_STR_IVL_MOBILE", { interval });
         else if (y < 1.0) return t("MONTHS_STR_IVL_MOBILE", { interval: m });
         else return t("YEARS_STR_IVL_MOBILE", { interval: y });
     } else {
+        if (h < 1) return t("MINUTES_STR_IVL", { interval: min });
+        if (interval < 1) return t("HOURS_STR_IVL", { interval: h });
         if (m < 1.0) return t("DAYS_STR_IVL", { interval });
         else if (y < 1.0) return t("MONTHS_STR_IVL", { interval: m });
         else return t("YEARS_STR_IVL", { interval: y });

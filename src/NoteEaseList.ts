@@ -31,6 +31,9 @@ export class NoteEaseList implements INoteEaseList {
     }
 
     setEaseForPath(path: string, ease: number): void {
+        if (this.hasEaseForPath(path)) {
+            ease = (this.getEaseByPath(path) + ease) / 2;
+        }
         this.dict[path] = ease;
     }
 }

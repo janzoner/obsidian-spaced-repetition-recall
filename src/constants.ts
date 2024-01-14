@@ -1,8 +1,9 @@
 // To cater for both LF and CR-LF line ending styles, "\r?\n" is used to match the newline character sequence
 // https://github.com/st3v3nmw/obsidian-spaced-repetition/issues/776
 export const SCHEDULING_INFO_REGEX =
-    /^---\r?\n((?:.*\r?\n)*)sr-due: (.+)\r?\nsr-interval: (\d+)\r?\nsr-ease: (\d+)\r?\n((?:.*\r?\n)?)---/;
+    /^---\r?\n((?:.*\r?\n)*)sr-due: (.+)\r?\nsr-interval: (\d+)\r?\nsr-ease: (\d+)\r?\n((?:.*\r?\n)*)---\n/;
 export const YAML_FRONT_MATTER_REGEX = /^---\r?\n((?:.*\r?\n)*?)---/;
+export const YAML_TAGS_REGEX = /^---\n((?:.*\n)*?)tags?:(.*?(?:\n\s+- .*)*)\n((?:.*\n)*?)---/;
 
 export const MULTI_SCHEDULING_EXTRACTOR = /!([\d-]+),(\d+),(\d+)/gm;
 export const LEGACY_SCHEDULING_EXTRACTOR = /<!--SR:([\d-]+),(\d+),(\d+)-->/gm;
@@ -34,3 +35,5 @@ export const TICKS_PER_DAY = 24 * 3600 * 1000;
 
 export const SR_HTML_COMMENT_BEGIN = "<!--SR:";
 export const SR_HTML_COMMENT_END = "-->";
+
+export const DEFAULT_DECKNAME = "default";

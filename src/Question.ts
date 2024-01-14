@@ -10,6 +10,7 @@ import { SRSettings } from "./settings";
 import { TopicPath, TopicPathWithWs } from "./TopicPath";
 import { MultiLineTextFinder } from "./util/MultiLineTextFinder";
 import { cyrb53, stringTrimStart } from "./util/utils";
+import { DataLocation } from "src/dataStore/dataLocation";
 
 export enum CardType {
     SingleLineBasic,
@@ -182,6 +183,9 @@ export class Question {
 
     formatForNote(settings: SRSettings): string {
         let result: string = this.questionText.formatForNote();
+        if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+            return result;
+        }
         if (this.cards.some((card) => card.hasSchedule)) {
             result =
                 result.trimEnd() +

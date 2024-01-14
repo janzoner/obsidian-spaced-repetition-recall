@@ -1,7 +1,8 @@
 import { SRSettings } from "src/settings";
-import { OBSIDIAN_TAG_AT_STARTOFLINE_REGEX } from "./constants";
+import { DEFAULT_DECKNAME, OBSIDIAN_TAG_AT_STARTOFLINE_REGEX } from "./constants";
 import { ISRFile } from "./SRFile";
-import { stringTrimStart } from "./util/utils";
+import { DataStore } from "src/dataStore/data";
+import { DataLocation } from "src/dataStore/dataLocation";
 
 export class TopicPath {
     path: string[];
@@ -39,7 +40,11 @@ export class TopicPath {
         return result;
     }
 
-    static getTopicPathOfFile(noteFile: ISRFile, settings: SRSettings): TopicPath {
+    static getTopicPathOfFile(
+        noteFile: ISRFile,
+        settings: SRSettings,
+        store?: DataStore,
+    ): TopicPath {
         let deckPath: string[] = [];
         let result: TopicPath = TopicPath.emptyPath;
 
@@ -62,8 +67,34 @@ export class TopicPath {
                     }
                 }
             }
-        }
 
+            if (result.isEmptyPath && settings.trackedNoteToDecks) {
+                outer: for (const tagToReview of this.getTopicPathsFromTagList(
+                    settings.tagsToReview,
+                )) {
+                    for (const tag of tagList) {
+                        if (tagToReview.isSameOrAncestorOf(tag)) {
+                            result = tag;
+                            break outer;
+                        }
+                    }
+                }
+                if (settings.dataLocation !== DataLocation.SaveOnNoteFile && store != undefined) {
+                    if (result.isEmptyPath) {
+                        if (store.isInTrackedFiles(noteFile.path)) {
+                            let deckName = store.getTrackedFile(noteFile.path).lastTag;
+                            if (deckName == null) {
+                                deckName = DEFAULT_DECKNAME;
+                            } else if (TopicPath.isValidTag(deckName)) {
+                                deckName = deckName.slice(1);
+                            }
+                            deckPath = deckName.split("/");
+                            result = new TopicPath(deckPath);
+                        }
+                    }
+                }
+            }
+        }
         return result;
     }
 
@@ -79,6 +110,16 @@ export class TopicPath {
     static getTopicPathFromCardText(cardText: string): TopicPath {
         const path = cardText.trimStart().match(OBSIDIAN_TAG_AT_STARTOFLINE_REGEX)?.slice(-1)[0];
         return path?.length > 0 ? TopicPath.getTopicPathFromTag(path) : null;
+    }
+
+    static removeTopicPathFromStartOfCardText(cardText: string): [string, string] {
+        const cardText1: string = cardText
+            .trimStart()
+            .replaceAll(OBSIDIAN_TAG_AT_STARTOFLINE_REGEX, "");
+        const cardText2: string = cardText1.trimStart();
+        const whiteSpaceLength: number = cardText1.length - cardText2.length;
+        const whiteSpace: string = cardText1.substring(0, whiteSpaceLength);
+        return [cardText2, whiteSpace];
     }
 
     static getTopicPathsFromTagList(tagList: string[]): TopicPath[] {

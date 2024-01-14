@@ -10,6 +10,7 @@ export default {
     SKIP: "略过",
     EDIT_CARD: "编辑卡片",
     RESET_CARD_PROGRESS: "重置卡片",
+    RESET: "重来",
     HARD: "较难",
     GOOD: "记得",
     EASY: "简单",
@@ -21,6 +22,7 @@ export default {
     CURRENT_EASE_HELP_TEXT: "目前掌握程度：",
     CURRENT_INTERVAL_HELP_TEXT: "目前间隔：",
     CARD_GENERATED_FROM: "生成自：${notePath}",
+    OPEN_NOTE: "打开笔记",
 
     // main.ts
     OPEN_NOTE_FOR_REVIEW: "打开一个笔记开始复习",
@@ -42,7 +44,7 @@ export default {
     PLEASE_TAG_NOTE: "请将需要复习的笔记中加入正确的标签（检查设置选项）。",
     RESPONSE_RECEIVED: "反馈已收到",
     NO_DECK_EXISTS: "没有 ${deckName} 卡组",
-    ALL_CAUGHT_UP: "都复习完啦，你真棒！",
+    ALL_CAUGHT_UP: "都复习完啦，你真棒！\n去接触点新东西吧~",
 
     // scheduling.ts
     DAYS_STR_IVL: "${interval}天",
@@ -51,6 +53,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "${interval}天",
     MONTHS_STR_IVL_MOBILE: "${interval}月",
     YEARS_STR_IVL_MOBILE: "${interval}年",
+    HOURS_STR_IVL: "${interval}小时",
+    MINUTES_STR_IVL: "${interval}分钟",
+    HOURS_STR_IVL_MOBILE: "${interval}时",
+    MINUTES_STR_IVL_MOBILE: "${interval}分",
 
     // settings.ts
     SETTINGS_HEADER: "间隔重复插件 - 设置",
@@ -135,6 +141,42 @@ export default {
     LOGGING: "记录中",
     DISPLAY_DEBUG_INFO: "在开发者控制台中显示调试信息？",
 
+    DATA_LOC: "数据位置",
+    DATA_LOC_DESC: "间隔重复数据项的文件的保存位置.",
+    DATA_FOLDER: "`tracked_files.json`的文件夹",
+    NEW_PER_DAY: "每天新增重复的数量",
+    NEW_PER_DAY_DESC: "每天要添加到队列中的新（未重复过的）笔记的最大数量。设置为`-1`则无限制。",
+    NEW_PER_DAY_NAN: "必须是整数",
+    NEW_PER_DAY_NEG: "整数必须大于等于-1.",
+    REPEAT_ITEMS: "重复错误",
+    REPEAT_ITEMS_DESC: "错误项是否要一直重复复习，直到回答正确?",
+    ALGORITHMS_CONFIRM:
+        "切换算法可能导致日期排程重置，这个修改不可撤销，当重启软件或重新加载插件切换算法才会生效。你确定要切换算法么?",
+    ALGORITHMS_DESC:
+        '用于间隔重复的算法. 更多信息请查阅 <a href="https://github.com/martin-jw/obsidian-recall">算法</a>.',
+    CONVERT_TRACKED_TO_DECK: "将复习笔记转换为卡牌组?",
+    REVIEW_FLOATBAR: "复习悬浮栏",
+    REVIEW_FLOATBAR_DESC:
+        "当设置项“复习后自动打开下一个笔记”启用时，这个设置项启用才生效. 通过点击状态栏/侧边栏/命令进行复习时就会显示出来.",
+    REVIEW_NOTE_DIRECTLY: "直接复习笔记?",
+    REVIEW_NOTE_DIRECTLY_DESC: "复习笔记时, 不必选择标签（多个复习标签的情况）就直接打开笔记",
+    INTERVAL_SHOWHIDE: "显示复习间隔",
+    INTERVAL_SHOWHIDE_DESC: "是否在按键上显示复习间隔",
+    REQUEST_RETENTION: "保留度",
+    REQUEST_RETENTION_DESC: "在下次进行复习时，你期望能回想起答案的概率（百分比）",
+    REVLOG_TAGS: "输出到日志的标签",
+    REVLOG_TAGS_DESC:
+        "用于输出到日志的标签, 卡片或笔记的标签（如#review #flashcards #tag1）都行。默认留空则不按标签区分，都正常输出到日志表格",
+
+    FLASHCARD_AGAIN_LABEL: "重来 按钮文本",
+    FLASHCARD_BLACKOUT_LABEL: "忘记 按钮文本",
+    FLASHCARD_INCORRECT_LABEL: "猜错 按钮文本",
+    "FLASHCARD_INCORRECT (EASY)_LABEL": "猜错（简单） 按钮文本",
+    FLASHCARD_AGAIN_DESC: "自定义“重来”按钮的标签",
+    FLASHCARD_BLACKOUT_DESC: "自定义“忘记”按钮的标签",
+    FLASHCARD_INCORRECT_DESC: "自定义“猜错”按钮的标签",
+    "FLASHCARD_INCORRECT (EASY)_DESC": "自定义“猜错（简单）”按钮的标签",
+
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "笔记复习序列",
     CLOSE: "临近",
@@ -167,4 +209,10 @@ export default {
     CARD_TYPE_YOUNG: "较新",
     CARD_TYPE_MATURE: "熟悉",
     CARD_TYPES_SUMMARY: "总卡片数: ${totalCardsCount}",
+    REVIEWED_TODAY: "今天复习情况",
+    REVIEWED_TODAY_DESC: "今天已经复习的卡片/笔记的数量",
+    NEW_LEARNED: "新学",
+    DUE_REVIEWED: "复习",
+    REVIEWED_TODAY_SUMMARY: "总复习数: ${totalreviewedCount}",
+    DATE: "日期",
 };

@@ -20,8 +20,12 @@ import type SRPlugin from "src/main";
 import { getKeysPreserveType, getTypedObjectEntries } from "src/util/utils";
 import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
-import { Stats } from "../stats";
+import { ReviewedCounts } from "src/dataStore/data";
+import { State } from "fsrs.js";
+import { algorithmNames } from "src/algorithms/algorithms";
+import { Stats } from "src/stats";
 import { CardListType } from "src/Deck";
+import { RPITEMTYPE } from "src/dataStore/repetitionItem";
 
 Chart.register(
     BarElement,
@@ -47,14 +51,22 @@ export class StatsModal extends Modal {
         this.titleEl.setText(`${t("STATS_TITLE")} `);
         this.titleEl.addClass("sr-centered");
         this.titleEl.innerHTML += (
-            <select id="sr-chart-period">
-                <option value="month" selected>
-                    {t("MONTH")}
-                </option>
-                <option value="quarter">{t("QUARTER")}</option>
-                <option value="year">{t("YEAR")}</option>
-                <option value="lifetime">{t("LIFETIME")}</option>
-            </select>
+            <div>
+                <select id="sr-chart-type">
+                    <option value={RPITEMTYPE.CARD} selected>
+                        {t("FLASHCARDS")}
+                    </option>
+                    <option value={RPITEMTYPE.NOTE}>{t("NOTES")}</option>
+                </select>
+                <select id="sr-chart-period">
+                    <option value="month" selected>
+                        {t("MONTH")}
+                    </option>
+                    <option value="quarter">{t("QUARTER")}</option>
+                    <option value="year">{t("YEAR")}</option>
+                    <option value="lifetime">{t("LIFETIME")}</option>
+                </select>
+            </div>
         );
 
         this.modalEl.style.height = "100%";
@@ -69,27 +81,12 @@ export class StatsModal extends Modal {
         const { contentEl } = this;
         contentEl.style.textAlign = "center";
 
-        // Add forecast
-        const cardStats: Stats = this.plugin.cardStats;
-        let maxN: number = cardStats.delayedDays.getMaxValue();
-        for (let dueOffset = 0; dueOffset <= maxN; dueOffset++) {
-            cardStats.delayedDays.clearCountIfMissing(dueOffset);
-        }
-
-        const dueDatesFlashcardsCopy: Record<number, number> = { 0: 0 };
-        for (const [dueOffset, dueCount] of getTypedObjectEntries(cardStats.delayedDays.dict)) {
-            if (dueOffset <= 0) {
-                dueDatesFlashcardsCopy[0] += dueCount;
-            } else {
-                dueDatesFlashcardsCopy[dueOffset] = dueCount;
-            }
-        }
-
-        const scheduledCount: number = cardStats.youngCount + cardStats.matureCount;
-        maxN = Math.max(maxN, 1);
-
         contentEl.innerHTML += (
             <div>
+                <canvas id="todayReviewedChart"></canvas>
+                <span id="todayReviewedChartSummary"></span>
+                <br />
+                <br />
                 <canvas id="forecastChart"></canvas>
                 <span id="forecastChartSummary"></span>
                 <br />
@@ -108,6 +105,88 @@ export class StatsModal extends Modal {
             </div>
         );
 
+        const chartTypeEl = document.getElementById("sr-chart-type") as HTMLSelectElement;
+        chartTypeEl.addEventListener("change", () => {
+            const chartType = chartTypeEl.value;
+            if (chartType === RPITEMTYPE.NOTE) {
+                this.createCharts(
+                    this.plugin.store.getReviewedCounts(),
+                    this.plugin.noteStats,
+                    this.plugin.noteStats.getTotalCount(CardListType.All),
+                );
+                return;
+            } else {
+                this.createCharts(
+                    this.plugin.store.getReviewedCardCounts(),
+                    this.plugin.cardStats,
+                    this.plugin.deckTree.getCardCount(CardListType.All, true),
+                );
+                return;
+            }
+        });
+
+        this.createCharts(
+            this.plugin.store.getReviewedCardCounts(),
+            this.plugin.cardStats,
+            this.plugin.deckTree.getCardCount(CardListType.All, true),
+        );
+    }
+
+    onClose(): void {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+
+    private createCharts(rc: ReviewedCounts, cardStats: Stats, totalCardsCount: number) {
+        //Add today review data
+        // const rc = reviewedCounts;
+        const now = window.moment(Date.now());
+        const todayDate: string = now.format("YYYY-MM-DD");
+        if (!(todayDate in rc)) {
+            rc[todayDate] = { due: 0, new: 0 };
+        }
+        const rdueCnt = rc[todayDate].due,
+            rnewCnt = rc[todayDate].new;
+
+        const totalreviewedCount = rdueCnt + rnewCnt;
+        createStatsChart(
+            "bar",
+            "todayReviewedChart",
+            t("REVIEWED_TODAY"),
+            t("REVIEWED_TODAY_DESC"),
+            [`${t("NEW_LEARNED")} - ${rnewCnt}`, `${t("DUE_REVIEWED")} - ${rdueCnt}`],
+            [rnewCnt, rdueCnt],
+            t("REVIEWED_TODAY_SUMMARY", { totalreviewedCount }),
+            t("COUNT"),
+            "",
+            t("NUMBER_OF_CARDS"),
+        );
+
+        // Add forecast
+        // const cardStats: Stats = this.plugin.cardStats;
+        let maxN: number = cardStats.delayedDays.getMaxValue();
+        for (let dueOffset = 0; dueOffset <= maxN; dueOffset++) {
+            cardStats.delayedDays.clearCountIfMissing(dueOffset);
+        }
+
+        const dueDatesFlashcardsCopy: Record<string, number> = {};
+        const todayStr = t("TODAY");
+        dueDatesFlashcardsCopy[todayStr] = 0;
+        for (const [dueOffset, dueCount] of getTypedObjectEntries(cardStats.delayedDays.dict)) {
+            if (dueOffset <= 0) {
+                // dueDatesFlashcardsCopy[0] += dueCount;
+                dueDatesFlashcardsCopy[todayStr] += dueCount;
+            } else {
+                // dueDatesFlashcardsCopy[dueOffset] = dueCount;
+                const due = now.clone().add(dueOffset, "days");
+                const dateStr = due.format("YYYY-MM-DD");
+                dueDatesFlashcardsCopy[dateStr] = dueCount;
+            }
+        }
+
+        const scheduledCount: number = cardStats.youngCount + cardStats.matureCount;
+        maxN = Math.max(maxN, 1);
+
         createStatsChart(
             "bar",
             "forecastChart",
@@ -117,7 +196,7 @@ export class StatsModal extends Modal {
             Object.values(dueDatesFlashcardsCopy),
             t("REVIEWS_PER_DAY", { avg: (scheduledCount / maxN).toFixed(1) }),
             t("SCHEDULED"),
-            t("DAYS"),
+            t("DATE"),
             t("NUMBER_OF_CARDS"),
         );
 
@@ -156,12 +235,22 @@ export class StatsModal extends Modal {
         const average_ease: number =
             Math.round(cardStats.eases.getTotalOfValueMultiplyCount() / scheduledCount) || 0;
 
+        const esaeStr: string[] = [];
+        getKeysPreserveType(cardStats.eases.dict).forEach((value: number) => {
+            if (this.plugin.data.settings.algorithm === algorithmNames.Fsrs) {
+                esaeStr.push(`${State[value]} `);
+            } else {
+                esaeStr.push(`${value} `);
+            }
+        });
+
         createStatsChart(
             "bar",
             "easesChart",
             t("EASES"),
             "",
-            Object.keys(cardStats.eases.dict),
+            esaeStr,
+            // Object.keys(cardStats.eases),
             Object.values(cardStats.eases.dict),
             t("EASES_SUMMARY", { avgEase: average_ease }),
             t("COUNT"),
@@ -170,7 +259,7 @@ export class StatsModal extends Modal {
         );
 
         // Add card types
-        const totalCardsCount: number = this.plugin.deckTree.getCardCount(CardListType.All, true);
+        // const totalCardsCount: number = this.plugin.deckTree.getCardCount(CardListType.All, true);
         createStatsChart(
             "pie",
             "cardTypesChart",
@@ -190,11 +279,6 @@ export class StatsModal extends Modal {
             [cardStats.newCount, cardStats.youngCount, cardStats.matureCount],
             t("CARD_TYPES_SUMMARY", { totalCardsCount }),
         );
-    }
-
-    onClose(): void {
-        const { contentEl } = this;
-        contentEl.empty();
     }
 }
 
@@ -238,6 +322,13 @@ function createStatsChart(
 
     const shouldFilter = canvasId === "forecastChart" || canvasId === "intervalsChart";
 
+    const statsE1 = document.getElementById(canvasId) as HTMLCanvasElement;
+    const existingChart = Chart.getChart(statsE1);
+    if (existingChart) {
+        existingChart.unbindEvents();
+        existingChart.destroy();
+    }
+
     const statsChart = new Chart(document.getElementById(canvasId) as HTMLCanvasElement, {
         type,
         data: {
@@ -280,31 +371,40 @@ function createStatsChart(
 
     if (shouldFilter) {
         const chartPeriodEl = document.getElementById("sr-chart-period") as HTMLSelectElement;
-        chartPeriodEl.addEventListener("click", () => {
-            let filteredLabels, filteredData;
-            const chartPeriod = chartPeriodEl.value;
-            if (chartPeriod === "month") {
-                filteredLabels = labels.slice(0, 31);
-                filteredData = data.slice(0, 31);
-            } else if (chartPeriod === "quarter") {
-                filteredLabels = labels.slice(0, 91);
-                filteredData = data.slice(0, 91);
-            } else if (chartPeriod === "year") {
-                filteredLabels = labels.slice(0, 366);
-                filteredData = data.slice(0, 366);
-            } else {
-                filteredLabels = labels;
-                filteredData = data;
+        chartPeriodEl.addEventListener("change", () => {
+            if (statsChart.canvas != null) {
+                chartPeriodCallBack(chartPeriodEl);
             }
-
-            statsChart.data.labels = filteredLabels;
-            statsChart.data.datasets[0] = {
-                label: seriesTitle,
-                backgroundColor,
-                data: filteredData,
-            };
-            statsChart.update();
         });
+        chartPeriodCallBack(chartPeriodEl);
+    }
+
+    document.getElementById(`${canvasId}Summary`).innerText = summary;
+
+    function chartPeriodCallBack(chartPeriodEl: HTMLSelectElement) {
+        let filteredLabels, filteredData;
+        const chartPeriod = chartPeriodEl.value;
+        if (chartPeriod === "month") {
+            filteredLabels = labels.slice(0, 31);
+            filteredData = data.slice(0, 31);
+        } else if (chartPeriod === "quarter") {
+            filteredLabels = labels.slice(0, 91);
+            filteredData = data.slice(0, 91);
+        } else if (chartPeriod === "year") {
+            filteredLabels = labels.slice(0, 366);
+            filteredData = data.slice(0, 366);
+        } else {
+            filteredLabels = labels;
+            filteredData = data;
+        }
+
+        statsChart.data.labels = filteredLabels;
+        statsChart.data.datasets[0] = {
+            label: seriesTitle,
+            backgroundColor,
+            data: filteredData,
+        };
+        statsChart.update();
     }
 
     document.getElementById(`${canvasId}Summary`).innerText = summary;

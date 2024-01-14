@@ -7,6 +7,11 @@ module.exports = {
     moduleNameMapper: {
         "src/(.*)": "<rootDir>/src/$1",
     },
+    modulePaths: ["<rootDir>"],
+    transform: {
+        "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
+            "<rootDir>/utils/fileTransformer.js",
+    },
     moduleFileExtensions: ["js", "jsx", "ts", "tsx", "json", "node", "d.ts"],
     roots: ["<rootDir>/src/", "<rootDir>/tests/unit/"],
     collectCoverageFrom: [

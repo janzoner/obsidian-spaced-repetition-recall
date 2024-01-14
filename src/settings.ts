@@ -2,8 +2,24 @@ import { Notice, PluginSettingTab, Setting, App, Platform } from "obsidian";
 import type SRPlugin from "src/main";
 import { t } from "src/lang/helpers";
 
+// https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
+
+import { algorithms } from "./algorithms/algorithms_switch";
+import { addResponseFloatBarSetting } from "src/settings/responseBarSetting";
+import { DataLocation } from "./dataStore/dataLocation";
+import { addDataLocationSettings } from "./settings/locationSetting";
+import {
+    DEFAULT_responseOptionBtnsText,
+    addAlgorithmSetting,
+    addAlgorithmSpecificDisplaySetting,
+    addResponseButtonTextSetting,
+} from "./settings/algorithmSetting";
+import { addUntrackSetting, addTrackedNoteToDecksSetting } from "./settings/trackSetting";
+import { buildDonation } from "./settings/donation";
+
 export interface SRSettings {
     // flashcards
+    responseOptionBtnsText: Record<string, string[]>;
     flashcardEasyText: string;
     flashcardGoodText: string;
     flashcardHardText: string;
@@ -25,12 +41,16 @@ export interface SRSettings {
     multilineCardSeparator: string;
     multilineReversedCardSeparator: string;
     editLaterTag: string;
+    intervalShowHide: boolean;
     // notes
     enableNoteReviewPaneOnStartup: boolean;
     tagsToReview: string[];
     noteFoldersToIgnore: string[];
     openRandomNote: boolean;
     autoNextNote: boolean;
+    reviewResponseFloatBar: boolean;
+    responseBarPositionPercentage: number;
+    reviewingNoteDirectly: boolean;
     disableFileMenuReviewOptions: boolean;
     maxNDaysNotesReviewQueue: number;
     // UI preferences
@@ -43,10 +63,24 @@ export interface SRSettings {
     maxLinkFactor: number;
     // logging
     showDebugMessages: boolean;
+
+    // trackfile: https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
+    dataLocation: DataLocation;
+    customFolder: string;
+    maxNewPerDay: number;
+    repeatItems: boolean;
+    trackedNoteToDecks: boolean;
+    untrackWithReviewTag: boolean;
+    algorithm: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    algorithmSettings: any;
+
+    previousRelease: string;
 }
 
 export const DEFAULT_SETTINGS: SRSettings = {
     // flashcards
+    responseOptionBtnsText: DEFAULT_responseOptionBtnsText,
     flashcardEasyText: t("EASY"),
     flashcardGoodText: t("GOOD"),
     flashcardHardText: t("HARD"),
@@ -69,12 +103,16 @@ export const DEFAULT_SETTINGS: SRSettings = {
     multilineCardSeparator: "?",
     multilineReversedCardSeparator: "??",
     editLaterTag: "#edit-later",
+    intervalShowHide: true,
     // notes
     enableNoteReviewPaneOnStartup: true,
     tagsToReview: ["#review"],
     noteFoldersToIgnore: [],
     openRandomNote: false,
     autoNextNote: false,
+    reviewResponseFloatBar: false,
+    responseBarPositionPercentage: 5,
+    reviewingNoteDirectly: false,
     disableFileMenuReviewOptions: false,
     maxNDaysNotesReviewQueue: 365,
     // UI settings
@@ -87,6 +125,17 @@ export const DEFAULT_SETTINGS: SRSettings = {
     maxLinkFactor: 1.0,
     // logging
     showDebugMessages: false,
+
+    // trackfile: https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
+    dataLocation: DataLocation.SaveOnNoteFile,
+    customFolder: "",
+    maxNewPerDay: -1,
+    repeatItems: false,
+    trackedNoteToDecks: false,
+    untrackWithReviewTag: false,
+    algorithm: Object.keys(algorithms)[0],
+    algorithmSettings: { algorithm: Object.values(algorithms)[0].settings },
+    previousRelease: "0.0.0",
 };
 
 export function upgradeSettings(settings: SRSettings) {
@@ -108,7 +157,7 @@ export function upgradeSettings(settings: SRSettings) {
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
 let applyDebounceTimer = 0;
-function applySettingsUpdate(callback: () => void): void {
+export function applySettingsUpdate(callback: () => void): void {
     clearTimeout(applyDebounceTimer);
     applyDebounceTimer = window.setTimeout(callback, 512);
 }
@@ -132,6 +181,17 @@ export class SRSettingTab extends PluginSettingTab {
         containerEl.createDiv().innerHTML = t("CHECK_WIKI", {
             wiki_url: "https://www.stephenmwangi.com/obsidian-spaced-repetition/",
         });
+        const issue_url =
+            "https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues";
+        containerEl.createDiv().innerHTML = `有空时可以看看 <a href= ${issue_url} > issue </a> .`;
+
+        // trackfile_setting
+        // https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
+        addDataLocationSettings(containerEl.createDiv(), this.plugin);
+
+        addAlgorithmSetting(containerEl.createDiv(), this.plugin);
+        // this.addNewPerDaySetting(containerEl);
+        // this.addRepeatItemsSetting(containerEl);
 
         new Setting(containerEl)
             .setName(t("FOLDERS_TO_IGNORE"))
@@ -446,74 +506,7 @@ export class SRSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
-            .setName(t("FLASHCARD_EASY_LABEL"))
-            .setDesc(t("FLASHCARD_EASY_DESC"))
-            .addText((text) =>
-                text.setValue(this.plugin.data.settings.flashcardEasyText).onChange((value) => {
-                    applySettingsUpdate(async () => {
-                        this.plugin.data.settings.flashcardEasyText = value;
-                        await this.plugin.savePluginData();
-                    });
-                }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.flashcardEasyText =
-                            DEFAULT_SETTINGS.flashcardEasyText;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName(t("FLASHCARD_GOOD_LABEL"))
-            .setDesc(t("FLASHCARD_GOOD_DESC"))
-            .addText((text) =>
-                text.setValue(this.plugin.data.settings.flashcardGoodText).onChange((value) => {
-                    applySettingsUpdate(async () => {
-                        this.plugin.data.settings.flashcardGoodText = value;
-                        await this.plugin.savePluginData();
-                    });
-                }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.flashcardGoodText =
-                            DEFAULT_SETTINGS.flashcardGoodText;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName(t("FLASHCARD_HARD_LABEL"))
-            .setDesc(t("FLASHCARD_HARD_DESC"))
-            .addText((text) =>
-                text.setValue(this.plugin.data.settings.flashcardHardText).onChange((value) => {
-                    applySettingsUpdate(async () => {
-                        this.plugin.data.settings.flashcardHardText = value;
-                        await this.plugin.savePluginData();
-                    });
-                }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.flashcardHardText =
-                            DEFAULT_SETTINGS.flashcardHardText;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
+        this.addIntervalShowHideSetting(containerEl.createDiv());
 
         containerEl.createEl("h3", { text: `${t("NOTES")}` });
 
@@ -558,6 +551,11 @@ export class SRSettingTab extends PluginSettingTab {
                 await this.plugin.savePluginData();
             }),
         );
+
+        addTrackedNoteToDecksSetting(containerEl.createDiv(), this.plugin);
+        addUntrackSetting(containerEl.createDiv(), this.plugin);
+        addResponseFloatBarSetting(containerEl.createDiv(), this.plugin);
+        this.addReviewNoteDirectlySetting(containerEl.createDiv());
 
         new Setting(containerEl)
             .setName(t("DISABLE_FILE_MENU_REVIEW_OPTIONS"))
@@ -622,174 +620,96 @@ export class SRSettingTab extends PluginSettingTab {
                     }),
             );
 
+        addResponseButtonTextSetting(containerEl.createDiv(), this.plugin);
+
         containerEl.createEl("h3", { text: `${t("ALGORITHM")}` });
-        containerEl.createDiv().innerHTML = t("CHECK_ALGORITHM_WIKI", {
-            algo_url: "https://www.stephenmwangi.com/obsidian-spaced-repetition/algorithms/",
-        });
 
-        new Setting(containerEl)
-            .setName(t("BASE_EASE"))
-            .setDesc(t("BASE_EASE_DESC"))
-            .addText((text) =>
-                text.setValue(this.plugin.data.settings.baseEase.toString()).onChange((value) => {
-                    applySettingsUpdate(async () => {
-                        const numValue: number = Number.parseInt(value);
-                        if (!isNaN(numValue)) {
-                            if (numValue < 130) {
-                                new Notice(t("BASE_EASE_MIN_WARNING"));
-                                text.setValue(this.plugin.data.settings.baseEase.toString());
-                                return;
-                            }
-
-                            this.plugin.data.settings.baseEase = numValue;
-                            await this.plugin.savePluginData();
-                        } else {
-                            new Notice(t("VALID_NUMBER_WARNING"));
-                        }
-                    });
-                }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.baseEase = DEFAULT_SETTINGS.baseEase;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName(t("LAPSE_INTERVAL_CHANGE"))
-            .setDesc(t("LAPSE_INTERVAL_CHANGE_DESC"))
-            .addSlider((slider) =>
-                slider
-                    .setLimits(1, 99, 1)
-                    .setValue(this.plugin.data.settings.lapsesIntervalChange * 100)
-                    .setDynamicTooltip()
-                    .onChange(async (value: number) => {
-                        this.plugin.data.settings.lapsesIntervalChange = value / 100;
-                        await this.plugin.savePluginData();
-                    }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.lapsesIntervalChange =
-                            DEFAULT_SETTINGS.lapsesIntervalChange;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName(t("EASY_BONUS"))
-            .setDesc(t("EASY_BONUS_DESC"))
-            .addText((text) =>
-                text
-                    .setValue((this.plugin.data.settings.easyBonus * 100).toString())
-                    .onChange((value) => {
-                        applySettingsUpdate(async () => {
-                            const numValue: number = Number.parseInt(value) / 100;
-                            if (!isNaN(numValue)) {
-                                if (numValue < 1.0) {
-                                    new Notice(t("EASY_BONUS_MIN_WARNING"));
-                                    text.setValue(
-                                        (this.plugin.data.settings.easyBonus * 100).toString(),
-                                    );
-                                    return;
-                                }
-
-                                this.plugin.data.settings.easyBonus = numValue;
-                                await this.plugin.savePluginData();
-                            } else {
-                                new Notice(t("VALID_NUMBER_WARNING"));
-                            }
-                        });
-                    }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.easyBonus = DEFAULT_SETTINGS.easyBonus;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName(t("MAX_INTERVAL"))
-            .setDesc(t("MAX_INTERVAL_DESC"))
-            .addText((text) =>
-                text
-                    .setValue(this.plugin.data.settings.maximumInterval.toString())
-                    .onChange((value) => {
-                        applySettingsUpdate(async () => {
-                            const numValue: number = Number.parseInt(value);
-                            if (!isNaN(numValue)) {
-                                if (numValue < 1) {
-                                    new Notice(t("MAX_INTERVAL_MIN_WARNING"));
-                                    text.setValue(
-                                        this.plugin.data.settings.maximumInterval.toString(),
-                                    );
-                                    return;
-                                }
-
-                                this.plugin.data.settings.maximumInterval = numValue;
-                                await this.plugin.savePluginData();
-                            } else {
-                                new Notice(t("VALID_NUMBER_WARNING"));
-                            }
-                        });
-                    }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.maximumInterval =
-                            DEFAULT_SETTINGS.maximumInterval;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName(t("MAX_LINK_CONTRIB"))
-            .setDesc(t("MAX_LINK_CONTRIB_DESC"))
-            .addSlider((slider) =>
-                slider
-                    .setLimits(0, 100, 1)
-                    .setValue(this.plugin.data.settings.maxLinkFactor * 100)
-                    .setDynamicTooltip()
-                    .onChange(async (value: number) => {
-                        this.plugin.data.settings.maxLinkFactor = value / 100;
-                        await this.plugin.savePluginData();
-                    }),
-            )
-            .addExtraButton((button) => {
-                button
-                    .setIcon("reset")
-                    .setTooltip(t("RESET_DEFAULT"))
-                    .onClick(async () => {
-                        this.plugin.data.settings.maxLinkFactor = DEFAULT_SETTINGS.maxLinkFactor;
-                        await this.plugin.savePluginData();
-                        this.display();
-                    });
-            });
+        addAlgorithmSpecificDisplaySetting(containerEl.createDiv(), this.plugin);
 
         containerEl.createEl("h3", { text: `${t("LOGGING")}` });
         new Setting(containerEl).setName(t("DISPLAY_DEBUG_INFO")).addToggle((toggle) =>
             toggle.setValue(this.plugin.data.settings.showDebugMessages).onChange(async (value) => {
                 this.plugin.data.settings.showDebugMessages = value;
+                if (value) {
+                    this.plugin.commands.addDebugCommands();
+                }
                 await this.plugin.savePluginData();
             }),
         );
+
+        buildDonation(this.containerEl);
+    }
+
+    addNewPerDaySetting(containerEl: HTMLElement) {
+        const plugin = this.plugin;
+
+        new Setting(containerEl)
+            .setName(t("NEW_PER_DAY"))
+            .setDesc(t("NEW_PER_DAY_DESC"))
+            .addText((text) =>
+                text
+                    .setPlaceholder("New Per Day")
+                    .setValue(plugin.data.settings.maxNewPerDay.toString())
+                    .onChange((newValue) => {
+                        const newPerDay = Number(newValue);
+
+                        if (isNaN(newPerDay)) {
+                            new Notice(t("NEW_PER_DAY_NAN"));
+                            return;
+                        }
+
+                        if (newPerDay < -1) {
+                            new Notice(t("NEW_PER_DAY_NEG"));
+                            return;
+                        }
+
+                        plugin.data.settings.maxNewPerDay = newPerDay;
+                        plugin.savePluginData();
+                    }),
+            );
+    }
+
+    addRepeatItemsSetting(containerEl: HTMLElement) {
+        const plugin = this.plugin;
+        new Setting(containerEl)
+            .setName(t("REPEAT_ITEMS"))
+            .setDesc(t("REPEAT_ITEMS_DESC"))
+            .addToggle((toggle) => {
+                toggle.setValue(this.plugin.data.settings.repeatItems);
+                toggle.onChange((value) => {
+                    plugin.data.settings.repeatItems = value;
+                    plugin.savePluginData();
+                });
+            });
+    }
+
+    addIntervalShowHideSetting(containerEl: HTMLElement) {
+        const plugin = this.plugin;
+
+        new Setting(containerEl)
+            .setName(t("INTERVAL_SHOWHIDE"))
+            .setDesc(t("INTERVAL_SHOWHIDE_DESC"))
+            .addToggle((toggle) => {
+                toggle.setValue(plugin.data.settings.intervalShowHide);
+                toggle.onChange((newValue) => {
+                    plugin.data.settings.intervalShowHide = newValue;
+                    plugin.savePluginData();
+                });
+            });
+    }
+
+    addReviewNoteDirectlySetting(containerEl: HTMLElement) {
+        const plugin = this.plugin;
+
+        new Setting(containerEl)
+            .setName(t("REVIEW_NOTE_DIRECTLY"))
+            .setDesc(t("REVIEW_NOTE_DIRECTLY_DESC"))
+            .addToggle((toggle) => {
+                toggle.setValue(plugin.data.settings.reviewingNoteDirectly);
+                toggle.onChange((newValue) => {
+                    plugin.data.settings.reviewingNoteDirectly = newValue;
+                    plugin.savePluginData();
+                });
+            });
     }
 }

@@ -10,6 +10,7 @@ export default {
     SKIP: "略過",
     EDIT_CARD: "編輯卡片",
     RESET_CARD_PROGRESS: "重置卡片",
+    RESET: "重来",
     HARD: "較難",
     GOOD: "記得",
     EASY: "簡單",
@@ -21,6 +22,7 @@ export default {
     CURRENT_EASE_HELP_TEXT: "目前掌握程度：",
     CURRENT_INTERVAL_HELP_TEXT: "目前間隔時間：",
     CARD_GENERATED_FROM: "生成自：${notePath}",
+    OPEN_NOTE: "打開筆記",
 
     // main.ts
     OPEN_NOTE_FOR_REVIEW: "打開一個筆記開始復習",
@@ -51,6 +53,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "${interval}天",
     MONTHS_STR_IVL_MOBILE: "${interval}月",
     YEARS_STR_IVL_MOBILE: "${interval}年",
+    HOURS_STR_IVL: "${interval}小時",
+    MINUTES_STR_IVL: "${interval}分鐘",
+    HOURS_STR_IVL_MOBILE: "${interval}時",
+    MINUTES_STR_IVL_MOBILE: "${interval}分",
 
     // settings.ts
     SETTINGS_HEADER: "間隔重複外掛 - 設定",
@@ -134,6 +140,42 @@ export default {
     LOGGING: "記錄中",
     DISPLAY_DEBUG_INFO: "在開發者控制台中顯示除錯資訊？",
 
+    DATA_LOC: "數據位置",
+    DATA_LOC_DESC: "間隔重複資料項目的檔的保存位置.",
+    DATA_FOLDER: "`tracked_files.json`的檔夾",
+    NEW_PER_DAY: "每天新增重複的數量",
+    NEW_PER_DAY_DESC: "每天要添加到佇列中的新（未重複過的）筆記的最大數量。設置爲`-1`則無限制",
+    NEW_PER_DAY_NAN: "必須是整數",
+    NEW_PER_DAY_NEG: "整數必須大於等於-1.",
+    REPEAT_ITEMS: "重複錯誤",
+    REPEAT_ITEMS_DESC: "錯誤項是否要一直重複復習，直到回答正確?",
+    ALGORITHMS_CONFIRM:
+        "切換演算法可能導致日期排程重置，這個修改不可撤銷，當重啟軟體或重新加載插件切換演算法才會生效。你確定要切換演算法麼?",
+    ALGORITHMS_DESC:
+        '用於間隔重複的演算法. 更多資訊請查閱 <a href="https://github.com/martin-jw/obsidian-recall">演算法</a>.',
+    CONVERT_TRACKED_TO_DECK: "將復習筆記轉換為卡牌組?",
+    REVIEW_FLOATBAR: "復習懸浮欄",
+    REVIEW_FLOATBAR_DESC:
+        "當設置項“復習後自動打開下一個筆記”啟用時，這個設置項啟用才生效. 通過點擊狀態欄/側邊欄/命令進行復習時就會顯示出來.",
+    REVIEW_NOTE_DIRECTLY: "直接復習筆記?",
+    REVIEW_NOTE_DIRECTLY_DESC: "復習筆記時, 不必選擇標籤（多個復習標籤的情況）就直接打開筆記",
+    INTERVAL_SHOWHIDE: "顯示復習間隔",
+    INTERVAL_SHOWHIDE_DESC: "是否在按鍵上顯示復習間隔",
+    REQUEST_RETENTION: "保留度",
+    REQUEST_RETENTION_DESC: "在下次進行復習時，你期望能回想起答案的概率（百分比）",
+    REVLOG_TAGS: "輸出到日誌的標籤",
+    REVLOG_TAGS_DESC:
+        "用於輸出到日誌的標籤, 卡片或筆記的標籤（如#review #flashcards #tag1）都行。默認留空則不按標籤區分，都正常輸出到日誌表格",
+
+    FLASHCARD_AGAIN_LABEL: "重來 按鈕文本",
+    FLASHCARD_BLACKOUT_LABEL: "忘記 按鈕文本",
+    FLASHCARD_INCORRECT_LABEL: "猜錯 按鈕文本",
+    "FLASHCARD_INCORRECT (EASY)_LABEL": "猜錯（簡單） 按鈕文本",
+    FLASHCARD_AGAIN_DESC: "自定義“重來”按鈕的標籤",
+    FLASHCARD_BLACKOUT_DESC: "自定義“忘記”按鈕的標籤",
+    FLASHCARD_INCORRECT_DESC: "自定義“猜錯”按鈕的標籤",
+    "FLASHCARD_INCORRECT (EASY)_DESC": "自定義“猜錯（簡單）”按鈕的標籤",
+
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "筆記復習序列",
     CLOSE: "臨近",
@@ -166,4 +208,10 @@ export default {
     CARD_TYPE_YOUNG: "較新",
     CARD_TYPE_MATURE: "熟悉",
     CARD_TYPES_SUMMARY: "總卡片數: ${totalCardsCount}",
+    REVIEWED_TODAY: "今天復習情況",
+    REVIEWED_TODAY_DESC: "今天已經復習的卡片/筆記的數量",
+    NEW_LEARNED: "新學",
+    DUE_REVIEWED: "復習",
+    REVIEWED_TODAY_SUMMARY: "總復習數: ${totalreviewedCount}",
+    DATE: "日期",
 };

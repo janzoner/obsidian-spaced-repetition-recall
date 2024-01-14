@@ -1,4 +1,4 @@
-import { Modal, App, Notice, Platform, setIcon } from "obsidian";
+import { Modal, App, Notice, Platform, setIcon, MarkdownView } from "obsidian";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import h from "vhtml";
 
@@ -20,6 +20,10 @@ import { Note } from "src/Note";
 import { RenderMarkdownWrapper } from "src/util/RenderMarkdownWrapper";
 import { CardScheduleInfo } from "src/CardSchedule";
 import { TopicPath } from "src/TopicPath";
+import { DataLocation } from "src/dataStore/dataLocation";
+import { SrTFile } from "src/SRFile";
+import { RepetitionItem, RPITEMTYPE } from "src/dataStore/repetitionItem";
+import { debug } from "src/util/utils_recall";
 
 export enum FlashcardModalMode {
     DecksList,
@@ -33,18 +37,23 @@ export class FlashcardModal extends Modal {
     public answerBtn: HTMLElement;
     public flashcardView: HTMLElement;
     private flashCardMenu: HTMLDivElement;
+    public responseBtns: HTMLElement[];
     public hardBtn: HTMLElement;
     public goodBtn: HTMLElement;
     public easyBtn: HTMLElement;
     public nextBtn: HTMLElement;
     public responseDiv: HTMLElement;
     public resetButton: HTMLButtonElement;
+    public openNoteFileButton: HTMLElement;
     public editButton: HTMLElement;
     public contextView: HTMLElement;
     public mode: FlashcardModalMode;
     private reviewSequencer: IFlashcardReviewSequencer;
     private settings: SRSettings;
     private reviewMode: FlashcardReviewMode;
+
+    public cardItem: RepetitionItem;
+    public options: string[];
 
     private get currentCard(): Card {
         return this.reviewSequencer.currentCard;
@@ -68,6 +77,7 @@ export class FlashcardModal extends Modal {
         super(app);
 
         this.plugin = plugin;
+        this.options = this.plugin.algorithm.srsOptions();
         this.settings = settings;
         this.reviewSequencer = reviewSequencer;
         this.reviewMode = reviewMode;
@@ -78,6 +88,7 @@ export class FlashcardModal extends Modal {
         if (Platform.isMobile) {
             this.contentEl.style.display = "block";
         }
+        this.modalEl.style.position = "relative";
         this.modalEl.style.height = this.settings.flashcardHeightPercentage + "%";
         this.modalEl.style.width = this.settings.flashcardWidthPercentage + "%";
 
@@ -261,6 +272,7 @@ export class FlashcardModal extends Modal {
         this.flashCardMenu = this.contentEl.createDiv("sr-flashcard-menu");
 
         this.createBackButton();
+        this.createOpenFileButton();
         this.createEditButton();
         this.createResetButton();
         this.createCardInfoButton();
@@ -280,6 +292,9 @@ export class FlashcardModal extends Modal {
 
         if (this.reviewMode == FlashcardReviewMode.Cram) {
             this.goodBtn.style.display = "none";
+            for (let i = 2; i < this.responseBtns.length - 1; i++) {
+                this.responseBtns[i].style.display = "none";
+            }
 
             this.responseDiv.addClass("sr-ignorestats-response");
             this.easyBtn.addClass("sr-ignorestats-btn");
@@ -298,30 +313,30 @@ export class FlashcardModal extends Modal {
 
     createResponseButtons() {
         this.responseDiv = this.contentEl.createDiv("sr-flashcard-response");
+        const optBtnCounts = this.plugin.algorithm.srsOptions().length;
+        let btnCols = 4;
+        if (!Platform.isMobile && optBtnCounts > btnCols) {
+            btnCols = optBtnCounts;
+        }
+        this.responseDiv.setAttribute(
+            "style",
+            `grid-template-columns: ${"1fr ".repeat(btnCols - 1)}`,
+        );
 
-        this.hardBtn = document.createElement("button");
-        this.hardBtn.setAttribute("id", "sr-hard-btn");
-        this.hardBtn.setText(this.settings.flashcardHardText);
-        this.hardBtn.addEventListener("click", () => {
-            this.processReview(ReviewResponse.Hard);
-        });
-        this.responseDiv.appendChild(this.hardBtn);
+        for (let i = 1; i < this.options.length; i++) {
+            this.responseBtns.push(document.createElement("button"));
+            this.responseBtns[i].setAttribute("id", "sr-" + this.options[i].toLowerCase() + "-btn");
+            this.responseBtns[i].setAttribute("class", "ResponseFloatBarCommandItem");
+            this.responseBtns[i].setText(this.plugin.data.settings.flashcardHardText);
+            this.responseBtns[i].addEventListener("click", () => {
+                this.processReview(i);
+            });
+            this.responseDiv.appendChild(this.responseBtns[i]);
+        }
+        this.hardBtn = this.responseBtns[1];
+        this.goodBtn = this.responseBtns.at(-2);
+        this.easyBtn = this.responseBtns.last();
 
-        this.goodBtn = document.createElement("button");
-        this.goodBtn.setAttribute("id", "sr-good-btn");
-        this.goodBtn.setText(this.settings.flashcardGoodText);
-        this.goodBtn.addEventListener("click", () => {
-            this.processReview(ReviewResponse.Good);
-        });
-        this.responseDiv.appendChild(this.goodBtn);
-
-        this.easyBtn = document.createElement("button");
-        this.easyBtn.setAttribute("id", "sr-easy-btn");
-        this.easyBtn.setText(this.settings.flashcardEasyText);
-        this.easyBtn.addEventListener("click", () => {
-            this.processReview(ReviewResponse.Easy);
-        });
-        this.responseDiv.appendChild(this.easyBtn);
         this.responseDiv.style.display = "none";
     }
 
@@ -375,6 +390,8 @@ export class FlashcardModal extends Modal {
         this.resetButton.addEventListener("click", () => {
             this.processReview(ReviewResponse.Reset);
         });
+        this.responseBtns = [];
+        this.responseBtns.push(this.resetButton);
     }
 
     createEditButton() {
@@ -384,6 +401,38 @@ export class FlashcardModal extends Modal {
         this.editButton.setAttribute("aria-label", t("EDIT_CARD"));
         this.editButton.addEventListener("click", async () => {
             this.doEditQuestionText();
+        });
+    }
+
+    createOpenFileButton() {
+        this.openNoteFileButton = this.flashCardMenu.createEl("button");
+        this.openNoteFileButton.addClass("sr-flashcard-menu-item");
+        setIcon(this.openNoteFileButton, "file-edit");
+        this.openNoteFileButton.setAttribute("aria-label", t("OPEN_NOTE"));
+        this.openNoteFileButton.addEventListener("click", async () => {
+            const activeLeaf = this.plugin.app.workspace.getLeaf("tab");
+            const noteFile = this.currentCard.question.note.file as SrTFile;
+            await activeLeaf.openFile(noteFile.file);
+            if (activeLeaf.view instanceof MarkdownView) {
+                const activeView = activeLeaf.view;
+                const pos = {
+                    line: this.currentCard.question.lineNo,
+                    ch: 0,
+                };
+                // const posEnd = {}
+                activeView.editor.setCursor(pos);
+                if (activeView.getMode() === "preview") {
+                    activeView.currentMode.applyScroll(pos.line);
+                } else {
+                    activeView.editor.scrollIntoView(
+                        {
+                            from: pos,
+                            to: pos,
+                        },
+                        true,
+                    );
+                }
+            }
         });
     }
 
@@ -428,9 +477,28 @@ export class FlashcardModal extends Modal {
     }
 
     private async processReview(response: ReviewResponse): Promise<void> {
+        if (this.settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+            // just update storedata
+            this.processReviewbyAlgo(response);
+        }
         await this.reviewSequencer.processReview(response);
         // console.log(`processReview: ${response}: ${this.currentCard?.front ?? 'None'}`)
         await this.handleNextCard();
+    }
+
+    private processReviewbyAlgo(response: ReviewResponse) {
+        const algo = this.plugin.algorithm;
+        algo.setDueDates(
+            this.plugin.noteStats.delayedDays.dict,
+            this.plugin.noteStats.delayedDays.dict,
+        );
+        const opt = algo.srsOptions()[response];
+        const store = this.plugin.store;
+        const id = this.currentCard.Id;
+
+        store.updateReviewedCounts(id, RPITEMTYPE.CARD);
+        store.reviewId(id, opt);
+        store.save();
     }
 
     private async skipCurrentCard(): Promise<void> {
@@ -462,10 +530,26 @@ export class FlashcardModal extends Modal {
         );
         await wrapper.renderMarkdownWrapper(this.currentCard.front, this.flashcardView);
 
+        // const intervals: number[] = [];
+        const settings = this.plugin.data.settings;
+        const algo = settings.algorithm;
+        const btnTexts = settings.responseOptionBtnsText[algo];
+        // const opts = this.plugin.algorithm.srsOptions();
+        // todo: opts and ReviewResponse
         if (this.reviewMode == FlashcardReviewMode.Cram) {
             // Same for mobile/desktop
-            this.hardBtn.setText(`${this.settings.flashcardHardText}`);
-            this.easyBtn.setText(`${this.settings.flashcardEasyText}`);
+            this.hardBtn.setText(`${btnTexts[1]}`);
+            this.easyBtn.setText(`${btnTexts.last()}`);
+        } else if (!settings.intervalShowHide) {
+            for (let i = 1; i < this.responseBtns.length; i++) {
+                this.responseBtns[i].setText(`${btnTexts[i]}`);
+            }
+        } else if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+            this.setupResponseBtns(btnTexts);
+            const item = this.plugin.store.getItembyID(this.currentCard.Id);
+            if (item.nextReview > Date.now()) {
+                debug("复习了还没到期的卡片" + item);
+            }
         } else {
             this.setupEaseButton(
                 this.hardBtn,
@@ -493,6 +577,33 @@ export class FlashcardModal extends Modal {
     private formatQuestionContextText(questionContext: string[]): string {
         const result = `${this.currentNote.file.basename} > ${questionContext.join(" > ")}`;
         return result;
+    }
+
+    private setupResponseBtns(btnTexts: string[]) {
+        const store = this.plugin.store;
+        // const lineNo: number = this.currentCard.question.lineNo;
+        // const hash: string = BlockUtils.getTxtHash(
+        //     this.currentCard.question.questionText.actualQuestion,
+        // );
+        // const file: SrTFile = this.currentCard.question.note.file as SrTFile;
+        // const cardinfo = store.getSyncCardInfo(file.file, lineNo, hash);
+        // const cardId = cardinfo.itemIds[this.currentCard.cardIdx];
+        // const cardItem = store.getItembyID(cardId);
+        const cardItem = store.getItembyID(this.currentCard.Id);
+        // console.debug("item:", cardItem);
+        const intervals = this.plugin.algorithm.calcAllOptsIntervals(cardItem);
+
+        if (Platform.isMobile) {
+            for (let i = 1; i < this.responseBtns.length; i++) {
+                this.responseBtns[i].setText(textInterval(intervals[i], true));
+            }
+        } else {
+            for (let i = 1; i < this.responseBtns.length; i++) {
+                this.responseBtns[i].setText(
+                    `${btnTexts[i]} - ${textInterval(intervals[i], false)}`,
+                );
+            }
+        }
     }
 
     private setupEaseButton(

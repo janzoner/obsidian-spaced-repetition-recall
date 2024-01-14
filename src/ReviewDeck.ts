@@ -1,11 +1,17 @@
-import { App, FuzzySuggestModal, TFile } from "obsidian";
+import { TFile } from "obsidian";
 
-import { SchedNote } from "src/main";
 import { t } from "src/lang/helpers";
+import { RepetitionItem } from "./dataStore/repetitionItem";
+
+export interface SchedNote {
+    note: TFile;
+    item?: RepetitionItem;
+    dueUnix?: number;
+}
 
 export class ReviewDeck {
     public deckName: string;
-    public newNotes: TFile[] = [];
+    public newNotes: SchedNote[] = [];
     public scheduledNotes: SchedNote[] = [];
     public activeFolders: Set<string>;
     public dueNotesCount = 0;
@@ -18,7 +24,8 @@ export class ReviewDeck {
     public sortNotes(pageranks: Record<string, number>): void {
         // sort new notes by importance
         this.newNotes = this.newNotes.sort(
-            (a: TFile, b: TFile) => (pageranks[b.path] || 0) - (pageranks[a.path] || 0),
+            (a: SchedNote, b: SchedNote) =>
+                (pageranks[b.note.path] || 0) - (pageranks[a.note.path] || 0),
         );
 
         // sort scheduled notes by date & within those days, sort them by importance
@@ -29,28 +36,5 @@ export class ReviewDeck {
             }
             return (pageranks[b.note.path] || 0) - (pageranks[a.note.path] || 0);
         });
-    }
-}
-
-export class ReviewDeckSelectionModal extends FuzzySuggestModal<string> {
-    public deckKeys: string[] = [];
-    public submitCallback: (deckKey: string) => void;
-
-    constructor(app: App, deckKeys: string[]) {
-        super(app);
-        this.deckKeys = deckKeys;
-    }
-
-    getItems(): string[] {
-        return this.deckKeys;
-    }
-
-    getItemText(item: string): string {
-        return item;
-    }
-
-    onChooseItem(deckKey: string, _: MouseEvent | KeyboardEvent): void {
-        this.close();
-        this.submitCallback(deckKey);
     }
 }
