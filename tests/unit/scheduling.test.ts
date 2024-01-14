@@ -134,6 +134,8 @@ test("Test load balancing", () => {
 });
 
 test("Test textInterval - desktop", () => {
+    expect(textInterval(0.01, false)).toEqual("14.4minute(s)");
+    expect(textInterval(0.5, false)).toEqual("12hour(s)");
     expect(textInterval(1, false)).toEqual("1 day(s)");
     expect(textInterval(41, false)).toEqual("1.3 month(s)");
     expect(textInterval(366, false)).toEqual("1 year(s)");
@@ -141,6 +143,8 @@ test("Test textInterval - desktop", () => {
 });
 
 test("Test textInterval - mobile", () => {
+    expect(textInterval(0.01, true)).toEqual("14.4min");
+    expect(textInterval(0.5, true)).toEqual("12h");
     expect(textInterval(1, true)).toEqual("1d");
     expect(textInterval(41, true)).toEqual("1.3m");
     expect(textInterval(366, true)).toEqual("1y");

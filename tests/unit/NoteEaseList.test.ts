@@ -20,3 +20,11 @@ test("getEaseByPath", async () => {
     list.setEaseForPath("Known path", 100);
     expect(list.getEaseByPath("Known path")).toEqual(100);
 });
+
+test("setEaseByPath", async () => {
+    let list: NoteEaseList = new NoteEaseList(DEFAULT_SETTINGS);
+
+    list.setEaseForPath("Known path", 100);
+    list.setEaseForPath("Known path", 50);
+    expect(list.getEaseByPath("Known path")).toEqual(75);
+});
