@@ -37,6 +37,7 @@ jobs:
         needs: validate
         runs-on: ubuntu-latest
         # if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'Newdea/obsidian-spaced-repetition-recall'
+        permissions: write-all
 
         steps:
             - name: Checkout
