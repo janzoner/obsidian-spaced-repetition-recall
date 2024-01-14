@@ -44,7 +44,7 @@ github: https://github.com/open-spaced-repetition/obsidian-spaced-repetition-rec
 
 1. 从[最新发布](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/releases/)中下载压缩包（已包括 main.js, manifest.json, styles.css）；
 2. 在 `Vault-name/.obsidian/plugins` 中，把刚下的文件解压（应是`obsidian-spaced-repetition-recall`文件夹）放入`plugins`文件夹下，；
-3. 重启Obsidan 开启插件，就可以使用了。
+3. 重启 Obsidan 开启插件，就可以使用了。
 
 ## Thanks
 
