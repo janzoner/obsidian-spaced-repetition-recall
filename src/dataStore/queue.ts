@@ -186,7 +186,6 @@ export class Queue implements IQueue {
         let untrackedFiles = 0;
         let removedItems = 0;
         const bUnTfiles = new Set<TrackedFile>();
-        let validItems: RepetitionItem[] = [];
         await Promise.all(
             store.data.trackedFiles.map(async (file, _idx) => {
                 if (file?.path == undefined || !file.isTracked) return false;
@@ -205,7 +204,7 @@ export class Queue implements IQueue {
                 return exists;
             }),
         );
-        validItems = store.items.filter((item) => item != null && item.isTracked);
+        const validItems = store.items.filter((item) => item != null && item.isTracked);
         validItems
             .filter((item) => item.isCard)
             .forEach((item) => {

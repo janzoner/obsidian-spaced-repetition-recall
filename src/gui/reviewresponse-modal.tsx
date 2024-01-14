@@ -215,14 +215,14 @@ export class reviewResponseModal {
 
     private addKeysEvent() {
         const bar = document.getElementById(this.barId);
-        const Markdown = app.workspace.getActiveViewOfType(MarkdownView);
+        // const Markdown = app.workspace.getActiveViewOfType(MarkdownView);
 
         document.body.onkeydown = (e) => {
             if (
                 bar &&
                 bar.checkVisibility() &&
                 this.isDisplay() &&
-                Markdown.getMode() === "preview"
+                app.workspace.getActiveViewOfType(MarkdownView).getMode() === "preview"
             ) {
                 const consume = () => {
                     e.preventDefault();

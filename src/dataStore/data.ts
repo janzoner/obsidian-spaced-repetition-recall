@@ -157,12 +157,12 @@ export class DataStore {
     async save(path = this.dataPath) {
         try {
             await app.vault.adapter.write(path, JSON.stringify(this.data));
+            this.data.mtime = await this.getmtime();
         } catch (error) {
             MiscUtils.notice("Unable to save data file!");
             console.log(error);
             return;
         }
-        this.data.mtime = await this.getmtime();
     }
 
     /**
@@ -490,12 +490,13 @@ export class DataStore {
 
         const trackedFile = this.getTrackedFile(path);
         const note = app.vault.getAbstractFileByPath(path) as TFile;
+        let cardName: string = null;
 
         if (note != null && trackedFile.tags.length > 0) {
-            // const fileCachedData = app.metadataCache.getFileCache(note) || {};
-            // const tags = getAllTags(fileCachedData) || [];
+            const fileCachedData = app.metadataCache.getFileCache(note) || {};
+            const tags = getAllTags(fileCachedData) || [];
             const deckname = Tags.getNoteDeckName(note, this.settings);
-            // const cardName = Tags.getTagFromSettingTags(tags, this.settings.flashcardTags);
+            cardName = Tags.getTagFromSettingTags(tags, this.settings.flashcardTags);
             if (deckname !== null || this.settings.convertFoldersToDecks) {
                 // || cardName !== null
                 // it's taged file, can't untrack by this.
@@ -511,19 +512,17 @@ export class DataStore {
         const lastTag = trackedFile.lastTag;
         trackedFile.setUnTracked();
         for (const key in trackedFile.items) {
-            const ind = trackedFile.items[key];
-            this.unTrackItem(ind);
-            numItems++;
+            const id = trackedFile.items[key];
+            if (id >= 0) {
+                this.unTrackItem(id);
+                numItems++;
+            }
         }
-        const fileCachedData = app.metadataCache.getFileCache(note) || {};
-        const tags = getAllTags(fileCachedData) || [];
-        const cardName = Tags.getTagFromSettingTags(tags, this.settings.flashcardTags);
         if (cardName == null && this.settings.trackedNoteToDecks) {
-            trackedFile.cardIDs.forEach(this.unTrackItem, this);
+            trackedFile.cardIDs.filter((id) => id >= 0).forEach(this.unTrackItem, this);
             numItems += trackedFile.cardIDs.length;
         }
 
-        //  when file not exist, or doesn't have carditems, del it.
         let nulrstr: string = "";
         // this.data.trackedFiles[index] = null;
         if (note == null) {
