@@ -176,6 +176,7 @@ export default {
     FLASHCARD_BLACKOUT_DESC: "自定义“忘记”按钮的标签",
     FLASHCARD_INCORRECT_DESC: "自定义“猜错”按钮的标签",
     "FLASHCARD_INCORRECT (EASY)_DESC": "自定义“猜错（简单）”按钮的标签",
+    UNTRACK_WITH_REVIEWTAG: "UntrackWithReviewTag",
 
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "笔记复习序列",

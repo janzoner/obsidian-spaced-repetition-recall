@@ -175,6 +175,7 @@ export default {
     FLASHCARD_BLACKOUT_DESC: "自定義“忘記”按鈕的標籤",
     FLASHCARD_INCORRECT_DESC: "自定義“猜錯”按鈕的標籤",
     "FLASHCARD_INCORRECT (EASY)_DESC": "自定義“猜錯（簡單）”按鈕的標籤",
+    UNTRACK_WITH_REVIEWTAG: "UntrackWithReviewTag",
 
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "筆記復習序列",
