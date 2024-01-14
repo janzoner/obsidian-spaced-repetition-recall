@@ -112,7 +112,7 @@ class QuestionType_Cloze implements IQuestionTypeHandler {
                 deletionEnd: number = deletionStart + m[0].length;
             front =
                 questionText.substring(0, deletionStart) +
-                QuestionType_ClozeUtil.renderClozeFront() +
+                QuestionType_ClozeUtil.renderClozeFront(m[0].length) +
                 questionText.substring(deletionEnd);
             front = QuestionType_ClozeUtil.removeClozeTokens(front, settings);
             back =

@@ -160,8 +160,8 @@ export class AnkiAlgorithm extends SrsAlgorithm {
                     lastitval > newdata.lastInterval
                         ? lastitval
                         : iter > 1
-                        ? this.settings.graduatingInterval
-                        : newdata.lastInterval;
+                          ? this.settings.graduatingInterval
+                          : newdata.lastInterval;
                 newdata.iteration = iter;
                 item.data = deepcopy(newdata);
             }

@@ -3,9 +3,10 @@
 #### CASE1: Not using the original SR plugin, directly using this plugin
 
 Recommended settings
-    - Data Location:  in plugin/vault/specified folder
-    - Algorithm: Fsrs
-![image](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/assets/9208450/a22d23df-5d11-4b19-9007-e1530e2808be)
+
+-   Data Location: in plugin/vault/specified folder
+-   Algorithm: Fsrs
+    ![image](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/assets/9208450/a22d23df-5d11-4b19-9007-e1530e2808be)
 
 For the specific parameter settings of the algorithm, please refer to [FSRS v4](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm#fsrs-v4).
 
@@ -57,8 +58,8 @@ Add a label corresponding to a review card to your notes, or convert review note
 
 Review notes can be opened from the command line, or from your computer by clicking Notes in the status bar/right sidebar. Feedback on memorization level is available via command line, hover bar or menu bar
 
--   On computer , right-click on the floating bar, you can close it, set time interval visible/hidden; 
--   On computer, when floatbar is show and in preview, you can use keyshortcut(0 reset, 1,2, 3 easy ) feedback; 
+-   On computer , right-click on the floating bar, you can close it, set time interval visible/hidden;
+-   On computer, when floatbar is show and in preview, you can use keyshortcut(0 reset, 1,2, 3 easy ) feedback;
 -   On mobile, swipup from the floating bar, close it , long press the floating bar to setting time interval visible/hidden;
 -   time interval visible/hidden Suggestion: review is not shown, progressive summary/incremental writing is shown;
 
