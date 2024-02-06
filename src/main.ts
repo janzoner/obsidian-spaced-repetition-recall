@@ -7,7 +7,7 @@ import { StatsModal } from "src/gui/stats-modal";
 import { ReviewQueueListView, REVIEW_QUEUE_VIEW_TYPE } from "src/gui/sidebar";
 import { ReviewResponse, schedule } from "src/scheduling";
 import { YAML_FRONT_MATTER_REGEX, SCHEDULING_INFO_REGEX } from "src/constants";
-import { ReviewDeck } from "src/ReviewDeck";
+import { ReviewDeck, SchedNote } from "src/ReviewDeck";
 import { t } from "src/lang/helpers";
 import { appIcon } from "src/icons/appicon";
 import { TopicPath } from "./TopicPath";
@@ -76,6 +76,16 @@ const DEFAULT_DATA: PluginData = {
     buryList: [],
     historyDeck: null,
 };
+
+// export interface SchedNote {
+//     note: TFile;
+//     dueUnix: number;
+// }
+
+// export interface LinkStat {
+//     sourcePath: string;
+//     linkCount: number;
+// }
 
 export default class SRPlugin extends Plugin {
     private statusBar: HTMLElement;
@@ -180,9 +190,11 @@ export default class SRPlugin extends Plugin {
                         for (let i = 1; i < options.length; i++) {
                             menu.addItem((item) => {
                                 // item.setTitle(t("REVIEW_EASY_FILE_MENU"))
-                                item.setTitle(t("REVIEW_DIFFICULTY_FILE_MENU", {
-                                    difficulty: showtext[algo][i],
-                                }),)
+                                item.setTitle(
+                                    t("REVIEW_DIFFICULTY_FILE_MENU", {
+                                        difficulty: showtext[algo][i],
+                                    }),
+                                )
                                     .setIcon("SpacedRepIcon")
                                     .onClick(() => {
                                         this.saveReviewResponse(fileish, i);
@@ -468,7 +480,7 @@ export default class SRPlugin extends Plugin {
             this.easeByPath.setEaseForPath(noteFile.path, ease);
 
             const nDays: number = Math.ceil((dueUnix - now.valueOf()) / (24 * 3600 * 1000));
-            
+
             const interval = Number(frontmatter["sr-interval"]);
             this.noteStats.update(nDays, interval, ease);
         }
@@ -700,12 +712,8 @@ export default class SRPlugin extends Plugin {
                 this.data.buryList.push(...result.buryList);
                 await this.savePluginData();
             }
-            this.reviewDecks[deckName].sortNotes(this.linkRank.pageranks);
-            // this.dueNotesCount = this. ...
-            this.updateStatusBar();
-            if (settings.autoNextNote) {
-                this.reviewNextNote(deckName);
-            }
+
+            this.postResponse(note, result.dueNum);
             return;
         }
         const fileCachedData = this.app.metadataCache.getFileCache(note) || {};
@@ -804,12 +812,15 @@ export default class SRPlugin extends Plugin {
 
         // Update note's properties to update our due notes.
         this.easeByPath.setEaseForPath(note.path, ease);
+        this.postResponse(note, due.valueOf());
+    }
 
+    private postResponse(note: TFile, dueNum: number) {
         Object.values(this.reviewDecks).forEach((reviewDeck: ReviewDeck) => {
             let wasDueInDeck = false;
             for (const scheduledNote of reviewDeck.scheduledNotes) {
                 if (scheduledNote.note.path === note.path) {
-                    scheduledNote.dueUnix = due.valueOf();
+                    scheduledNote.dueUnix = dueNum;
                     wasDueInDeck = true;
                     break;
                 }
@@ -818,10 +829,10 @@ export default class SRPlugin extends Plugin {
             // It was a new note, remove it from the new notes and schedule it.
             if (!wasDueInDeck) {
                 reviewDeck.newNotes.splice(
-                    reviewDeck.newNotes.findIndex((newNote: TFile) => newNote.path === note.path),
+                    reviewDeck.newNotes.findIndex((newNote) => newNote.note.path === note.path),
                     1,
                 );
-                reviewDeck.scheduledNotes.push({ note, dueUnix: due.valueOf() });
+                reviewDeck.scheduledNotes.push({ note, dueUnix: dueNum });
             }
         });
 
