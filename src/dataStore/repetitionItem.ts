@@ -114,8 +114,7 @@ export class RepetitionItem {
         let ease: number;
         let interval: number;
 
-        const isFsrs: boolean = Object.prototype.hasOwnProperty.call(this.data, "state");
-        if (isFsrs) {
+        if (this.isFsrs) {
             const data = this.data as FsrsData;
             interval = data.scheduled_days;
             // ease just used for StatsChart, not review scheduling.
@@ -129,6 +128,10 @@ export class RepetitionItem {
 
         const sched = [this.ID, this.nextReview, interval, ease] as unknown as RegExpMatchArray;
         return sched;
+    }
+
+    private isFsrs(): boolean {
+        return Object.prototype.hasOwnProperty.call(this.data, "state");
     }
 
     getSchedDurAsStr() {
@@ -163,6 +166,13 @@ export class RepetitionItem {
         }
     }
 
+    get interval(): number {
+        return Number(this.getSched()[2]);
+    }
+    get ease(): number {
+        return Number(this.getSched()[3]);
+    }
+
     /**
      * check if file id is just new add.
      * @returns boolean
@@ -182,7 +192,33 @@ export class RepetitionItem {
         }
     }
 
+    /**
+     * check if item should be reviewed rightnow.
+     */
     get isDue() {
+        const now_number = Date.now();
+        if (this.hasDue) {
+            if (this.nextReview < now_number) {
+                return true;
+            }
+            if (this.nextReview < DateUtils.EndofToday) {
+                if (this.isFsrs) {
+                    const data: FsrsData = this.data as FsrsData;
+                    if (data.scheduled_days >= 1) {
+                        return true;
+                    }
+                } else {
+                    const data: AnkiData = this.data as AnkiData;
+                    if (data.lastInterval >= 1) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    get hasDue() {
         try {
             if (this.nextReview > 0 || this.timesReviewed > 0) {
                 return true;

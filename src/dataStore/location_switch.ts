@@ -30,7 +30,7 @@ export class LocationSwitch {
     public afternoteStats: Stats;
     public beforecardStats: Stats;
     public aftercardStats: Stats;
-    revTag: string;
+    private revTag: string;
 
     constructor(plugin: SRPlugin, settings: SRSettings) {
         this.plugin = plugin;
@@ -135,6 +135,15 @@ export class LocationSwitch {
                     deckname = DEFAULT_DECKNAME;
                     topicPath = new TopicPath([deckname]);
                     fileText = delDefaultTag(fileText, this.revTag);
+                    fileChanged = true;
+                } else if (
+                    topicPath.path.length === 2 &&
+                    settings.tagsToReview.includes(topicPath.path[1])
+                ) {
+                    deckname = topicPath.path[1];
+                    topicPath = new TopicPath([deckname]);
+                    const revtag = this.converteTag(deckname);
+                    fileText = delDefaultTag(fileText, revtag);
                     fileChanged = true;
                 }
             }
@@ -309,7 +318,7 @@ export class LocationSwitch {
                                     // const citem = store.getItembyID(id);
                                     // if (citem.isTracked) {
                                     const sched = citem.getSchedDurAsStr();
-                                    if (citem.isDue && sched != null) {
+                                    if (citem.hasDue && sched != null) {
                                         scheduling.push(sched);
                                         dueIds.push(citem.ID);
                                     }
@@ -332,7 +341,7 @@ export class LocationSwitch {
                         item?.isTracked &&
                         (tkfile.isDefault || Tags.isTagedNoteDeckName(item.deckName, this.settings))
                     ) {
-                        if (item?.isDue) {
+                        if (item?.hasDue) {
                             // let due: str, ease: number, interval: number;
                             const ret = item.getSchedDurAsStr();
                             if (ret != null) {
@@ -353,7 +362,7 @@ export class LocationSwitch {
                                 noteTag == null &&
                                 this.settings.tagsToReview.includes(item.deckName)
                             ) {
-                                const tag = this.converteTag(item.deckName.substring(1));
+                                const tag = this.converteTag(item.deckName);
                                 fileText = addDefaultTagtoNote(fileText, tag);
                                 fileChanged = true;
                             }

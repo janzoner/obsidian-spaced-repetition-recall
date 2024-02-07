@@ -1,4 +1,4 @@
-import { Modal, App, Notice, Platform, setIcon, MarkdownView } from "obsidian";
+import { Modal, App, Notice, Platform, setIcon, MarkdownView, TFile } from "obsidian";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import h from "vhtml";
 
@@ -24,6 +24,7 @@ import { DataLocation } from "src/dataStore/dataLocation";
 import { SrTFile } from "src/SRFile";
 import { RepetitionItem, RPITEMTYPE } from "src/dataStore/repetitionItem";
 import { debug } from "src/util/utils_recall";
+import { ItemInfoModal } from "./info";
 
 export enum FlashcardModalMode {
     DecksList,
@@ -369,6 +370,11 @@ export class FlashcardModal extends Modal {
             notePath: this.currentQuestion.note.filePath,
         });
         new Notice(currentEaseStr + "\n" + currentIntervalStr + "\n" + generatedFromStr);
+        const srfile = this.currentNote.file as SrTFile;
+        const store = this.plugin.store;
+        const id = this.currentCard.Id;
+        const infoM = new ItemInfoModal(this.settings, srfile.file, store.getItembyID(id));
+        infoM.open();
     }
 
     createBackButton() {

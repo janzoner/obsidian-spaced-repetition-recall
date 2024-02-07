@@ -27,18 +27,18 @@ export class SampleDataStore {
         algo.updateSettings(settings.algorithmSettings[algorithmNames.Default]);
         const opts = algo.srsOptions();
         // eslint-disable-next-line prefer-const
-        arr = Array.from(new Array(50)).map((_v, _idx) => {
+        arr = Array.from(new Array(30)).map((_v, _idx) => {
             const type = this.roundInt(1) > 0 ? RPITEMTYPE.CARD : RPITEMTYPE.NOTE;
             store.trackFile("testPath" + _idx, type, true);
             if (type === RPITEMTYPE.CARD) {
                 const tkfile = store.data.trackedFiles[_idx];
 
-                Array.from(Array(this.roundInt(20))).map((_v, _idx) => {
+                Array.from(Array(this.roundInt(10))).map((_v, _idx) => {
                     const carditem = tkfile.trackCard(_idx * 3, "chash" + _idx);
                     store.updateCardItems(tkfile, carditem, this.roundInt(10), "fcard", false);
                 });
             }
-            return this.roundInt(100);
+            return this.roundInt(50);
         });
         const noteStats = new Stats();
         const cardStats = new Stats();

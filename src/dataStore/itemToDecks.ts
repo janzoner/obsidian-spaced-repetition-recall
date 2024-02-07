@@ -19,6 +19,9 @@ import { algorithmNames } from "src/algorithms/algorithms";
 export class ItemToDecks {
     settings: SRSettings;
 
+    static create(settings: SRSettings) {
+        return new ItemToDecks(settings);
+    }
     constructor(settings: SRSettings) {
         this.settings = settings;
     }
@@ -155,8 +158,14 @@ export class ItemToDecks {
             latterQue[fileid] = rdeck.deckName;
         }
 
-        if (item.isDue) {
-            rdeck.scheduledNotes.push({ note, item, dueUnix: item.nextReview });
+        if (item.hasDue) {
+            rdeck.scheduledNotes.push({
+                note,
+                item,
+                dueUnix: item.nextReview,
+                interval: item.interval,
+                ease: item.ease,
+            });
             if (item.nextReview <= now_number) {
                 rdeck.dueNotesCount++;
                 // console.debug(`${rdeck.deckName} isDue dueCnt: ${rdeck.dueNotesCount}`, item);
@@ -202,8 +211,8 @@ export class ItemToDecks {
                 carditem.itemIds
                     .map((id: number) => store.getItembyID(id).getSched())
                     .filter((sched) => {
-                        // ignore new add card
-                        if (sched != null && scheduling.length <= count) {
+                        // ignore new add card  sched != null &&
+                        if (scheduling.length <= count) {
                             scheduling.push(sched);
                             return true;
                         }

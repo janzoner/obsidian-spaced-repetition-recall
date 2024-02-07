@@ -62,7 +62,7 @@ export class Stats {
 
     updateStats(item: RepetitionItem, now?: number) {
         const scheduling = item?.getSched();
-        if (item == null || !item.isDue || scheduling == null) {
+        if (item == null || !item.hasDue || scheduling == null) {
             this.incrementNew();
             return;
         }
@@ -102,7 +102,7 @@ export class Stats {
         if (now == undefined) {
             now = Date.now();
         }
-        if (item.isDue && item.nextReview - now < 0) {
+        if (item.hasDue && item.nextReview - now < 0) {
             this.decrementOnDue();
         } else if (item.isNew) {
             this.decrementNew();
