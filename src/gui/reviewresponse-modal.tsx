@@ -273,8 +273,8 @@ export class reviewResponseModal {
                 this.responseInterval == null
                     ? `${text}`
                     : Platform.isMobile
-                    ? textInterval(this.responseInterval[index], true)
-                    : `${text} - ${textInterval(this.responseInterval[index], false)}`;
+                      ? textInterval(this.responseInterval[index], true)
+                      : `${text} - ${textInterval(this.responseInterval[index], false)}`;
         }
         return text;
     }

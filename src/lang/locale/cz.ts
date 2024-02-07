@@ -187,8 +187,8 @@ export default {
     FLASHCARD_BLACKOUT_DESC: 'Customize the label for the "Blackout" Button',
     FLASHCARD_INCORRECT_DESC: 'Customize the label for the "Incorrect" Button',
     "FLASHCARD_INCORRECT (EASY)_DESC": 'Customize the label for the "Incorrect (Easy)" Button',
-    UNTRACK_WITH_REVIEWTAG:"UntrackWithReviewTag",
-    
+    UNTRACK_WITH_REVIEWTAG: "UntrackWithReviewTag",
+
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "Fronta poznámek k revizi",
     CLOSE: "Uzavřené",
