@@ -744,7 +744,7 @@ export class DataStore {
         if (item.isDue) {
             if (this.settings.algorithm === algorithmNames.Fsrs) {
                 const data: FsrsData = item.data as FsrsData;
-                if (data.last_review < new Date(date)) {
+                if (new Date(data.last_review) < new Date(date)) {
                     rc[date].due++;
                 }
             } else {

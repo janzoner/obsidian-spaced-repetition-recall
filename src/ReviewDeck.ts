@@ -7,6 +7,8 @@ export interface SchedNote {
     note: TFile;
     item?: RepetitionItem;
     dueUnix?: number;
+    interval?: number;
+    ease?: number;
 }
 
 export class ReviewDeck {

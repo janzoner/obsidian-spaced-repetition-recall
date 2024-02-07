@@ -11,27 +11,33 @@ export class ItemInfoModal extends Modal {
     store: DataStore;
     settings: SRSettings;
     file: TFile;
+    item: RepetitionItem;
     nextReview: number;
     lastInterval: number;
 
-    constructor(settings: SRSettings, file: TFile) {
+    constructor(settings: SRSettings, file: TFile, item: RepetitionItem = null) {
         super(app);
         // this.plugin = plugin;
         this.store = DataStore.getInstance();
         this.settings = settings;
         this.file = file;
+        if (item == null) {
+            this.item = this.store.getItemsOfFile(this.file.path)[0];
+        } else {
+            this.item = item;
+        }
     }
 
     onOpen() {
         const { contentEl } = this;
         //TODO: Implement Item info.
-        const item = this.store.getItemsOfFile(this.file.path)[0];
+        // const item = this.store.getItemsOfFile(this.file.path)[0];
         // const path = this.store.getFilePath(item);
         // contentEl.createEl("p").setText("Item info of " + this.file.path);
         const buttonDivAll = contentEl.createDiv("srs-flex-row");
         const contentdiv = contentEl.createEl("div");
 
-        this.displayitem(contentdiv, item);
+        this.displayitem(contentdiv, this.item);
 
         // new ButtonComponent(buttonDivAll).setButtonText("Current").onClick(() => {
         //     this.displayitem(contentdiv, item);
@@ -126,7 +132,7 @@ export class ItemInfoModal extends Modal {
     }
 
     submit() {
-        const item = this.store.getItemsOfFile(this.file.path)[0];
+        const item = this.item;
         console.debug(this);
         const algo = this.settings.algorithm;
         if (this.nextReview) {

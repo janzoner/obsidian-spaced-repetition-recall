@@ -1,5 +1,6 @@
 import { Notice, TFile } from "obsidian";
 import { DataStore } from "src/dataStore/data";
+import { DataLocation } from "src/dataStore/dataLocation";
 import { ItemToDecks } from "src/dataStore/itemToDecks";
 import { reviewResponseModal } from "src/gui/reviewresponse-modal";
 import { t } from "src/lang/helpers";
@@ -11,6 +12,16 @@ import { DateUtils, isIgnoredPath } from "src/util/utils_recall";
 export class ReviewNote {
     static itemId: number;
     static minNextView: number;
+
+    settings: SRSettings;
+
+    static create(settings: SRSettings, location: DataLocation) {
+        return new ReviewNote(settings);
+    }
+
+    constructor(settings: SRSettings) {
+        this.settings = settings;
+    }
 
     /**
      * 231215-not used yet.
@@ -30,7 +41,10 @@ export class ReviewNote {
 
         let deckName = Tags.getNoteDeckName(note, settings);
 
-        if (deckName == null && !store.getTrackedFile(note.path)?.isTrackedNote) {
+        if (
+            deckName == null ||
+            (!settings.untrackWithReviewTag && !store.getTrackedFile(note.path)?.isTrackedNote)
+        ) {
             new Notice(t("PLEASE_TAG_NOTE"));
             return;
         } else if (deckName == null) {
@@ -39,8 +53,7 @@ export class ReviewNote {
         return deckName;
     }
 
-    static saveReviewResponsebyAlgo(
-        deck: ReviewDeck,
+    static saveReviewResponse_trackfiles(
         note: TFile,
         option: string,
         burySiblingCards: boolean,
@@ -49,8 +62,8 @@ export class ReviewNote {
         const store = DataStore.getInstance();
         const now = Date.now();
 
-        const fileId = store.getTrackedFile(note.path).noteID;
-        const item = store.getItembyID(fileId);
+        const itemId = store.getTrackedFile(note.path).noteID;
+        const item = store.getItembyID(itemId);
         if (item.isNew && ease != null) {
             // new note
             item.updateAlgorithmData("ease", ease);
@@ -65,11 +78,20 @@ export class ReviewNote {
             }
         }
 
-        ReviewNote.recallReviewResponse(fileId, option);
+        ReviewNote.recallReviewResponse(itemId, option);
 
         // preUpdateDeck(deck, note);
         // ItemToDecks.toRevDeck(deck, note, now);
-        return { buryList, dueNum: item.nextReview };
+        return {
+            buryList,
+            sNote: {
+                note,
+                item,
+                dueUnix: item.nextReview,
+                interval: item.interval,
+                ease: item.ease,
+            },
+        };
     }
 
     static recallReviewNote(settings: SRSettings) {

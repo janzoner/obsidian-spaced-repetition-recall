@@ -9,6 +9,7 @@ import { ReviewResponse, schedule } from "./scheduling";
 import { SRSettings } from "./settings";
 import { formatDate_YYYY_MM_DD } from "./util/utils";
 import { DateUtil, globalDateProvider } from "./util/DateProvider";
+import { DateUtils } from "./util/utils_recall";
 
 export class CardScheduleInfo {
     dueDate: Moment;
@@ -37,18 +38,22 @@ export class CardScheduleInfo {
     }
 
     isDue(): boolean {
-        return this.dueDate.isSameOrBefore(globalDateProvider.today);
+        // return this.dueDate.isSameOrBefore(globalDateProvider.today);
+        return (
+            this.dueDate.isSameOrBefore(globalDateProvider.today) ||
+            (this.dueDate.isSameOrBefore(globalDateProvider.endofToday) && this.interval >= 1)
+        );
     }
 
     isDummyScheduleForNewCard(): boolean {
         return this.formatDueDate() == CardScheduleInfo.dummyDueDateForNewCard;
     }
 
-    static getDummyScheduleForNewCard(settings: SRSettings): CardScheduleInfo {
+    static getDummyScheduleForNewCard(baseEase: number): CardScheduleInfo {
         return CardScheduleInfo.fromDueDateStr(
             CardScheduleInfo.dummyDueDateForNewCard,
             CardScheduleInfo.initialInterval,
-            settings.baseEase,
+            baseEase,
             0,
         );
     }
@@ -186,19 +191,24 @@ export class NoteCardScheduleParser {
         const result: CardScheduleInfo[] = [];
         for (let i = 0; i < scheduling.length; i++) {
             const match: RegExpMatchArray = scheduling[i];
-            const dueDateNum = parseInt(match[1]);
-            const interval = parseInt(match[2]);
-            const ease = parseInt(match[3]);
-            const dueDate: Moment = window.moment(dueDateNum);
-            const delayBeforeReviewTicks: number = dueDateNum - globalDateProvider.today.valueOf();
+            if (match == null) {
+                result.push(CardScheduleInfo.getDummyScheduleForNewCard(0));
+            } else {
+                const dueDateNum = parseInt(match[1]);
+                const interval = parseInt(match[2]);
+                const ease = parseInt(match[3]);
+                const dueDate: Moment = window.moment(dueDateNum);
+                const delayBeforeReviewTicks: number =
+                    dueDateNum - globalDateProvider.today.valueOf();
 
-            const info: CardScheduleInfo = new CardScheduleInfo(
-                dueDate,
-                interval,
-                ease,
-                delayBeforeReviewTicks,
-            );
-            result.push(info);
+                const info: CardScheduleInfo = new CardScheduleInfo(
+                    dueDate,
+                    interval,
+                    ease,
+                    delayBeforeReviewTicks,
+                );
+                result.push(info);
+            }
         }
         return result;
     }
