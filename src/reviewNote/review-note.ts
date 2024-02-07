@@ -67,9 +67,9 @@ export class ReviewNote {
 
         ReviewNote.recallReviewResponse(fileId, option);
 
-        preUpdateDeck(deck, note);
-        ItemToDecks.toRevDeck(deck, note, now);
-        return { buryList };
+        // preUpdateDeck(deck, note);
+        // ItemToDecks.toRevDeck(deck, note, now);
+        return { buryList, dueNum: item.nextReview };
     }
 
     static recallReviewNote(settings: SRSettings) {

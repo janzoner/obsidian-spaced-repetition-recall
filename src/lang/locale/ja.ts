@@ -27,12 +27,8 @@ export default {
     // main.ts
     OPEN_NOTE_FOR_REVIEW: "レビューするノートを開く",
     REVIEW_CARDS: "フラッシュカードのレビュー",
-    REVIEW_EASY_FILE_MENU: "レビュー: Easy",
-    REVIEW_GOOD_FILE_MENU: "レビュー: Good",
-    REVIEW_HARD_FILE_MENU: "レビュー: Hard",
-    REVIEW_NOTE_EASY_CMD: "ノートをEasyとしてレビューする",
-    REVIEW_NOTE_GOOD_CMD: "ノートをGoodとしてレビューする",
-    REVIEW_NOTE_HARD_CMD: "ノートをHardとしてレビューする",
+    REVIEW_DIFFICULTY_FILE_MENU: "レビュー: ${difficulty}",
+    REVIEW_NOTE_DIFFICULTY_CMD: "ノートを${difficulty}としてレビューする",
     REVIEW_ALL_CARDS: "すべてのノートからフラッシュカードをレビューする",
     CRAM_ALL_CARDS: "Select a deck to cram",
     REVIEW_CARDS_IN_NOTE: "このノートのフラッシュカードをレビューする",
@@ -195,8 +191,8 @@ export default {
     FLASHCARD_BLACKOUT_DESC: 'Customize the label for the "Blackout" Button',
     FLASHCARD_INCORRECT_DESC: 'Customize the label for the "Incorrect" Button',
     "FLASHCARD_INCORRECT (EASY)_DESC": 'Customize the label for the "Incorrect (Easy)" Button',
-    UNTRACK_WITH_REVIEWTAG:"UntrackWithReviewTag",
-    
+    UNTRACK_WITH_REVIEWTAG: "UntrackWithReviewTag",
+
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "ノートレビューのキュー",
     CLOSE: "閉じる",

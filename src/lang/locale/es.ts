@@ -27,12 +27,8 @@ export default {
     // main.ts
     OPEN_NOTE_FOR_REVIEW: "Abrir nota para revisión",
     REVIEW_CARDS: "Revisar Tarjetas",
-    REVIEW_EASY_FILE_MENU: "Revisar: Fácil",
-    REVIEW_GOOD_FILE_MENU: "Revisar: Bien",
-    REVIEW_HARD_FILE_MENU: "Revisar: Difícil",
-    REVIEW_NOTE_EASY_CMD: "Revisar nota como fácil",
-    REVIEW_NOTE_GOOD_CMD: "Revisar nota como bien",
-    REVIEW_NOTE_HARD_CMD: "Revisar nota como difícil",
+    REVIEW_DIFFICULTY_FILE_MENU: "Revisar: ${difficulty}",
+    REVIEW_NOTE_DIFFICULTY_CMD: "Revisar nota como ${difficulty}",
     CRAM_ALL_CARDS: "Selecciona un mazo a memorizar",
     REVIEW_ALL_CARDS: "Revisar tarjetas de todas las notas",
     REVIEW_CARDS_IN_NOTE: "Revisar tarjetas en esta nota",
@@ -196,8 +192,8 @@ export default {
     FLASHCARD_BLACKOUT_DESC: 'Customize the label for the "Blackout" Button',
     FLASHCARD_INCORRECT_DESC: 'Customize the label for the "Incorrect" Button',
     "FLASHCARD_INCORRECT (EASY)_DESC": 'Customize the label for the "Incorrect (Easy)" Button',
-    UNTRACK_WITH_REVIEWTAG:"UntrackWithReviewTag",
-    
+    UNTRACK_WITH_REVIEWTAG: "UntrackWithReviewTag",
+
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "Cola de notas a revisar",
     CLOSE: "Cerrar",

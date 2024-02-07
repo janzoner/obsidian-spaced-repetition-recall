@@ -27,12 +27,8 @@ export default {
     // main.ts
     OPEN_NOTE_FOR_REVIEW: "افتح الملاحظة للمراجعة",
     REVIEW_CARDS: "مراجعة البطاقات",
-    REVIEW_EASY_FILE_MENU: "مراجعة: سهل",
-    REVIEW_GOOD_FILE_MENU: "مراجعة: جيد",
-    REVIEW_HARD_FILE_MENU: "مراجعة: صعب",
-    REVIEW_NOTE_EASY_CMD: "مراجعة الملاحظة كـ سهلة",
-    REVIEW_NOTE_GOOD_CMD: "مراجعة الملاحظة كـ جيدة",
-    REVIEW_NOTE_HARD_CMD: "مراجعة الملاحظة كـ صعبة",
+    REVIEW_DIFFICULTY_FILE_MENU: "${difficulty} :مراجعة",
+    REVIEW_NOTE_DIFFICULTY_CMD: "${difficulty} مراجعة الملاحظة كـ",
     CRAM_ALL_CARDS: "حدد رُزمَة للحشر",
     REVIEW_ALL_CARDS: "مراجعة البطاقات من جميع الملاحظات",
     REVIEW_CARDS_IN_NOTE: "مراجعة البطاقات  من هذه الملاحظة",
@@ -187,8 +183,8 @@ export default {
     FLASHCARD_BLACKOUT_DESC: 'Customize the label for the "Blackout" Button',
     FLASHCARD_INCORRECT_DESC: 'Customize the label for the "Incorrect" Button',
     "FLASHCARD_INCORRECT (EASY)_DESC": 'Customize the label for the "Incorrect (Easy)" Button',
-    UNTRACK_WITH_REVIEWTAG:"UntrackWithReviewTag",
-    
+    UNTRACK_WITH_REVIEWTAG: "UntrackWithReviewTag",
+
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "ملاحظات قائمة المراجعة",
     CLOSE: "أغلق",
