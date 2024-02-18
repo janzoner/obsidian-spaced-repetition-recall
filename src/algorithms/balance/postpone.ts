@@ -5,7 +5,7 @@ export function postponeItems(items: RepetitionItem[], days?: number): Repetitio
     const now = Date.now();
     const newdue: number = days ? now + days * DateUtils.DAYS_TO_MILLIS : undefined;
     let fltItems = items.filter((item) => item.isTracked);
-    let safe_fltItems = fltItems
+    const safe_fltItems = fltItems
         .filter((item) => item.nextReview < DateUtils.StartofToday)
         .sort((a, b) => currentRetention(a) - currentRetention(b))
         // https://github.com/open-spaced-repetition/fsrs4anki-helper/blob/58bcfcf8b5eeb60835c5cbde1d0d0ef769af62b0/schedule/postpone.py#L73
@@ -33,10 +33,10 @@ function currentRetention(item: RepetitionItem) {
 function postpone(items: RepetitionItem[], newdue?: number): RepetitionItem[] {
     let cnt = 0;
     items.map((item) => {
-        let newitvl: number,
-            olastview = item.hasDue
-                ? item.nextReview - item.interval * DateUtils.DAYS_TO_MILLIS
-                : Date.now();
+        let newitvl: number;
+        const olastview = item.hasDue
+            ? item.nextReview - item.interval * DateUtils.DAYS_TO_MILLIS
+            : Date.now();
 
         if (newdue) {
             newitvl = newdue - olastview;

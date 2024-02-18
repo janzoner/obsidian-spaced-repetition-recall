@@ -21,10 +21,8 @@ function reschedule_default(items: RepetitionItem[]) {
     let reCnt = 0;
 
     items.map((item) => {
-        let newitvl: number;
-
-        let interval = item.interval * 9 * (1 / 0.9 - 1);
-        newitvl = Math.min(Math.max(Math.round(interval), 1), 3650);
+        const interval = item.interval * 9 * (1 / 0.9 - 1);
+        const newitvl = Math.min(Math.max(Math.round(interval), 1), 3650);
         if (newitvl !== item.interval) {
             reCnt++;
             item.updateDueByInterval(newitvl);
@@ -37,13 +35,12 @@ function reschedule_default(items: RepetitionItem[]) {
 
 function reschedule_fsrs(items: RepetitionItem[]) {
     let reCnt = 0;
-    let fsrs = (SrsAlgorithm.getInstance() as FsrsAlgorithm).fsrs;
+    const fsrs = (SrsAlgorithm.getInstance() as FsrsAlgorithm).fsrs;
 
     items.map((item) => {
-        let newitvl: number;
         if (!item.isTracked) return;
         const data = item.data as FsrsData;
-        newitvl = fsrs.next_interval(data.stability);
+        const newitvl = fsrs.next_interval(data.stability);
         if (newitvl !== data.scheduled_days) {
             reCnt++;
             item.updateDueByInterval(newitvl);

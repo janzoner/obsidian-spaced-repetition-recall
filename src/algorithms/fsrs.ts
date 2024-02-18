@@ -170,7 +170,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             this.appendRevlog(item, review_log);
         }
 
-        let nextInterval = data.due.valueOf() - data.last_review.valueOf();
+        const nextInterval = data.due.valueOf() - data.last_review.valueOf();
 
         return {
             correct,

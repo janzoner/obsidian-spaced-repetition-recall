@@ -42,12 +42,15 @@ export class ReviewNote {
         let deckName = Tags.getNoteDeckName(note, settings);
 
         if (
-            deckName == null ||
-            (!settings.untrackWithReviewTag && !store.getTrackedFile(note.path)?.isTrackedNote)
+            (settings.untrackWithReviewTag && deckName == null) ||
+            (!settings.untrackWithReviewTag &&
+                deckName == null &&
+                !store.getTrackedFile(note.path)?.isTrackedNote)
         ) {
             new Notice(t("PLEASE_TAG_NOTE"));
             return;
-        } else if (deckName == null) {
+        }
+        if (deckName == null) {
             deckName = store.getTrackedFile(note.path)?.lastTag ?? null;
         }
         return deckName;

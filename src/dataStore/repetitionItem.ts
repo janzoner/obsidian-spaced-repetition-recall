@@ -68,7 +68,7 @@ export class RepetitionItem {
         const newItem = new RepetitionItem();
         Object.assign(newItem, item);
         if (newItem.isFsrs) {
-            let data = item.data as FsrsData;
+            const data = item.data as FsrsData;
             data.due = new Date(data.due);
             data.last_review = new Date(data.last_review);
         }
@@ -98,7 +98,7 @@ export class RepetitionItem {
      * @return {*}
      */
     reviewUpdate(result: ReviewResult) {
-        let newitvl = balance(result.nextReview / DateUtils.DAYS_TO_MILLIS, this.itemType);
+        const newitvl = balance(result.nextReview / DateUtils.DAYS_TO_MILLIS, this.itemType);
         this.nextReview = DateUtils.fromNow(newitvl * DateUtils.DAYS_TO_MILLIS).getTime();
         this.timesReviewed += 1;
         if (result.correct) {
@@ -183,7 +183,7 @@ export class RepetitionItem {
         // 240212-interval will be used to calc current retention, shoudn't update.
         const now = Date.now();
         const enableBalance = newdue == undefined;
-        let oitvl = this.interval,
+        const oitvl = this.interval,
             odue = this.hasDue ? this.nextReview : now;
 
         if (this.isFsrs) {
@@ -204,7 +204,7 @@ export class RepetitionItem {
             let days = Math.max(0, newdue - now) / DateUtils.DAYS_TO_MILLIS;
             days = balance(days, this.itemType);
             console.debug("days:", days);
-            let nextInterval = days * DateUtils.DAYS_TO_MILLIS;
+            const nextInterval = days * DateUtils.DAYS_TO_MILLIS;
             newdue = nextInterval + now;
         }
 
