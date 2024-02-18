@@ -29,7 +29,7 @@ test("No questions in the text", async () => {
     );
 });
 
-describe("Single question in the text", () => {
+describe("Single question in the text (without block identifier)", () => {
     test("SingleLineBasic: No schedule info", async () => {
         let noteText: string = `
 A::B
@@ -101,6 +101,155 @@ A::B
     });
 });
 
+describe("Single question in the text (with block identifier)", () => {
+    test("SingleLineBasic: No schedule info", async () => {
+        let noteText: string = `
+A::B ^d7cee0
+`;
+        let noteFile: ISRFile = new UnitTestSRFile(noteText);
+
+        let folderTopicPath: TopicPath = TopicPath.emptyPath;
+        let card1 = {
+            cardIdx: 0,
+            scheduleInfo: null as CardScheduleInfo,
+        };
+        let expected = [
+            {
+                questionType: CardType.SingleLineBasic,
+                topicPath: TopicPath.emptyPath,
+                questionText: {
+                    original: `A::B ^d7cee0`,
+                    actualQuestion: "A::B",
+                    obsidianBlockId: "^d7cee0",
+                },
+
+                lineNo: 1,
+                hasEditLaterTag: false,
+                cards: [card1],
+                hasChanged: false,
+            },
+        ];
+        expect(
+            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath),
+        ).toMatchObject(expected);
+    });
+
+    test("SingleLineBasic: With schedule info (next line)", async () => {
+        let noteText: string = `#flashcards/test
+A::B ^d7cee0
+<!--SR:!2023-09-03,1,230-->
+    `;
+        let noteFile: ISRFile = new UnitTestSRFile(noteText);
+
+        let folderTopicPath: TopicPath = TopicPath.emptyPath;
+        let delayDays = 3 - 6;
+        let card1 = {
+            cardIdx: 0,
+            scheduleInfo: CardScheduleInfo.fromDueDateStr(
+                "2023-09-03",
+                1,
+                230,
+                delayDays * TICKS_PER_DAY,
+            ),
+        };
+        let expected = [
+            {
+                questionType: CardType.SingleLineBasic,
+                topicPath: new TopicPath(["flashcards", "test"]),
+                questionText: {
+                    original: `A::B ^d7cee0
+<!--SR:!2023-09-03,1,230-->`,
+                    actualQuestion: "A::B",
+                    textHash: "1c6b0b01215dc4",
+                    obsidianBlockId: "^d7cee0",
+                },
+                lineNo: 1,
+                hasEditLaterTag: false,
+                cards: [card1],
+                hasChanged: false,
+            },
+        ];
+        expect(
+            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath),
+        ).toMatchObject(expected);
+    });
+
+    test("SingleLineBasic: With schedule info (same line)", async () => {
+        let noteText: string = `#flashcards/test
+A::B <!--SR:!2023-09-03,1,230--> ^d7cee0
+    `;
+        let noteFile: ISRFile = new UnitTestSRFile(noteText);
+
+        let folderTopicPath: TopicPath = TopicPath.emptyPath;
+        let delayDays = 3 - 6;
+        let card1 = {
+            cardIdx: 0,
+            scheduleInfo: CardScheduleInfo.fromDueDateStr(
+                "2023-09-03",
+                1,
+                230,
+                delayDays * TICKS_PER_DAY,
+            ),
+        };
+        let expected = [
+            {
+                questionType: CardType.SingleLineBasic,
+                topicPath: new TopicPath(["flashcards", "test"]),
+                questionText: {
+                    original: `A::B <!--SR:!2023-09-03,1,230--> ^d7cee0`,
+                    actualQuestion: "A::B",
+                    textHash: "1c6b0b01215dc4",
+                    obsidianBlockId: "^d7cee0",
+                },
+                lineNo: 1,
+                hasEditLaterTag: false,
+                cards: [card1],
+                hasChanged: false,
+            },
+        ];
+        expect(
+            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath),
+        ).toMatchObject(expected);
+    });
+
+    test("SingleLineBasic: With topic tag and schedule info (same line)", async () => {
+        let noteText: string = `
+#flashcards/test A::B <!--SR:!2023-09-03,1,230--> ^d7cee0
+    `;
+        let noteFile: ISRFile = new UnitTestSRFile(noteText);
+
+        let folderTopicPath: TopicPath = TopicPath.emptyPath;
+        let delayDays = 3 - 6;
+        let card1 = {
+            cardIdx: 0,
+            scheduleInfo: CardScheduleInfo.fromDueDateStr(
+                "2023-09-03",
+                1,
+                230,
+                delayDays * TICKS_PER_DAY,
+            ),
+        };
+        let expected = [
+            {
+                questionType: CardType.SingleLineBasic,
+                topicPath: new TopicPath(["flashcards", "test"]),
+                questionText: {
+                    original: `#flashcards/test A::B <!--SR:!2023-09-03,1,230--> ^d7cee0`,
+                    actualQuestion: "A::B",
+                    obsidianBlockId: "^d7cee0",
+                },
+                lineNo: 1,
+                hasEditLaterTag: false,
+                cards: [card1],
+                hasChanged: false,
+            },
+        ];
+        expect(
+            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath),
+        ).toMatchObject(expected);
+    });
+});
+
 describe("Multiple questions in the text", () => {
     test("SingleLineBasic: No schedule info", async () => {
         let noteText: string = `#flashcards/test
@@ -133,6 +282,53 @@ Q3::A3
         expect(questionList[0].topicPath).toEqual(new TopicPath(["flashcards", "science"]));
         expect(questionList[1].topicPath).toEqual(new TopicPath(["flashcards", "science"]));
         expect(questionList[2].topicPath).toEqual(new TopicPath(["flashcards", "science"]));
+    });
+
+    test("MultiLine: Space before multi line separator", async () => {
+        // https://github.com/st3v3nmw/obsidian-spaced-repetition/issues/853
+        let noteText: string = `
+#flashcards/test/b853 
+
+Question::Answer
+
+Multiline question
+ ?
+Multiline answer
+
+Multiline question2
+ ??
+Multiline answer2
+ 
+`;
+        let noteFile: ISRFile = new UnitTestSRFile(noteText);
+
+        let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
+            noteFile,
+            TopicPath.emptyPath,
+        );
+        expect(questionList.length).toEqual(3);
+        expect(questionList[0].cards).toMatchObject([
+            {
+                front: "Question",
+                back: "Answer",
+            },
+        ]);
+        expect(questionList[1].cards).toMatchObject([
+            {
+                front: "Multiline question",
+                back: "Multiline answer",
+            },
+        ]);
+        expect(questionList[2].cards).toMatchObject([
+            {
+                front: "Multiline question2",
+                back: "Multiline answer2",
+            },
+            {
+                front: "Multiline answer2",
+                back: "Multiline question2",
+            },
+        ]);
     });
 });
 
