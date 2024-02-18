@@ -725,15 +725,13 @@ export default class SRPlugin extends Plugin {
     private postponeResponse(note: TFile, sNote: SchedNote) {
         Object.values(this.reviewDecks).forEach((reviewDeck: ReviewDeck) => {
             let wasDueInDeck = false;
-            const result = reviewDeck.scheduledNotes.splice(
-                reviewDeck.scheduledNotes.findIndex((newNote) => newNote.note.path === note.path),
-                1,
-                sNote,
-            );
-            if (result.length > 0) {
-                return;
-                wasDueInDeck = true;
-            }
+            reviewDeck.scheduledNotes.findIndex((newNote, ind) => {
+                if (newNote.note.path === note.path) {
+                    reviewDeck.scheduledNotes[ind] = sNote;
+                    wasDueInDeck = true;
+                    return true;
+                }
+            });
 
             // It was a new note, remove it from the new notes and schedule it.
             if (!wasDueInDeck) {

@@ -551,7 +551,11 @@ export class FlashcardModal extends Modal {
         } else if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
             this.setupResponseBtns(btnTexts);
             const item = this.plugin.store.getItembyID(this.currentCard.Id);
-            if (item.nextReview > Date.now()) {
+            if (
+                item.nextReview > Date.now() &&
+                this.currentCard.hasSchedule &&
+                !this.currentCard.scheduleInfo.isDue()
+            ) {
                 debug("复习了还没到期的卡片" + item);
             }
         } else {

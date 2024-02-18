@@ -173,7 +173,12 @@ export const errorlog = (data: {}) => {
     console.error({ plugin: "Spaced-rep-recall:", ...data });
 };
 
-export const debug = (functionname: string, duration?: number, ...data: unknown[]) => {
+export const debug = (functionname: string, ...data: unknown[]) => {
+    let duration: number;
+    if (Number(data[0]) >= 0) {
+        duration = Number(data[0]);
+        data = data.slice(1);
+    }
     const msg = { plugin: "SRR", func: functionname, ...data };
     console.debug(msg);
     if (Platform.isMobile) {
