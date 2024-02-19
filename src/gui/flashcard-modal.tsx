@@ -517,8 +517,8 @@ export class FlashcardModal extends Modal {
             await this.showCurrentCard();
             if (
                 this?.previousCard &&
-                this.previousCard.question === this.currentCard.question &&
-                this.currentCard?.multiClozeIndex > 0
+                this.previousCard.isMultiCloze &&
+                this.currentCard !== this.currentCard.getFirstClozeCard()
             ) {
                 this.showAnswer();
             }

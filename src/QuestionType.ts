@@ -197,7 +197,7 @@ export class QuestionType_ClozeUtil {
                 return true;
             });
             front = front + questionText.substring(startIdx);
-            front = QuestionType_ClozeUtil.removeClozeTokens(front, settings);
+            // front = QuestionType_ClozeUtil.removeClozeTokens(front, settings);
             back = back + questionText.substring(startIdx);
             back = QuestionType_ClozeUtil.removeClozeTokens(back, settings);
             siblings[idxs[sibIdx]].front = front;

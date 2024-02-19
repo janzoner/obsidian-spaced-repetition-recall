@@ -38,12 +38,47 @@ export class Card {
         return this?.multiClozeIndex >= 0;
     }
 
+    /**
+     * 3 cloze in a group, but last group could have 4 cloze.
+     */
     get hasNextMultiCloze(): boolean {
-        return this.isMultiCloze && this?.multiClozeIndex + 1 < this?.multiCloze.length;
+        if (this.isMultiCloze && this.multiClozeIndex + 1 < this.multiCloze.length) {
+            const len = this.multiCloze.length;
+            if (len % 3 === 1 && len - this.multiClozeIndex <= 4) {
+                return true;
+            } else if (this.multiClozeIndex % 3 < 2) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    getNextMultiClozeIndex(): number {
+    private getFirstMultiClozeIndex(): number {
+        let result = -1;
+        if (this.isMultiCloze) {
+            const len = this.multiCloze.length;
+            if (this.multiCloze.length <= 4) {
+                result = 0;
+            } else if (len % 3 === 1 && len - this.multiClozeIndex <= 4) {
+                result = len - 4;
+            } else {
+                result = Math.floor(this.multiClozeIndex / 3) * 3;
+            }
+        }
+        console.debug(this.getFirstMultiClozeIndex.name, result);
+        return result;
+    }
+
+    private getNextMultiClozeIndex(): number {
         return this.hasNextMultiCloze ? this.multiClozeIndex + 1 : -1;
+    }
+
+    getFirstClozeCard(): Card {
+        return this.question.cards[this.multiCloze[this.getFirstMultiClozeIndex()]];
+    }
+
+    getNextClozeCard(): Card {
+        return this.question.cards[this.multiCloze[this.getNextMultiClozeIndex()]];
     }
 
     formatSchedule(): string {

@@ -117,9 +117,10 @@ class SingleDeckIterator {
     }
 
     private setMultiCloze(card: Card): boolean {
-        let idx = -1;
-        if (card?.multiClozeIndex >= 0) {
+        let idx = -2;
+        if (card.isMultiCloze) {
             const cardList = this.deck.getCardListForCardType(card.cardListType);
+            // console.debug("cardList: ", cardList, this.deck);
             idx = cardList.findIndex((v) => v === card);
         }
         if (idx >= 0) {
@@ -127,13 +128,13 @@ class SingleDeckIterator {
         } else {
             this.setCardListType(this.preferredCardListType);
         }
-        // console.debug("this.idx: ", this.cardIdx);
+        // console.debug("this.idx: ", this.cardIdx, idx, card);
         return idx >= 0;
     }
 
     firstMultiCloze(card: Card): void {
-        if (card.hasNextMultiCloze) {
-            const fCard = card.question.cards[card.multiCloze[0]];
+        if (card.isMultiCloze) {
+            const fCard = card.getFirstClozeCard();
             this.setMultiCloze(fCard);
         }
     }
@@ -142,10 +143,11 @@ class SingleDeckIterator {
         // console.debug("nextMultiCloze: prev card: ", card, card?.multiClozeIndex);
         let nCard: Card;
         if (card.hasNextMultiCloze) {
-            nCard = this.previousCard.question.cards[card.getNextMultiClozeIndex()];
+            nCard = this.previousCard.getNextClozeCard();
+            // console.debug(" next Nulti card: ", nCard, nCard?.multiClozeIndex);
+            return this.setMultiCloze(nCard);
         }
-        // console.debug(this.nextMultiClozeCard.name + " next card: ", nCard, nCard?.multiClozeIndex);
-        return this.setMultiCloze(nCard);
+        return false;
     }
 
     private nextRandomCard(): void {
