@@ -428,6 +428,9 @@ export default class SRPlugin extends Plugin {
         );
         await ReviewNote.getInstance().sync(notes, this.reviewDecks, this.easeByPath);
 
+        // Reviewable cards are all except those with the "edit later" tag
+        this.deckTree = DeckTreeFilter.filterForReviewableCards(fullDeckTree);
+
         // sort the deck names
         this.deckTree.sortSubdecksList();
         this.remainingDeckTree = DeckTreeFilter.filterForRemainingCards(
@@ -571,14 +574,13 @@ export default class SRPlugin extends Plugin {
             new Notice(t("NOTE_IN_IGNORED_FOLDER"));
             return;
         }
-        let result: { sNote: SchedNote; buryList?: string[] };
-        let ease = this.getLinkedEase(note);
+        const ease = this.getLinkedEase(note);
         const revnote = ReviewNote.getInstance();
         if (!revnote.tagCheck(note)) {
             return;
         }
 
-        result = revnote.responseProcess(note, response, ease);
+        const result = revnote.responseProcess(note, response, ease);
         if (settings.burySiblingCards) {
             this.data.buryList.push(...result.buryList);
             await this.savePluginData();
