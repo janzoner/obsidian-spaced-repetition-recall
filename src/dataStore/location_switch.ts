@@ -116,27 +116,29 @@ export class LocationSwitch {
                 settings.dataLocation = newLocation;
             }
         }
+        settings.tagsToReview.push(this.revTag);
+
         await store.save();
 
         // await plugin.sync_Algo();
 
         let notes: TFile[] = app.vault.getMarkdownFiles();
         notes = notes.filter(
-            (noteFile) => !isIgnoredPath(settings.noteFoldersToIgnore, noteFile.path),
+            (noteFile) =>
+                !isIgnoredPath(settings.noteFoldersToIgnore, noteFile.path) &&
+                plugin.createSrTFile(noteFile).getAllTags().length > 0,
         );
         for (const noteFile of notes) {
             let deckname = Tags.getNoteDeckName(noteFile, this.settings);
-            let topicPath: TopicPath = plugin.findTopicPath(plugin.createSrTFile(noteFile));
-            let fileText: string = "";
+            const srfile = plugin.createSrTFile(noteFile);
+            let topicPath: TopicPath = plugin.findTopicPath(srfile);
+            let fileText: string = await noteFile.vault.read(noteFile);
             let fileChanged = false;
+
+            // delet removed tag
             if (topicPath.hasPath) {
-                fileText = await noteFile.vault.read(noteFile);
-                if (topicPath.formatAsTag().includes(this.revTag)) {
-                    deckname = DEFAULT_DECKNAME;
-                    topicPath = new TopicPath([deckname]);
-                    fileText = delDefaultTag(fileText, this.revTag);
-                    fileChanged = true;
-                } else if (
+                // fileText = await noteFile.vault.read(noteFile);
+                if (
                     topicPath.path.length === 2 &&
                     settings.tagsToReview.includes(topicPath.path[1])
                 ) {
@@ -146,6 +148,17 @@ export class LocationSwitch {
                     fileText = delDefaultTag(fileText, revtag);
                     fileChanged = true;
                 }
+            }
+
+            // delete review/default tag
+            if (
+                (topicPath.hasPath && topicPath.formatAsTag().includes(this.revTag)) ||
+                srfile.getAllTags().includes("#" + this.revTag)
+            ) {
+                deckname = DEFAULT_DECKNAME;
+                topicPath = new TopicPath([deckname]);
+                fileText = delDefaultTag(fileText, this.revTag);
+                fileChanged = true;
             }
 
             if (deckname !== null) {
@@ -191,6 +204,8 @@ export class LocationSwitch {
                 // console.debug("_convert fileChanged end :\n", fileText);
             }
         }
+
+        settings.tagsToReview.pop();
 
         const msg = "converteNoteSchedToTrackfile success!";
         if (dryrun) {
@@ -563,7 +578,9 @@ export function updateCardSchedXml(
     if (newCardText.endsWith("```") && sep !== "\n") {
         sep = "\n";
     }
-
+    if (scheduling != null && scheduling.every((sched) => sched == null)) {
+        return newCardText;
+    }
     if (scheduling != null && scheduling.length > 0) {
         schedString = sep + SR_HTML_COMMENT_BEGIN;
 

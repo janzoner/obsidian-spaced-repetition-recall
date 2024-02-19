@@ -5,7 +5,6 @@ import { ItemInfoModal } from "src/gui/info";
 import { Queue } from "./dataStore/queue";
 import { debug } from "./util/utils_recall";
 import { postponeItems } from "./algorithms/balance/postpone";
-import { ReviewDeckSelectionModal } from "./gui/reviewDeckSelectionModal";
 import { reschedule } from "./algorithms/balance/reschedule";
 import { GetInputModal } from "./gui/getInputModal";
 

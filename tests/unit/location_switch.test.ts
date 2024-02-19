@@ -118,6 +118,19 @@ Obsidian`;
         const result = delDefaultTag(fileText, "review/default");
         expect(result).toEqual(expectedText);
     });
+
+    test("delDefaultTag(no frontmatter) : \n review/default", () => {
+        const fileText = `---
+tags:
+    - review/default
+---
+Obsidian`;
+        const expectedText = `
+Obsidian`;
+        const result = delDefaultTag(fileText, "review/default");
+        expect(result).toEqual(expectedText);
+    });
+
     test("delDefaultTag : \n review/default", () => {
         const fileText = `---
 tags:

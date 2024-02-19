@@ -142,6 +142,12 @@ export default class SRPlugin extends Plugin {
         settings.algorithmSettings[settings.algorithm] = this.algorithm.settings;
         this.savePluginData();
 
+        ReviewNote.create(
+            settings,
+            this.sync_onNote.bind(this),
+            this.tagCheck.bind(this),
+            this.saveReviewResponse_onNote.bind(this),
+        );
         this.commands = new Commands(this);
         this.commands.addCommands();
         if (this.data.settings.showDebugMessages) {
@@ -420,15 +426,7 @@ export default class SRPlugin extends Plugin {
                 }
             }),
         );
-        if (settings.dataLocation != DataLocation.SaveOnNoteFile) {
-            await this.sync_trackfiles(notes);
-            // this.getTimeDuration(this.sync.name);
-        } else {
-            this.sync_onNote(notes);
-        }
-
-        // Reviewable cards are all except those with the "edit later" tag
-        this.deckTree = DeckTreeFilter.filterForReviewableCards(fullDeckTree);
+        await ReviewNote.getInstance().sync(notes, this.reviewDecks, this.easeByPath);
 
         // sort the deck names
         this.deckTree.sortSubdecksList();
@@ -558,22 +556,6 @@ export default class SRPlugin extends Plugin {
         debug(fname, undefined, { msg });
     }
 
-    // @logExecutionTime()
-    async sync_trackfiles(notes: TFile[]): Promise<void> {
-        // const settings = this.data.settings;
-        const store = this.store;
-        store.data.queues.buildQueue();
-
-        // check trackfile
-        await store.reLoad();
-
-        ItemToDecks.create(this.data.settings).itemToReviewDecks(
-            this.reviewDecks,
-            notes,
-            this.easeByPath,
-        );
-    }
-
     async loadNote(noteFile: TFile, topicPath: TopicPath): Promise<Note> {
         const loader: NoteFileLoader = new NoteFileLoader(this.data.settings);
         const note: Note = await loader.load(this.createSrTFile(noteFile), topicPath);
@@ -590,43 +572,23 @@ export default class SRPlugin extends Plugin {
         }
         let result: { sNote: SchedNote; buryList?: string[] };
         let ease = this.getLinkedEase(note);
-
-        if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
-            let deckName = Tags.getNoteDeckName(note, settings);
-            if (deckName == null && !this.store.getTrackedFile(note.path)?.isTrackedNote) {
-                new Notice(t("PLEASE_TAG_NOTE"));
-                return;
-            }
-            if (deckName == null) {
-                deckName = this.store.getTrackedFile(note.path).lastTag;
-            }
-            if (deckName == null) return;
-            const opt = this.algorithm.srsOptions()[response];
-
-            result = ReviewNote.saveReviewResponse_trackfiles(
-                note,
-                opt,
-                settings.burySiblingCards,
-                ease,
-            );
-            if (settings.burySiblingCards) {
-                this.data.buryList.push(...result.buryList);
-                await this.savePluginData();
-            }
-        } else {
-            // let ease = this.linkRank.getContribution(note, this.easeByPath).ease;
-            ease = Math.round(ease);
-            result = await this.saveReviewResponse_onNote(note, response, ease);
-            this.easeByPath.setEaseForPath(note.path, ease);
+        const revnote = ReviewNote.getInstance();
+        if (!revnote.tagCheck(note)) {
+            return;
         }
+
+        result = revnote.responseProcess(note, response, ease);
+        if (settings.burySiblingCards) {
+            this.data.buryList.push(...result.buryList);
+            await this.savePluginData();
+        }
+
         // Update note's properties to update our due notes.
         this.postponeResponse(note, result.sNote);
     }
 
-    async saveReviewResponse_onNote(note: TFile, response: ReviewResponse, ease: number) {
+    tagCheck(note: TFile) {
         const fileCachedData = this.app.metadataCache.getFileCache(note) || {};
-        const frontmatter: FrontMatterCache | Record<string, unknown> =
-            fileCachedData.frontmatter || {};
 
         const tags = getAllTags(fileCachedData) || [];
         let shouldIgnore = true;
@@ -643,8 +605,15 @@ export default class SRPlugin extends Plugin {
 
         if (shouldIgnore) {
             new Notice(t("PLEASE_TAG_NOTE"));
-            return;
+            return false;
         }
+        return true;
+    }
+
+    async saveReviewResponse_onNote(note: TFile, response: ReviewResponse, ease: number) {
+        const fileCachedData = this.app.metadataCache.getFileCache(note) || {};
+        const frontmatter: FrontMatterCache | Record<string, unknown> =
+            fileCachedData.frontmatter || {};
 
         let fileText: string = await this.app.vault.read(note);
         let interval: number, delayBeforeReview: number;
@@ -681,6 +650,7 @@ export default class SRPlugin extends Plugin {
         );
         interval = schedObj.interval;
         ease = schedObj.ease;
+        this.easeByPath.setEaseForPath(note.path, ease);
 
         const due = window.moment(now + interval * 24 * 3600 * 1000);
         const dueString: string = due.format("YYYY-MM-DD");
@@ -710,16 +680,17 @@ export default class SRPlugin extends Plugin {
 
         await this.app.vault.modify(note, fileText);
 
+        const buryList: string[] = [];
         if (this.data.settings.burySiblingCards) {
             const topicPath: TopicPath = this.findTopicPath(this.createSrTFile(note));
             const noteX: Note = await this.loadNote(note, topicPath);
             for (const question of noteX.questionList) {
-                this.data.buryList.push(question.questionText.textHash);
+                buryList.push(question.questionText.textHash);
             }
             await this.savePluginData();
         }
-
-        return { sNote: { note, dueUnix: due.valueOf() } };
+        const snote: SchedNote = { note, dueUnix: due.valueOf() };
+        return { sNote: snote, buryList };
     }
 
     private postponeResponse(note: TFile, sNote: SchedNote) {
@@ -876,7 +847,7 @@ export default class SRPlugin extends Plugin {
     }
 
     findTopicPath(note: ISRFile): TopicPath {
-        return TopicPath.getTopicPathOfFile(note, this.data.settings, this.store);
+        return TopicPath.getTopicPathOfFile(note, this.data.settings);
     }
 
     async loadPluginData(): Promise<void> {

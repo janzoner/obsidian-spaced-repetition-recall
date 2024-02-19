@@ -11,6 +11,8 @@ export interface SchedNote {
     ease?: number;
 }
 
+export type Decks = { [deckKey: string]: ReviewDeck };
+
 export class ReviewDeck {
     public deckName: string;
     public newNotes: SchedNote[] = [];

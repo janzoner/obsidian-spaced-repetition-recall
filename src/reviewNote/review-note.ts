@@ -1,26 +1,59 @@
 import { Notice, TFile } from "obsidian";
+import { SrsAlgorithm } from "src/algorithms/algorithms";
 import { DataStore } from "src/dataStore/data";
 import { DataLocation } from "src/dataStore/dataLocation";
 import { ItemToDecks } from "src/dataStore/itemToDecks";
 import { reviewResponseModal } from "src/gui/reviewresponse-modal";
 import { t } from "src/lang/helpers";
-import { ReviewDeck } from "src/ReviewDeck";
+import SRPlugin from "src/main";
+import { NoteEaseList } from "src/NoteEaseList";
+import { Decks, ReviewDeck, SchedNote } from "src/ReviewDeck";
+import { ReviewResponse } from "src/scheduling";
 import { SRSettings } from "src/settings";
 import { Tags } from "src/tags";
 import { DateUtils, isIgnoredPath } from "src/util/utils_recall";
 
+type Tsync = (notes: TFile[], reviewDecks?: Decks, easeByPath?: NoteEaseList) => Promise<void>;
+export type TrespResult = { sNote: SchedNote; buryList?: string[] };
+type TsaveResponse = (note: TFile, response: ReviewResponse, ease: number) => any;
+
 export class ReviewNote {
+    private static _instance: ReviewNote;
     static itemId: number;
     static minNextView: number;
 
     settings: SRSettings;
+    // public reviewDecks: Decks = {};
+    // public easeByPath: NoteEaseList;
 
-    static create(settings: SRSettings, location: DataLocation) {
-        return new ReviewNote(settings);
+    static create(
+        // plugin: SRPlugin,
+        settings: SRSettings,
+        sync: Tsync,
+        tagCheck: (note: TFile) => boolean,
+        saveResponse: TsaveResponse,
+    ) {
+        switch (settings.dataLocation) {
+            case DataLocation.SaveOnNoteFile:
+                return new RNonNote(settings, sync, tagCheck, saveResponse);
+                break;
+
+            default:
+                return new RNonTrackfiles(settings);
+                break;
+        }
+    }
+
+    static getInstance() {
+        if (!ReviewNote._instance) {
+            throw Error("there is not ReviewNote instance.");
+        }
+        return ReviewNote._instance;
     }
 
     constructor(settings: SRSettings) {
         this.settings = settings;
+        ReviewNote._instance = this;
     }
 
     /**
@@ -56,45 +89,15 @@ export class ReviewNote {
         return deckName;
     }
 
-    static saveReviewResponse_trackfiles(
-        note: TFile,
-        option: string,
-        burySiblingCards: boolean,
-        ease?: number,
-    ) {
-        const store = DataStore.getInstance();
-        const now = Date.now();
+    tagCheck(note: TFile): boolean {
+        throw new Error("not implemented");
+    }
 
-        const itemId = store.getTrackedFile(note.path).noteID;
-        const item = store.getItembyID(itemId);
-        if (item.isNew && ease != null) {
-            // new note
-            item.updateAlgorithmData("ease", ease);
-        }
-        const buryList: string[] = [];
-        if (burySiblingCards) {
-            const trackFile = store.getTrackedFile(note.path);
-            if (trackFile.hasCards) {
-                for (const cardinfo of trackFile.cardItems) {
-                    buryList.push(cardinfo.cardTextHash);
-                }
-            }
-        }
-
-        ReviewNote.recallReviewResponse(itemId, option);
-
-        // preUpdateDeck(deck, note);
-        // ItemToDecks.toRevDeck(deck, note, now);
-        return {
-            buryList,
-            sNote: {
-                note,
-                item,
-                dueUnix: item.nextReview,
-                interval: item.interval,
-                ease: item.ease,
-            },
-        };
+    async sync(notes: TFile[], reviewDecks?: Decks, easeByPath?: NoteEaseList): Promise<void> {
+        throw new Error("not implemented");
+    }
+    responseProcess(note: TFile, response: ReviewResponse, ease: number): TrespResult {
+        throw new Error("not implemented");
     }
 
     static recallReviewNote(settings: SRSettings) {
@@ -220,6 +223,91 @@ export class ReviewNote {
                 new Notice("可以在" + interval / 60 + "小时后来复习");
             }
         }
+    }
+}
+
+class RNonNote extends ReviewNote {
+    constructor(
+        settings: SRSettings,
+        sync: Tsync,
+        tagCheck: (note: TFile) => boolean,
+        saveResponse: TsaveResponse,
+    ) {
+        super(settings);
+        this.sync = sync;
+        this.tagCheck = tagCheck;
+        this.responseProcess = saveResponse;
+    }
+}
+
+class RNonTrackfiles extends ReviewNote {
+    // @logExecutionTime()
+    async sync(notes: TFile[], reviewDecks: Decks, easeByPath: NoteEaseList): Promise<void> {
+        // const settings = this.data.settings;
+        const store = DataStore.getInstance();
+        store.data.queues.buildQueue();
+
+        // check trackfile
+        await store.reLoad();
+
+        ItemToDecks.create(this.settings).itemToReviewDecks(reviewDecks, notes, easeByPath);
+    }
+
+    tagCheck(note: TFile): boolean {
+        const store = DataStore.getInstance();
+
+        let deckName = Tags.getNoteDeckName(note, this.settings);
+        if (
+            (this.settings.untrackWithReviewTag && deckName == null) ||
+            (!this.settings.untrackWithReviewTag &&
+                deckName == null &&
+                !store.getTrackedFile(note.path)?.isTrackedNote)
+        ) {
+            new Notice(t("PLEASE_TAG_NOTE"));
+            return false;
+        }
+        if (deckName == null) {
+            deckName = store.getTrackedFile(note.path).lastTag;
+        }
+        if (deckName == null) return false;
+        return true;
+    }
+    responseProcess(note: TFile, response: ReviewResponse, ease?: number) {
+        const store = DataStore.getInstance();
+
+        const option = SrsAlgorithm.getInstance().srsOptions()[response];
+        const now = Date.now();
+
+        const itemId = store.getTrackedFile(note.path).noteID;
+        const item = store.getItembyID(itemId);
+        if (item.isNew && ease != null) {
+            // new note
+            item.updateAlgorithmData("ease", ease);
+        }
+        const buryList: string[] = [];
+        if (this.settings.burySiblingCards) {
+            const trackFile = store.getTrackedFile(note.path);
+            if (trackFile.hasCards) {
+                for (const cardinfo of trackFile.cardItems) {
+                    buryList.push(cardinfo.cardTextHash);
+                }
+            }
+        }
+
+        ReviewNote.recallReviewResponse(itemId, option);
+
+        // preUpdateDeck(deck, note);
+        // ItemToDecks.toRevDeck(deck, note, now);
+        return {
+            buryList,
+            sNote: {
+                note,
+                item,
+                dueUnix: item.nextReview,
+                interval: item.interval,
+                ease: item.ease,
+            },
+        };
     }
 }
 

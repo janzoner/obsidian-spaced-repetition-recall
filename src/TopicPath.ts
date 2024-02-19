@@ -40,11 +40,7 @@ export class TopicPath {
         return result;
     }
 
-    static getTopicPathOfFile(
-        noteFile: ISRFile,
-        settings: SRSettings,
-        store?: DataStore,
-    ): TopicPath {
+    static getTopicPathOfFile(noteFile: ISRFile, settings: SRSettings): TopicPath {
         let deckPath: string[] = [];
         let result: TopicPath = TopicPath.emptyPath;
 
@@ -67,9 +63,16 @@ export class TopicPath {
                     }
                 }
             }
+            result = getTopicPathTrackedfile(result);
+        }
+        return result;
 
+        function getTopicPathTrackedfile(result: TopicPath) {
             if (result.isEmptyPath && settings.trackedNoteToDecks) {
-                outer: for (const tagToReview of this.getTopicPathsFromTagList(
+                const tagList: TopicPath[] = TopicPath.getTopicPathsFromTagList(
+                    noteFile.getAllTags(),
+                );
+                outer: for (const tagToReview of TopicPath.getTopicPathsFromTagList(
                     settings.tagsToReview,
                 )) {
                     for (const tag of tagList) {
@@ -79,7 +82,8 @@ export class TopicPath {
                         }
                     }
                 }
-                if (settings.dataLocation !== DataLocation.SaveOnNoteFile && store != undefined) {
+                if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+                    const store = DataStore.getInstance();
                     if (result.isEmptyPath) {
                         if (store.isInTrackedFiles(noteFile.path)) {
                             let deckName = store.getTrackedFile(noteFile.path).lastTag;
@@ -94,8 +98,8 @@ export class TopicPath {
                     }
                 }
             }
+            return result;
         }
-        return result;
     }
 
     isSameOrAncestorOf(topicPath: TopicPath): boolean {

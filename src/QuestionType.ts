@@ -139,7 +139,7 @@ class QuestionType_Cloze implements IQuestionTypeHandler {
 
 export class QuestionType_ClozeUtil {
     static renderClozeFront(len: number = 3): string {
-        const rpt = Math.round(len / 3);
+        const rpt = Math.max(1, Math.round(len / 6));
         return "<span style='color:#2196f3'>[" + "...".repeat(rpt) + "]</span>";
     }
 
