@@ -125,8 +125,6 @@ class SingleDeckIterator {
         }
         if (idx >= 0) {
             this.setCardListType(card.cardListType, idx);
-        } else {
-            this.setCardListType(this.preferredCardListType);
         }
         // console.debug("this.idx: ", this.cardIdx, idx, card);
         return idx >= 0;
@@ -146,6 +144,8 @@ class SingleDeckIterator {
             nCard = this.previousCard.getNextClozeCard();
             // console.debug(" next Nulti card: ", nCard, nCard?.multiClozeIndex);
             return this.setMultiCloze(nCard);
+        } else {
+            this.setCardListType(this.preferredCardListType);
         }
         return false;
     }

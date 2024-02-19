@@ -518,6 +518,7 @@ export class FlashcardModal extends Modal {
             if (
                 this?.previousCard &&
                 this.previousCard.isMultiCloze &&
+                this.currentCard.isMultiCloze &&
                 this.currentCard !== this.currentCard.getFirstClozeCard()
             ) {
                 this.showAnswer();

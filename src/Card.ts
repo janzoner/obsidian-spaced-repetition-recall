@@ -42,42 +42,17 @@ export class Card {
      * 3 cloze in a group, but last group could have 4 cloze.
      */
     get hasNextMultiCloze(): boolean {
-        if (this.isMultiCloze && this.multiClozeIndex + 1 < this.multiCloze.length) {
-            const len = this.multiCloze.length;
-            if (len % 3 === 1 && len - this.multiClozeIndex <= 4) {
-                return true;
-            } else if (this.multiClozeIndex % 3 < 2) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private getFirstMultiClozeIndex(): number {
-        let result = -1;
-        if (this.isMultiCloze) {
-            const len = this.multiCloze.length;
-            if (this.multiCloze.length <= 4) {
-                result = 0;
-            } else if (len % 3 === 1 && len - this.multiClozeIndex <= 4) {
-                result = len - 4;
-            } else {
-                result = Math.floor(this.multiClozeIndex / 3) * 3;
-            }
-        }
-        return result;
-    }
-
-    private getNextMultiClozeIndex(): number {
-        return this.hasNextMultiCloze ? this.multiClozeIndex + 1 : -1;
+        return this.isMultiCloze && this.multiClozeIndex + 1 < this.multiCloze.length;
     }
 
     getFirstClozeCard(): Card {
-        return this.question.cards[this.multiCloze[this.getFirstMultiClozeIndex()]];
+        return this.isMultiCloze ? this.question.cards[this.multiCloze[0]] : undefined;
     }
 
     getNextClozeCard(): Card {
-        return this.question.cards[this.multiCloze[this.getNextMultiClozeIndex()]];
+        return this.hasNextMultiCloze
+            ? this.question.cards[this.multiCloze[this.multiClozeIndex + 1]]
+            : undefined;
     }
 
     formatSchedule(): string {

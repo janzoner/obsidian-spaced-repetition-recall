@@ -163,10 +163,7 @@ export class QuestionType_ClozeUtil {
         const ftsibls = textsibls.filter((v, idx) => idxs.includes(idx));
         // .sort((a, b) => b.index - a.index);
         let startIdx: number;
-        ftsibls.filter((m0, sibIdx) => {
-            // if (sibIdx === idxs.length - 1) {
-            //     return;
-            // }
+        ftsibls.forEach((m0, sibIdx) => {
             const deletionStart: number = m0.index,
                 deletionEnd: number = deletionStart + m0[0].length;
             startIdx = deletionEnd;
@@ -179,7 +176,8 @@ export class QuestionType_ClozeUtil {
                 QuestionType_ClozeUtil.renderClozeBack(
                     questionText.substring(deletionStart, deletionEnd),
                 );
-            ftsibls.filter((m) => {
+            let sibStartEndIdx = getStartEndIndex(sibIdx);
+            ftsibls.slice(sibIdx, sibStartEndIdx.end).forEach((m) => {
                 if (m.index <= startIdx) {
                     return true;
                 }
@@ -203,9 +201,29 @@ export class QuestionType_ClozeUtil {
             siblings[idxs[sibIdx]].front = front;
             siblings[idxs[sibIdx]].back = back;
             siblings[idxs[sibIdx]].multiClozeIndex = sibIdx;
-            siblings[idxs[sibIdx]].multiCloze = idxs;
+            siblings[idxs[sibIdx]].multiCloze = idxs.slice(
+                sibStartEndIdx.start,
+                sibStartEndIdx.end,
+            );
         });
         return siblings;
+
+        function getStartEndIndex(sibIdx: number, cnt = 3, lastcnt = 4) {
+            let start = 0,
+                end = 0;
+            const len = idxs.length;
+            if (len <= lastcnt) {
+                start = 0;
+                end = len;
+            } else if (len % cnt === 1 && len - sibIdx <= lastcnt) {
+                start = len - lastcnt;
+                end = len;
+            } else {
+                start = Math.floor(sibIdx / cnt) * cnt;
+                end = start + cnt;
+            }
+            return { start, end };
+        }
     }
 
     static renderClozeFront(len: number = 3): string {
