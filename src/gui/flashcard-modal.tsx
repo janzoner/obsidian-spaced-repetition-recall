@@ -602,11 +602,11 @@ export class FlashcardModal extends Modal {
         const intervals = this.plugin.algorithm.calcAllOptsIntervals(cardItem);
 
         if (Platform.isMobile) {
-            for (let i = 1; i < this.responseBtns.length; i++) {
+            for (let i = 0; i < this.responseBtns.length; i++) {
                 this.responseBtns[i].setText(textInterval(intervals[i], true));
             }
         } else {
-            for (let i = 1; i < this.responseBtns.length; i++) {
+            for (let i = 0; i < this.responseBtns.length; i++) {
                 this.responseBtns[i].setText(
                     `${btnTexts[i]} - ${textInterval(intervals[i], false)}`,
                 );
