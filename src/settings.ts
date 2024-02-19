@@ -1,6 +1,7 @@
 import { Notice, PluginSettingTab, Setting, App, Platform } from "obsidian";
 import type SRPlugin from "src/main";
 import { t } from "src/lang/helpers";
+import { addMultiClozeSetting } from "./settings/multiClozeSetting";
 
 // https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
 
@@ -27,6 +28,7 @@ export interface SRSettings {
     convertFoldersToDecks: boolean;
     cardCommentOnSameLine: boolean;
     burySiblingCards: boolean;
+    multiClozeCard: boolean;
     showContextInCards: boolean;
     flashcardHeightPercentage: number;
     flashcardWidthPercentage: number;
@@ -88,6 +90,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
     convertFoldersToDecks: false,
     cardCommentOnSameLine: false,
     burySiblingCards: false,
+    multiClozeCard: false,
     showContextInCards: true,
     flashcardHeightPercentage: Platform.isMobile ? 100 : 80,
     flashcardWidthPercentage: Platform.isMobile ? 100 : 40,
@@ -262,6 +265,7 @@ export class SRSettingTab extends PluginSettingTab {
                     }),
             );
 
+        addMultiClozeSetting(containerEl, this.plugin);
         new Setting(containerEl)
             .setName(t("SHOW_CARD_CONTEXT"))
             .setDesc(t("SHOW_CARD_CONTEXT_DESC"))

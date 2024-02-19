@@ -81,6 +81,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "次のレビューまでシブリングを延期しますか？",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "シブリングは同一のカードテキストから生成されたカード、つまり穴埋め問題の派生カードです。",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "カードにコンテキストを表示しますか？",
     SHOW_CARD_CONTEXT_DESC:
         "｢タイトル > 見出し 1 > 副見出し > ... > 副見出し｣の表示を行うかどうかを決めます。",

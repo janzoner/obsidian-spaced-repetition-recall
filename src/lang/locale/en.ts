@@ -78,6 +78,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Bury sibling cards until the next day?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Siblings are cards generated from the same card text i.e. cloze deletions",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Show context in cards?",
     SHOW_CARD_CONTEXT_DESC: "i.e. Title > Heading 1 > Subheading > ... > Subheading",
     CARD_MODAL_HEIGHT_PERCENT: "Flashcard Height Percentage",

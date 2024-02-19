@@ -79,6 +79,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Sibling 카드를 다음날까지 묻어두시겠습니까?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Sibling 카드는 동일한 카드 텍스트에서 생성된 카드입니다. i.e. cloze deletions",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "카드의 문맥(context)을 표시하시겠습니까?",
     SHOW_CARD_CONTEXT_DESC:
         "카드에서 'Title > Heading 1 > Subheading > ... > Subheading' 의 표시를 할지 설정합니다.",

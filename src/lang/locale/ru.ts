@@ -87,6 +87,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Прятать родственные карточки до следующего дня?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Родственные карточки - те, которые образованы из одного текста, пример: карточки с пропусками ([...])",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Показывать контекст (уровень) в карточках (во время повторения)?",
     SHOW_CARD_CONTEXT_DESC: "пример: Title > Heading 1 > Subheading > ... > Subheading",
     CARD_MODAL_HEIGHT_PERCENT: "Высота карточки в процентах",

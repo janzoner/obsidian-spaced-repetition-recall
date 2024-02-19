@@ -74,6 +74,8 @@ export default {
     INLINE_SCHEDULING_COMMENTS_DESC: "勾選後HTML註解不會破壞列表格式問題。",
     BURY_SIBLINGS_TILL_NEXT_DAY: "將反轉卡片隱藏至下一天？",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC: "反轉卡片由同一卡片文字產生，例如：填空克漏字",
+    MULTI_CLOZE: "允許多個完形填空?",
+    MULTI_CLOZE_DESC: "將新/到期的關聯卡片組合到一個卡片中.",
     SHOW_CARD_CONTEXT: "在卡片中顯示上下文？",
     SHOW_CARD_CONTEXT_DESC: "例如：標題 > 副標題 > 小標題 > ... > 小標題",
     CARD_MODAL_HEIGHT_PERCENT: "卡片高度百分比",

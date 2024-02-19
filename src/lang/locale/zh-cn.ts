@@ -74,6 +74,8 @@ export default {
     INLINE_SCHEDULING_COMMENTS_DESC: "HTML注释不再破坏列表格式",
     BURY_SIBLINGS_TILL_NEXT_DAY: "将关联卡片隐藏至下一天？",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC: "关联卡片是来自同一卡片的不同形式， 例如：完形填空卡片",
+    MULTI_CLOZE: "允许多个完形填空?",
+    MULTI_CLOZE_DESC: "将新/到期的关联卡片组合到一个卡片中.",
     SHOW_CARD_CONTEXT: "在卡片中显示上下文？",
     SHOW_CARD_CONTEXT_DESC: "例如：标题 > 副标题 > 小标题 > ... > 小标题",
     CARD_MODAL_HEIGHT_PERCENT: "卡片高度百分比",

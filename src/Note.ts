@@ -31,7 +31,7 @@ export class Note {
     }
 
     createMultiCloze(settings: SRSettings): void {
-        if (settings.burySiblingCards) return;
+        if (!settings.multiClozeCard) return;
         this.questionList.filter((question) => {
             QuestionType_ClozeUtil.convMultiCloze(
                 question.cards,

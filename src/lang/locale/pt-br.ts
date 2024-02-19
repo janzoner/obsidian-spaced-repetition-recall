@@ -82,6 +82,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Enterrar cartas irmãs até o próximo dia?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Cartas irmãs são geradas pelo texto da mesma carta ex: omissão de palavras",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Mostrar contexto nas cartas?",
     SHOW_CARD_CONTEXT_DESC: "ex: Título > Cabeçalho 1 > Subcabeçalho > ... > Subcabeçalho",
     CARD_MODAL_HEIGHT_PERCENT: "Porcentagem da Altura do Flashcard",

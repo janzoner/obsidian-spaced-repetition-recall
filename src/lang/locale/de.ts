@@ -85,6 +85,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Verwandte Karten auf den nächsten Tag verlegen?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Verwandte Karten sind aus der gleichen Karte generiert worden (z.B. Lückentextkarten oder beidseitige Karten).",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Kontext in den Karten anzeigen?",
     SHOW_CARD_CONTEXT_DESC: "Bsp. Titel > Überschrift 1 > Sektion > ... > Untersektion",
     CARD_MODAL_HEIGHT_PERCENT: "Höhe der Lernkartei in Prozent",
