@@ -65,7 +65,6 @@ export class Card {
                 result = Math.floor(this.multiClozeIndex / 3) * 3;
             }
         }
-        console.debug(this.getFirstMultiClozeIndex.name, result);
         return result;
     }
 
