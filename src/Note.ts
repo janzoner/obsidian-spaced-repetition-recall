@@ -2,6 +2,7 @@ import { SRSettings } from "./settings";
 import { Deck } from "./Deck";
 import { Question } from "./Question";
 import { ISRFile } from "./SRFile";
+import { QuestionType_ClozeUtil } from "./QuestionType";
 
 export class Note {
     file: ISRFile;
@@ -27,6 +28,17 @@ export class Note {
                 deck.appendCard(question.topicPath, card);
             }
         }
+    }
+
+    createMultiCloze(settings: SRSettings): void {
+        if (settings.burySiblingCards) return;
+        this.questionList.filter((question) => {
+            QuestionType_ClozeUtil.convMultiCloze(
+                question.cards,
+                question.questionText.actualQuestion,
+                settings,
+            );
+        });
     }
 
     debugLogToConsole(desc: string = "") {

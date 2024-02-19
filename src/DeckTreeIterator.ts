@@ -48,6 +48,8 @@ class SingleDeckIterator {
     cardListType?: CardListType;
     weightedRandomNumber: WeightedRandomNumber;
 
+    previousCard?: Card;
+
     get hasCurrentCard(): boolean {
         return this.cardIdx != null;
     }
@@ -114,6 +116,38 @@ class SingleDeckIterator {
         return this.cardIdx != null;
     }
 
+    private setMultiCloze(card: Card): boolean {
+        let idx = -1;
+        if (card?.multiClozeIndex >= 0) {
+            const cardList = this.deck.getCardListForCardType(card.cardListType);
+            idx = cardList.findIndex((v) => v === card);
+        }
+        if (idx >= 0) {
+            this.setCardListType(card.cardListType, idx);
+        } else {
+            this.setCardListType(this.preferredCardListType);
+        }
+        // console.debug("this.idx: ", this.cardIdx);
+        return idx >= 0;
+    }
+
+    firstMultiCloze(card: Card): void {
+        if (card.hasNextMultiCloze) {
+            const fCard = card.question.cards[card.multiCloze[0]];
+            this.setMultiCloze(fCard);
+        }
+    }
+
+    nextMultiClozeCard(card: Card): boolean {
+        // console.debug("nextMultiCloze: prev card: ", card, card?.multiClozeIndex);
+        let nCard: Card;
+        if (card.hasNextMultiCloze) {
+            nCard = this.previousCard.question.cards[card.getNextMultiClozeIndex()];
+        }
+        // console.debug(this.nextMultiClozeCard.name + " next card: ", nCard, nCard?.multiClozeIndex);
+        return this.setMultiCloze(nCard);
+    }
+
     private nextRandomCard(): void {
         const newCount: number = this.deck.newFlashcards.length;
         const dueCount: number = this.deck.dueFlashcards.length;
@@ -173,6 +207,7 @@ class SingleDeckIterator {
 
     deleteCurrentCard(): void {
         this.ensureCurrentCard();
+        this.previousCard = this.currentCard?.multiClozeIndex >= 0 ? this.currentCard : undefined;
         this.deck.deleteCardAtIndex(this.cardIdx, this.cardListType);
         this.setNoCurrentCard();
     }
@@ -277,6 +312,13 @@ export class DeckTreeIterator implements IDeckTreeIterator {
             this.singleDeckIterator.deleteCurrentCard();
         }
 
+        if (this.singleDeckIterator?.previousCard) {
+            result = this.singleDeckIterator.nextMultiClozeCard(
+                this.singleDeckIterator.previousCard,
+            );
+            if (result) return result;
+        }
+
         if (this.iteratorOrder.cardOrder == CardOrder.EveryCardRandomDeckAndCard) {
             result = this.nextCard_EveryCardRandomDeck();
         } else {
@@ -293,7 +335,12 @@ export class DeckTreeIterator implements IDeckTreeIterator {
                 this.chooseNextDeck(false);
             }
         }
+        // console.debug("before ", result, this?.deckIdx, "currCard:", this.currentCard);
+        if (result && this.currentCard.isMultiCloze) {
+            this.singleDeckIterator.firstMultiCloze(this.currentCard);
+        }
         if (!result) this.deckIdx = null;
+        // console.debug(result, this?.deckIdx, "currCard:", this.currentCard);
         return result;
     }
 

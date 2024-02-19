@@ -56,6 +56,7 @@ export class FlashcardModal extends Modal {
 
     public cardItem: RepetitionItem;
     public options: string[];
+    private previousCard: Card;
 
     private get currentCard(): Card {
         return this.reviewSequencer.currentCard;
@@ -459,7 +460,7 @@ export class FlashcardModal extends Modal {
 
     private showAnswer(): void {
         this.mode = FlashcardModalMode.Back;
-
+        this.previousCard = this.currentCard?.multiClozeIndex >= 0 ? this.currentCard : undefined;
         this.answerBtn.style.display = "none";
         this.responseDiv.style.display = "grid";
 
@@ -512,8 +513,16 @@ export class FlashcardModal extends Modal {
     }
 
     private async handleNextCard(): Promise<void> {
-        if (this.currentCard != null) await this.showCurrentCard();
-        else this.renderDecksList();
+        if (this.currentCard != null) {
+            await this.showCurrentCard();
+            if (
+                this?.previousCard &&
+                this.previousCard.question === this.currentCard.question &&
+                this.currentCard?.multiClozeIndex > 0
+            ) {
+                this.showAnswer();
+            }
+        } else this.renderDecksList();
     }
 
     private async showCurrentCard(): Promise<void> {

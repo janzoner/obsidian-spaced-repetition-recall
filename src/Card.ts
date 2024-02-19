@@ -6,6 +6,8 @@ export class Card {
     question: Question;
     cardIdx: number;
     Id?: number;
+    multiClozeIndex?: number;
+    multiCloze?: number[];
     // scheduling
     get hasSchedule(): boolean {
         return this.scheduleInfo != null;
@@ -30,6 +32,18 @@ export class Card {
 
     get isDue(): boolean {
         return this.hasSchedule && this.scheduleInfo.isDue();
+    }
+
+    get isMultiCloze(): boolean {
+        return this?.multiClozeIndex >= 0;
+    }
+
+    get hasNextMultiCloze(): boolean {
+        return this.isMultiCloze && this?.multiClozeIndex + 1 < this?.multiCloze.length;
+    }
+
+    getNextMultiClozeIndex(): number {
+        return this.hasNextMultiCloze ? this.multiClozeIndex + 1 : -1;
     }
 
     formatSchedule(): string {

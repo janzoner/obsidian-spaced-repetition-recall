@@ -560,6 +560,7 @@ export default class SRPlugin extends Plugin {
         const loader: NoteFileLoader = new NoteFileLoader(this.data.settings);
         const note: Note = await loader.load(this.createSrTFile(noteFile), topicPath);
         ItemToDecks.updateCardsSchedbyItems(note, topicPath);
+        note.createMultiCloze(this.data.settings);
         if (note.hasChanged) note.writeNoteFile(this.data.settings);
         return note;
     }
