@@ -320,12 +320,9 @@ export class FlashcardModal extends Modal {
         if (!Platform.isMobile && optBtnCounts > btnCols) {
             btnCols = optBtnCounts;
         }
-        this.responseDiv.setAttribute(
-            "style",
-            `grid-template-columns: ${"1fr ".repeat(btnCols - 1)}`,
-        );
+        this.responseDiv.setAttribute("style", `grid-template-columns: ${"1fr ".repeat(btnCols)}`);
 
-        for (let i = 1; i < this.options.length; i++) {
+        for (let i = 0; i < this.options.length; i++) {
             this.responseBtns.push(document.createElement("button"));
             this.responseBtns[i].setAttribute("id", "sr-" + this.options[i].toLowerCase() + "-btn");
             this.responseBtns[i].setAttribute("class", "ResponseFloatBarCommandItem");
@@ -398,7 +395,7 @@ export class FlashcardModal extends Modal {
             this.processReview(ReviewResponse.Reset);
         });
         this.responseBtns = [];
-        this.responseBtns.push(this.resetButton);
+        // this.responseBtns.push(this.resetButton);
     }
 
     createEditButton() {
