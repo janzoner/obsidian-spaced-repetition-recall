@@ -709,11 +709,13 @@ export default class SRPlugin extends Plugin {
 
             // It was a new note, remove it from the new notes and schedule it.
             if (!wasDueInDeck) {
-                reviewDeck.newNotes.splice(
-                    reviewDeck.newNotes.findIndex((newNote) => newNote.note.path === note.path),
-                    1,
+                const newidx = reviewDeck.newNotes.findIndex(
+                    (newNote) => newNote.note.path === note.path,
                 );
-                reviewDeck.scheduledNotes.push(sNote);
+                if (newidx >= 0) {
+                    reviewDeck.newNotes.splice(newidx, 1);
+                    reviewDeck.scheduledNotes.push(sNote);
+                }
             }
         });
 
