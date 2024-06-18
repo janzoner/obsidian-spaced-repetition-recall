@@ -148,7 +148,7 @@ export class QuestionType_ClozeUtil {
     }
 
     static convMultiCloze(siblings: Card[], questionText: string, settings: SRSettings): Card[] {
-        const newsiblings = siblings.filter((card) => !card.isNew && !card.isDue);
+        // const newsiblings = siblings.filter((card) => !card.isNew && !card.isDue);
         const idxs = siblings
             .map((card) => {
                 if (card.isNew || card.isDue) {
@@ -176,7 +176,7 @@ export class QuestionType_ClozeUtil {
                 QuestionType_ClozeUtil.renderClozeBack(
                     questionText.substring(deletionStart, deletionEnd),
                 );
-            let sibStartEndIdx = getStartEndIndex(sibIdx);
+            const sibStartEndIdx = getStartEndIndex(sibIdx);
             ftsibls.slice(sibIdx, sibStartEndIdx.end).forEach((m) => {
                 if (m.index <= startIdx) {
                     return true;

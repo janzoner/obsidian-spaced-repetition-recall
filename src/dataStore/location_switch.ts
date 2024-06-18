@@ -126,12 +126,12 @@ export class LocationSwitch {
         notes = notes.filter(
             (noteFile) =>
                 !isIgnoredPath(settings.noteFoldersToIgnore, noteFile.path) &&
-                plugin.createSrTFile(noteFile).getAllTags().length > 0,
+                plugin.createSrTFile(noteFile).getAllTagsFromCache().length > 0,
         );
         for (const noteFile of notes) {
             let deckname = Tags.getNoteDeckName(noteFile, this.settings);
             const srfile = plugin.createSrTFile(noteFile);
-            let topicPath: TopicPath = plugin.findTopicPath(srfile);
+            let topicPath: TopicPath = TopicPath.getFolderPathFromFilename(srfile, settings);
             let fileText: string = await noteFile.vault.read(noteFile);
             let fileChanged = false;
 
@@ -153,7 +153,7 @@ export class LocationSwitch {
             // delete review/default tag
             if (
                 (topicPath.hasPath && topicPath.formatAsTag().includes(this.revTag)) ||
-                srfile.getAllTags().includes("#" + this.revTag)
+                srfile.getAllTagsFromCache().includes("#" + this.revTag)
             ) {
                 deckname = DEFAULT_DECKNAME;
                 topicPath = new TopicPath([deckname]);
@@ -315,8 +315,9 @@ export class LocationSwitch {
                     if (!(note instanceof TFile)) {
                         return;
                     }
-                    const deckPath: string[] = plugin.findTopicPath(
+                    const deckPath: string[] = TopicPath.getFolderPathFromFilename(
                         plugin.createSrTFile(note),
+                        this.settings,
                     ).path;
                     let fileText: string = await note.vault.read(note);
                     let fileChanged = false;

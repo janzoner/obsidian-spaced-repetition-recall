@@ -15,7 +15,7 @@ import { DateUtils, isIgnoredPath } from "src/util/utils_recall";
 
 type Tsync = (notes: TFile[], reviewDecks?: Decks, easeByPath?: NoteEaseList) => Promise<void>;
 export type TrespResult = { sNote: SchedNote; buryList?: string[] };
-type TsaveResponse = (note: TFile, response: ReviewResponse, ease: number) => any;
+type TsaveResponse = (note: TFile, response: ReviewResponse, ease: number) => Promise<TrespResult>;
 
 export class ReviewNote {
     private static _instance: ReviewNote;
@@ -96,7 +96,7 @@ export class ReviewNote {
     async sync(notes: TFile[], reviewDecks?: Decks, easeByPath?: NoteEaseList): Promise<void> {
         throw new Error("not implemented");
     }
-    responseProcess(note: TFile, response: ReviewResponse, ease: number): TrespResult {
+    responseProcess(note: TFile, response: ReviewResponse, ease: number): Promise<TrespResult> {
         throw new Error("not implemented");
     }
 
@@ -272,7 +272,7 @@ class RNonTrackfiles extends ReviewNote {
         if (deckName == null) return false;
         return true;
     }
-    responseProcess(note: TFile, response: ReviewResponse, ease?: number) {
+    async responseProcess(note: TFile, response: ReviewResponse, ease?: number) {
         const store = DataStore.getInstance();
 
         const option = SrsAlgorithm.getInstance().srsOptions()[response];

@@ -119,6 +119,7 @@ class SingleDeckIterator {
             const cardList = this.deck.getCardListForCardType(card.cardListType);
             // console.debug("cardList: ", cardList, this.deck);
             idx = cardList.findIndex((v) => v === card);
+            this.previousCard = card;
         }
         if (idx >= 0) {
             this.setCardListType(card.cardListType, idx);
@@ -319,7 +320,11 @@ export class DeckTreeIterator implements IDeckTreeIterator {
             result = this.singleDeckIterator.nextMultiClozeCard(
                 this.singleDeckIterator.previousCard,
             );
-            if (result) return result;
+            if (result) {
+                return result;
+            } else {
+                this.singleDeckIterator.previousCard = undefined;
+            }
         }
 
         if (this.iteratorOrder.cardOrder == CardOrder.EveryCardRandomDeckAndCard) {

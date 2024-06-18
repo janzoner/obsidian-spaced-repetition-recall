@@ -150,6 +150,7 @@ export class Queue implements IQueue {
      * @returns {number | null}
      */
     getNextId(key?: string): number | null {
+        key = key ? key : KEY_ALL;
         if (this.queueSize(key) > 0) {
             return this.queue[key][0];
         } else if (this.repeatQueue.length > 0) {

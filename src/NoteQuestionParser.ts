@@ -317,7 +317,7 @@ export class NoteQuestionParser {
     //
     private determineQuestionTopicPathList(question: Question): TopicPathList {
         let result: TopicPathList;
-        if (this.settings.convertFoldersToDecks) {
+        if (this.settings.convertFoldersToDecks || this.settings.trackedNoteToDecks) {
             result = new TopicPathList([this.folderTopicPath]);
         } else {
             // If present, the question specific TopicPath takes precedence over everything else

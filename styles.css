@@ -1,20 +1,10 @@
 .tag-pane-tag-self:before {
-    content: "";
     position: absolute;
     width: 90%;
-    height: 100%;
     top: -6px;
     left: 10%;
-    cursor: pointer;
 }
-.sr-flashcard-menu {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: row;
-    gap: 1rem;
-}
+
 .is-mobile #sr-modal {
     --top-space: calc(var(--safe-area-inset-top) + var(--header-height) + var(--size-4-2));
     width: 100vw !important;
@@ -39,39 +29,6 @@ body:not(.native-scrollbars) #sr-modal .modal-close-button {
     overflow: hidden;
 }
 
-.sr-flashcard-input-area > textarea {
-    height: 100%;
-}
-
-.sr-flashcard-edit-button-bar {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: space-between;
-    width: 100%;
-    margin-top: 1rem;
-}
-
-.sr-flashcard-response {
-    grid-template-columns: auto auto auto auto;
-}
-
-.sr-ignorestats-response,
-.sr-flashcard-response {
-    display: inline-grid;
-    width: 100%;
-    grid-template-columns: auto auto auto;
-    position: absolute;
-    bottom: 0;
-}
-
-.sr-ignorestats-btn {
-    width: 100%;
-}
-
-.sr-ignorestats-response {
-    grid-template-columns: auto auto;
-    gap: var(--size-4-4);
-}
 .sr-is-hidden {
     display: none !important;
 }
@@ -92,11 +49,6 @@ body:not(.native-scrollbars) #sr-modal .modal-close-button {
     height: 100%;
 }
 
-#sr-show-answer {
-    display: block;
-    height: 48px;
-    line-height: 48px;
-}
 .sr-header {
     display: flex;
     flex-direction: column;
@@ -145,15 +97,22 @@ body:not(.native-scrollbars) #sr-modal .modal-close-button {
     background-color: var(--background-modifier-hover);
 }
 
+.srs-flex-row,
+.sr-show-response,
 .sr-response {
     display: flex;
     width: 100%;
-    margin-top: var(--size-4-4);
     gap: var(--size-4-4);
+    justify-content: center;
+}
+
+.sr-response {
+    margin-top: var(--size-4-4);
 }
 
 .sr-response-button {
     height: 48px;
+    width: 100%;
     flex-grow: 1;
     margin: auto;
     line-height: 48px;
@@ -169,14 +128,17 @@ body:not(.native-scrollbars) #sr-modal .modal-close-button {
     color: #ffffff !important;
 }
 
+#sr-easy-btn,
 .sr-bg-green {
     background-color: #4caf50 !important;
 }
 
+#sr-good-btn,
 .sr-bg-blue {
     background-color: #2094f3 !important;
 }
 
+#sr-hard-btn,
 .sr-bg-red {
     background-color: #ff7043 !important;
 }
@@ -269,19 +231,6 @@ body:not(.native-scrollbars) #sr-modal .modal-close-button {
     gap: var(--size-4-4);
 }
 
-
-#sr-hard-btn {
-    background-color: #f44336;
-}
-
-#sr-good-btn {
-    background-color: #2196f3;
-}
-
-#sr-easy-btn {
-    background-color: #4caf50;
-}
-
 .sr-flashcard .sr-context {
     font-style: italic;
     color: var(--text-faint);
@@ -339,12 +288,6 @@ body:not(.native-scrollbars) #sr-modal .modal-close-button {
     width: 100%;
 }
 
-#sr-flashcard-view {
-    font-size: var(--font-text-size);
-    overflow-y: auto;
-    height: 77%;
-    user-select: text;
-}
 .sr-edit-view .sr-response-button.sr-spacer {
     opacity: 0;
     cursor: default;
@@ -355,78 +298,6 @@ body:not(.native-scrollbars) #sr-modal .modal-close-button {
 #sr-chart-period {
     appearance: menulist;
     border-right: 8px solid transparent;
-}
-
-@media only screen and (max-width: 600px) {
-    .sr-back-btn {
-        width: initial !important;
-    }
-
-    .sr-modal-content {
-        width: 98% !important;
-        /* height: 90%; */
-    }
-
-    #sr-context {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 92%;
-        /* height: 20px; */
-    }
-
-    #sr-flashcard-view {
-        height: 70% !important;
-    }
-
-    .sr-modal-content::-webkit-scrollbar,
-    #sr-flashcard-view::-webkit-scrollbar {
-        display: none;
-    }
-
-    .sr-flashcard-response,
-    #sr-show-answer {
-        width: 93.5% !important;
-        line-height: 60px;
-    }
-
-    .ResponseFloatBarCommandItem,
-    #sr-hard-btn,
-    #sr-good-btn,
-    #sr-easy-btn {
-        width: 90%;
-    }
-
-    /* sidebar */
-    .nav-file-title,
-    .nav-folder-title {
-        margin-bottom: var(--size-2-1);
-        display: flex;
-    }
-
-    .nav-folder-title {
-        padding: var(--nav-item-parent-padding);
-    }
-
-    .nav-folder.mod-root .nav-folder > .nav-folder-children {
-        padding-left: var(--nav-item-children-padding-left);
-        margin: 0 0 0 var(--nav-item-children-margin-left);
-        border-left: var(--nav-indentation-guide-width) solid var(--nav-indentation-guide-color);
-    }
-
-    .nav-file {
-        margin-left: var(--nav-item-children-margin-left);
-        border-radius: var(--radius-s);
-    }
-}
-
-.srs-flex-row {
-    display: flex;
-    width: 100%;
-    flex-flow: row wrap;
-    justify-content: space-evenly;
-    align-items: flex-start;
-    padding-top: 10px;
 }
 
 /* https://img.shields.io/github/v/release/chetachiezikeuzor/cMenu-Plugin */
@@ -457,47 +328,10 @@ ResponseFloatBar TOOLBAR
     background: var(--background-primary-alt);
 }
 
-.sr-show-response {
-    height: 48px;
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-}
-
-.ResponseFloatBarCommandItem {
-    border: none;
-    cursor: pointer;
-    padding: 5px 6px;
-    min-width: 10px;
-    width: 90%;
-    height: 48px;
-    box-shadow: none;
-    margin: auto;
-    position: relative;
-
-    border-radius: 3px;
-    font-size: initial !important;
-    --background-secondary: var(--background-primary-alt);
-}
-
-#reviewResponseModalBar button.ResponseFloatBarCommandItem:hover {
-    color: #050505;
-    background-color: var(--background-secondary);
-}
-
-#reviewResponseModalBar button.ResponseFloatBarCommandItem svg {
-    width: 1.3em;
-    height: 1.3em;
-}
 
 /*----------------------------------------------------------------
-  ResponseFloatBar SETTING ITEMS
+  ResponseFloatBar Buttons
   ----------------------------------------------------------------*/
-.setting-item.ResponseFloatBarCommandItem:first-child {
-    padding-top: 18px;
-}
-
 #sr-reset-btn,
 #sr-again-btn {
     background: #6b6b6b;
@@ -510,45 +344,4 @@ ResponseFloatBar TOOLBAR
 }
 #sr-incorrect\ \(easy\)-btn {
     background: #ff9088;
-}
-
-#sr-showintvl-btn,
-#sr-close-btn {
-    margin-top: 13px;
-    margin-right: 3px;
-    height: 20px;
-    width: 30px;
-}
-
-.ResponseFloatBarCommandItem {
-    cursor: grab;
-    padding: 18px 0 18px 0;
-}
-
-/*----------------------------------------------------------------
-  ResponseFloatBar CLASS CHANGES
-  ----------------------------------------------------------------*/
-
-.ResponseFloatBarGlassAesthetic {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-}
-
-.ResponseFloatBarDefaultAesthetic {
-    background-color: var(--background-primary);
-}
-
-/*----------------------------------------------------------------
-  ResponseFloatBar ICONS
-  ----------------------------------------------------------------*/
-
-.ResponseFloatBarIconPick {
-    line-height: normal;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-
-.ResponseFloatBarIconPick svg {
-    width: 17px;
-    height: 17px;
 }

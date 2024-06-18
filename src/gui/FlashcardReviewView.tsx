@@ -46,7 +46,6 @@ export class FlashcardReviewView {
     public context: HTMLElement;
 
     public response: HTMLDivElement;
-    public responseDiv: HTMLElement;
     public responseBtns: HTMLButtonElement[];
     public hardButton: HTMLButtonElement;
     public goodButton: HTMLButtonElement;
@@ -525,33 +524,24 @@ export class FlashcardReviewView {
     // -> Response
 
     private _createResponseBtns() {
-        this.responseDiv = this.response.createDiv("sr-flashcard-response");
         const optBtnCounts = this.plugin.algorithm.srsOptions().length;
         let btnCols = 4;
         if (!Platform.isMobile && optBtnCounts > btnCols) {
             btnCols = optBtnCounts;
         }
-        this.responseDiv.setAttribute(
-            "style",
-            `grid-template-columns: ${"1fr ".repeat(btnCols - 1)}`,
-        );
-
         for (let i = 1; i < this.options.length; i++) {
             this.responseBtns.push(document.createElement("button"));
             this.responseBtns[i].setAttribute("id", "sr-" + this.options[i].toLowerCase() + "-btn");
-            this.responseBtns[i].setAttribute("class", "ResponseFloatBarCommandItem");
-            this.responseBtns[i].addClass("sr-is-hidden");
+            this.responseBtns[i].addClasses(["sr-response-button", "sr-is-hidden"]);
             this.responseBtns[i].setText(this.plugin.data.settings.flashcardHardText);
             this.responseBtns[i].addEventListener("click", () => {
                 this._processReview(i);
             });
-            this.responseDiv.appendChild(this.responseBtns[i]);
+            this.response.appendChild(this.responseBtns[i]);
         }
         this.hardButton = this.responseBtns[1];
         this.goodButton = this.responseBtns.at(-2);
         this.easyButton = this.responseBtns.last();
-
-        // this.responseDiv.style.display = "none";
     }
 
     private _setupResponseBtns(btnTexts: string[]) {

@@ -10,6 +10,7 @@ export default {
     SKIP: "Salta",
     EDIT_CARD: "Modifica scheda",
     RESET_CARD_PROGRESS: "Ripristina i progressi della scheda",
+    RESET: "Reset",
     HARD: "Difficile",
     GOOD: "Buono",
     EASY: "Facile",
@@ -21,6 +22,7 @@ export default {
     CURRENT_EASE_HELP_TEXT: "Difficoltà attuale: ",
     CURRENT_INTERVAL_HELP_TEXT: "Intervallo attuale: ",
     CARD_GENERATED_FROM: "Generato da: ${notePath}",
+    OPEN_NOTE: "Open Note",
 
     // main.ts
     OPEN_NOTE_FOR_REVIEW: "Apri una nota per rivisita",
@@ -49,6 +51,10 @@ export default {
     DAYS_STR_IVL_MOBILE: "${interval}d",
     MONTHS_STR_IVL_MOBILE: "${interval}m",
     YEARS_STR_IVL_MOBILE: "${interval}y",
+    HOURS_STR_IVL: "${interval}hour(s)",
+    MINUTES_STR_IVL: "${interval}minute(s)",
+    HOURS_STR_IVL_MOBILE: "${interval}h",
+    MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
     SETTINGS_HEADER: "Plugin per ripetizione spaziata - Impostazioni",
@@ -76,6 +82,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Sotterrare schede sorelle fino al giorno dopo?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Le schede sorelle sono schede generate dallo stesso testo della scheda, per esempio i.e. cloze deletions",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Mostrare contesto nelle schede?",
     SHOW_CARD_CONTEXT_DESC:
         "per esempio, Titolo > Intestazione 1 > Sottotitolo 1 > ... > Sottotitolo",
@@ -152,6 +160,48 @@ export default {
     LOGGING: "Registrando",
     DISPLAY_DEBUG_INFO: "Visualizza informazione di debug sulla console per sviluppatori?",
 
+    DATA_LOC: "Data Location",
+    DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",
+    DATA_FOLDER: "Folder for `tracked_files.json`",
+    NEW_PER_DAY: "New Per Day",
+    NEW_PER_DAY_DESC:
+        "Maximum number of new (unreviewed) notes to add to the queue each day, set `-1` with unlimit.",
+    NEW_PER_DAY_NAN: "Timeout must be a number",
+    NEW_PER_DAY_NEG: "New per day must be -1 or greater.",
+    REPEAT_ITEMS: "Repeat Items",
+    REPEAT_ITEMS_DESC: "Should items marked as incorrect be repeated until correct?",
+    ALGORITHMS_CONFIRM: `Switching algorithms might reset or impact review timings on existing items.
+    This change is irreversible. Changing algorithms only takes effect after a restart
+    or a plugin reload. Are you sure you want to switch algorithms?
+    `,
+    ALGORITHMS_DESC:
+        'The algorithm used for spaced repetition. For more information see <a href="https://github.com/martin-jw/obsidian-recall">algorithms</a>.',
+    CONVERT_TRACKED_TO_DECK: "Convert Tracked Notes to decks?",
+    REVIEW_FLOATBAR: "Review Response FloatBar",
+    REVIEW_FLOATBAR_DESC:
+        "only working when autoNextNote is true. show it when reviewing note via click statusbar/sidebar/command.",
+    REVIEW_NOTE_DIRECTLY: "Reviewing Note directly?",
+    REVIEW_NOTE_DIRECTLY_DESC:
+        "when reviewing note via click statusbar or command, open it directly without having to select a tag to open a note",
+    INTERVAL_SHOWHIDE: "Display Next Review Interval",
+    INTERVAL_SHOWHIDE_DESC: "whether to display next revivew iterval on the response buttons.",
+    REQUEST_RETENTION: "Request_retention",
+    REQUEST_RETENTION_DESC:
+        "The probability (percentage) that you expect to recall the answer the next time you review",
+    REVLOG_TAGS: "Tags for output review log",
+    REVLOG_TAGS_DESC:
+        "Tags for output review log, could be flashcards tags or/and notes tags(e.g. #review #flashcards #tag1), default empty means it output to the review log file normally without filtered by tags",
+
+    FLASHCARD_AGAIN_LABEL: "Again Button Text",
+    FLASHCARD_BLACKOUT_LABEL: "Blackout Button Text",
+    FLASHCARD_INCORRECT_LABEL: "Incorrect Button Text",
+    "FLASHCARD_INCORRECT (EASY)_LABEL": "Incorrect (Easy) Button Text",
+    FLASHCARD_AGAIN_DESC: 'Customize the label for the "Again" Button',
+    FLASHCARD_BLACKOUT_DESC: 'Customize the label for the "Blackout" Button',
+    FLASHCARD_INCORRECT_DESC: 'Customize the label for the "Incorrect" Button',
+    "FLASHCARD_INCORRECT (EASY)_DESC": 'Customize the label for the "Incorrect (Easy)" Button',
+    UNTRACK_WITH_REVIEWTAG: "UntrackWithReviewTag",
+
     // sidebar.ts
     NOTES_REVIEW_QUEUE: "Coda di note da rivedere",
     CLOSE: "Chiusi",
@@ -184,4 +234,10 @@ export default {
     CARD_TYPE_YOUNG: "Giovani",
     CARD_TYPE_MATURE: "Mature",
     CARD_TYPES_SUMMARY: "Schede tottali: ${totalCardsCount}",
+    REVIEWED_TODAY: "Reviewed today",
+    REVIEWED_TODAY_DESC: "counts of cards/notes you have reviewed today",
+    NEW_LEARNED: "New Learned",
+    DUE_REVIEWED: "due Reviewed",
+    REVIEWED_TODAY_SUMMARY: "Total Reviewed today: ${totalreviewedCount}",
+    DATE: "Date",
 };

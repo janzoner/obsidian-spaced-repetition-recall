@@ -565,12 +565,6 @@ export default class SRPlugin extends Plugin {
         if (this.getActiveLeaf(REVIEW_QUEUE_VIEW_TYPE)) this.reviewQueueView.redraw();
     }
 
-    private getTimeDuration(fname: string) {
-        const tdur = Date.now() - this.clock_start;
-        const msg = `${fname} time duration: ${tdur}`;
-        debug(fname, undefined, { msg });
-    }
-
     async loadNote(noteFile: TFile): Promise<Note> {
         const loader: NoteFileLoader = new NoteFileLoader(this.data.settings);
         const srFile: ISRFile = this.createSrTFile(noteFile);
@@ -579,7 +573,7 @@ export default class SRPlugin extends Plugin {
             this.data.settings,
         );
 
-        const note: Note = await loader.load(this.createSrTFile(noteFile), folderTopicPath);
+        const note: Note = await loader.load(srFile, folderTopicPath);
         ItemToDecks.updateCardsSchedbyItems(note, folderTopicPath);
         note.createMultiCloze(this.data.settings);
         if (note.hasChanged) {
@@ -600,7 +594,7 @@ export default class SRPlugin extends Plugin {
             return;
         }
 
-        const result = revnote.responseProcess(note, response, ease);
+        const result = await revnote.responseProcess(note, response, ease);
         if (settings.burySiblingCards) {
             this.data.buryList.push(...result.buryList);
             await this.savePluginData();

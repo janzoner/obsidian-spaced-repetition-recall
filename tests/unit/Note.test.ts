@@ -57,6 +57,7 @@ Q1::A1
 <!--SR:!2023-09-02,4,270!2023-09-02,5,270-->
 `;
         let settings2 = DEFAULT_SETTINGS;
+        settings2.multiClozeCard = true;
         settings2.convertBoldTextToClozes = true;
         settings2.convertHighlightsToClozes = true;
         settings2.convertCurlyBracketsToClozes = true;
@@ -72,7 +73,7 @@ Q1::A1
         note.appendCardsToDeck(deck);
         let subdeck: Deck = deck.getDeck(new TopicPath(["flashcards"]));
         expect(subdeck.newFlashcards[0].front).toEqual(
-            `"This is a really very interesting and fascinating and <span style='color:#2196f3'>[......]</span> test"\n`,
+            `"This is a really very {{interesting}} and ==fascinating== and <span style='color:#2196f3'>[......]</span> test"\n`,
         );
         expect(subdeck.newFlashcards[0].back).toEqual(
             `"This is a really very interesting and fascinating and <span style='color:#2196f3'>great</span> test"\n`,
@@ -85,7 +86,7 @@ Q1::A1
             `"This is a really very <span style='color:#2196f3'>interesting</span> and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
         );
         expect(subdeck.dueFlashcards[1].front).toEqual(
-            `"This is a really very interesting and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
+            `"This is a really very {{interesting}} and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
         );
         expect(subdeck.dueFlashcards[1].back).toEqual(
             `"This is a really very interesting and <span style='color:#2196f3'>fascinating</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
