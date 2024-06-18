@@ -221,9 +221,8 @@ export class ItemToDecks {
                 carditem = trackedFile.trackCard(lineNo, cardTextHash);
             }
 
-            let deckname = question.topicPath.hasPath
-                ? question.topicPath.path[0]
-                : topicPath.path[0];
+            const dtppath = question.topicPathList.list[0] ?? undefined;
+            let deckname = dtppath?.hasPath ? dtppath.path[0] : topicPath.path[0];
             deckname = Tags.isDefaultDackName(deckname) ? deckname : "#" + deckname;
             store.updateCardItems(trackedFile, carditem, count, deckname, false);
             updateCardObjs(question.cards, carditem, scheduling);
