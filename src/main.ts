@@ -67,6 +67,7 @@ import { LinkRank } from "src/algorithms/priorities/linkPageranks";
 import { Queue } from "./dataStore/queue";
 import { ReviewDeckSelectionModal } from "./gui/reviewDeckSelectionModal";
 import { setDueDates } from "./algorithms/balance/balance";
+import { RepetitionItem } from "./dataStore/repetitionItem";
 
 interface PluginData {
     settings: SRSettings;
@@ -779,6 +780,35 @@ export default class SRPlugin extends Plugin {
         let item;
         let index = -1;
 
+        const isPreviewUndueNote = (item: RepetitionItem) => {
+            return (
+                item.nextReview > Date.now() &&
+                !Object.keys(this.store.data.queues.toDayLatterQueue).includes(item.ID.toString())
+            );
+        };
+        const fShowItemInfo = (item: RepetitionItem, msg: string) => {
+            if (this.data.settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+                if (isPreviewUndueNote(item)) {
+                    const calcDueCnt = deck.scheduledNotes.filter(
+                        (snote) => snote.dueUnix < Date.now(),
+                    ).length;
+                    if (calcDueCnt !== deck.dueNotesCount) {
+                        debug(
+                            "check cnt",
+                            msg,
+                            0,
+                            deck,
+                            `${deck.deckName} due cnt error: calc ${calcDueCnt}, dnc: ${deck.dueNotesCount}`,
+                        );
+                    }
+                    const id = "obsidian-spaced-repetition-recall:view-item-info";
+                    // eslint-disable-next-line
+                    // @ts-ignore
+                    this.app.commands.executeCommandById(id);
+                }
+            }
+        };
+
         index = ReviewNote.getNextDueNoteIndex(
             deck.dueNotesCount,
             this.data.settings.openRandomNote,
@@ -786,10 +816,12 @@ export default class SRPlugin extends Plugin {
         if (index >= 0) {
             await this.app.workspace.getLeaf().openFile(deck.scheduledNotes[index].note);
             item = deck.scheduledNotes[index].item;
+            fShowItemInfo(item, "scheduledNoes index: " + index);
             show = true;
             // return;
         } else if (queue.queueSize(deckKey) > 0) {
             item = this.store.getNext(deckKey);
+            fShowItemInfo(item, "queue");
             const path = this.store.getFilePath(item);
             const note = this.app.vault.getAbstractFileByPath(path) as TFile;
             if (item != null && item.isTracked && path != null && note instanceof TFile) {
@@ -805,36 +837,15 @@ export default class SRPlugin extends Plugin {
                 : 0;
             await this.app.workspace.getLeaf().openFile(deck.newNotes[index].note);
             item = deck.newNotes[index].item;
+            fShowItemInfo(item, "newNotes index:" + index);
             show = true;
             // return;
         }
         if (show) {
             if (this.data.settings.dataLocation !== DataLocation.SaveOnNoteFile) {
-                const calcDueCnt = deck.scheduledNotes.filter(
-                    (snote) => snote.dueUnix < Date.now(),
-                ).length;
-                if (calcDueCnt !== deck.dueNotesCount) {
-                    debug(
-                        "check cnt",
-                        0,
-                        deck,
-                        `${deck.deckName} due cnt error: calc ${calcDueCnt}, dnc: ${deck.dueNotesCount}`,
-                    );
-                }
                 this.reviewFloatBar.display(item);
-                if (
-                    item.nextReview > Date.now() &&
-                    !Object.keys(this.store.data.queues.toDayLatterQueue).includes(
-                        item.ID.toString(),
-                    )
-                ) {
-                    const id = "obsidian-spaced-repetition-recall:view-item-info";
-                    // eslint-disable-next-line
-                    // @ts-ignore
-                    this.app.commands.executeCommandById(id);
-                }
+                // fShowItemInfo(item);
             }
-            // this.getTimeDuration("reviewNextNote");
             return;
         }
 
