@@ -1,4 +1,4 @@
-import { MarkdownView } from "obsidian";
+import { MarkdownView, Notice } from "obsidian";
 import ObsidianSrsPlugin from "./main";
 import { ReviewNote } from "src/reviewNote/review-note";
 import { ItemInfoModal } from "src/gui/info";
@@ -248,6 +248,7 @@ export default class Commands {
             name: "Postpone this note after x days",
             checkCallback: (checking: boolean) => {
                 const file = plugin.app.workspace.getActiveFile();
+                const settings = plugin.data.settings;
                 if (file != null) {
                     if (plugin.store.getTrackedFile(file.path)?.isTrackedNote) {
                         if (!checking) {
@@ -256,10 +257,14 @@ export default class Commands {
                                 plugin.app,
                                 "please input positive number",
                             );
-                            input.submitCallback = (days: number) => {
+                            input.submitCallback = async (days: number) => {
                                 postponeItems([plugin.store.getItembyID(tkfile.noteID)], days);
                                 plugin.store.save();
-                                plugin.sync();
+                                new Notice(`This note has been postponed ${days} days`);
+                                await plugin.sync();
+                                if (settings.autoNextNote && plugin.lastSelectedReviewDeck) {
+                                    plugin.reviewNextNote(plugin.lastSelectedReviewDeck);
+                                }
                             };
                             input.open();
                         }
