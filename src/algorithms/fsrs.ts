@@ -3,11 +3,11 @@ import { DateUtils, MiscUtils } from "src/util/utils_recall";
 import { SrsAlgorithm, algorithmNames } from "./algorithms";
 import { DataStore } from "../dataStore/data";
 
-import * as fsrsjs from "fsrs.js";
+import * as tsfsrs from "ts-fsrs";
 import { t } from "src/lang/helpers";
 import deepcopy from "deepcopy";
 import { AnkiData } from "./anki";
-import { Rating, ReviewLog } from "fsrs.js";
+import { Rating, ReviewLog } from "ts-fsrs";
 import { RepetitionItem, ReviewResult } from "src/dataStore/repetitionItem";
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
@@ -17,7 +17,7 @@ function applySettingsUpdate(callback: () => void): void {
     applyDebounceTimer = window.setTimeout(callback, 512);
 }
 
-export type FsrsData = fsrsjs.Card;
+export type FsrsData = tsfsrs.Card;
 
 export class RevLog {
     // https://github.com/open-spaced-repetition/fsrs-optimizer
@@ -53,9 +53,10 @@ interface FsrsSettings {
     request_retention: number;
     maximum_interval: number;
     w: number[];
+    enable_fuzz: boolean;
 }
 
-const FsrsOptions: string[] = ["Again", "Hard", "Good", "Easy"];
+const FsrsOptions: string[] = ["Again", "Hard", "Good", "Easy"]; // Manual =0
 
 /**
  * This is an implementation of the Free Spaced Repetition Scheduling Algorithm as described in
@@ -64,8 +65,9 @@ const FsrsOptions: string[] = ["Again", "Hard", "Good", "Easy"];
  */
 export class FsrsAlgorithm extends SrsAlgorithm {
     settings: FsrsSettings;
-    fsrs = new fsrsjs.FSRS();
-    card = new fsrsjs.Card();
+
+    fsrs = new tsfsrs.FSRS(tsfsrs.generatorParameters(this.settings));
+    card = tsfsrs.createEmptyCard();
 
     filename = "ob_revlog.csv";
     logfilepath: string = null;
@@ -82,12 +84,14 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     defaultSettings(): FsrsSettings {
         return {
             revlog_tags: [],
-            request_retention: 0.9,
-            maximum_interval: 36500,
-            w: [
-                0.4, 0.6, 2.4, 5.8, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34,
-                1.26, 0.29, 2.61,
-            ],
+            ...tsfsrs.generatorParameters(),
+            // request_retention: 0.9,
+            // maximum_interval: 36500,
+            // w: [
+            //     0.4, 0.6, 2.4, 5.8, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34,
+            //     1.26, 0.29, 2.61,
+            // ],
+            // enable_fuzz: false,
         };
     }
     updateSettings(settings: unknown) {
@@ -98,9 +102,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     updateFsrsParams() {
-        if (this.settings != undefined) {
-            this.fsrs.p = deepcopy(this.settings);
-        }
+        this.fsrs = new tsfsrs.FSRS(tsfsrs.generatorParameters(this.settings));
     }
 
     getLogfilepath() {
@@ -110,7 +112,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     defaultData(): FsrsData {
-        return new fsrsjs.Card();
+        return tsfsrs.createEmptyCard();
     }
 
     srsOptions(): string[] {
@@ -123,9 +125,9 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         const now = new Date();
         const scheduling_cards = this.fsrs.repeat(card, now);
         const intvls: number[] = [];
-        this.srsOptions().forEach((opt, ind) => {
-            const due = scheduling_cards[ind + 1].card.due.valueOf();
-            const lastrv = scheduling_cards[ind + 1].card.last_review.valueOf();
+        tsfsrs.Grades.forEach((grade, _ind) => {
+            const due = scheduling_cards[grade].card.due.valueOf();
+            const lastrv = scheduling_cards[grade].card.last_review.valueOf();
             const nextInterval = due - lastrv;
             intvls.push(nextInterval / DateUtils.DAYS_TO_MILLIS);
             // console.debug("due:" + due + ", last: " + lastrv + ", intvl: " + nextInterval);
@@ -140,7 +142,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
         log: boolean = true,
     ): ReviewResult {
         let data = item.data as FsrsData;
-        const response = FsrsOptions.indexOf(optionStr) + 1;
+        const response = (FsrsOptions.indexOf(optionStr) + 1) as tsfsrs.Grade;
 
         let correct = true;
         if (response == 1) {
@@ -166,7 +168,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
 
         // Get the review log after rating :
         if (log) {
-            const review_log = scheduling_cards[response].review_log;
+            const review_log = scheduling_cards[response].log;
             this.appendRevlog(item, review_log);
         }
 
@@ -331,9 +333,9 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .setValue(this.settings.request_retention * 100)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
-                        this.settings.request_retention = this.fsrs.p.request_retention =
-                            value / 100;
+                        this.settings.request_retention = value / 100;
                         update(this.settings);
+                        this.updateFsrsParams();
                     }),
             )
             .addExtraButton((button) => {
@@ -344,8 +346,8 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                         applySettingsUpdate(async () => {
                             this.settings.request_retention =
                                 this.defaultSettings().request_retention;
-                            this.fsrs.p.request_retention = this.settings.request_retention;
                             update(this.settings);
+                            this.updateFsrsParams();
                             this.displaySettings(containerEl, update);
                         });
                     });
@@ -365,10 +367,10 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                                 return;
                             }
 
-                            this.settings.maximum_interval = this.fsrs.p.maximum_interval =
-                                numValue;
+                            this.settings.maximum_interval = numValue;
                             text.setValue(this.settings.maximum_interval.toString());
                             update(this.settings);
+                            this.updateFsrsParams();
                         } else {
                             new Notice(t("VALID_NUMBER_WARNING"));
                         }
@@ -381,9 +383,10 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
                         applySettingsUpdate(async () => {
-                            this.settings.maximum_interval = this.fsrs.p.maximum_interval =
+                            this.settings.maximum_interval =
                                 this.defaultSettings().maximum_interval;
                             update(this.settings, true);
+                            this.updateFsrsParams();
                         });
                     });
             });
@@ -399,8 +402,9 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                                 return Number.parseFloat(v);
                             });
                             if (numValue.length === this.settings.w.length) {
-                                this.settings.w = this.fsrs.p.w = numValue;
+                                this.settings.w = numValue;
                                 update(this.settings);
+                                this.updateFsrsParams();
                                 return;
                             }
                         } catch (error) {
@@ -417,8 +421,9 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
                         applySettingsUpdate(async () => {
-                            this.settings.w = this.fsrs.p.w = this.defaultSettings().w;
+                            this.settings.w = this.defaultSettings().w;
                             update(this.settings, true);
+                            this.updateFsrsParams();
                         });
                     });
             })

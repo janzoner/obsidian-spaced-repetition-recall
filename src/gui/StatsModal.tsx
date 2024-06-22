@@ -21,7 +21,7 @@ import { getKeysPreserveType, getTypedObjectEntries } from "src/util/utils";
 import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
 import { ReviewedCounts } from "src/dataStore/data";
-import { State } from "fsrs.js";
+import { State } from "ts-fsrs";
 import { algorithmNames } from "src/algorithms/algorithms";
 import { Stats } from "src/stats";
 import { CardListType } from "src/Deck";
