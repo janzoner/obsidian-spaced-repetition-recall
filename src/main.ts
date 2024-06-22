@@ -733,7 +733,9 @@ export default class SRPlugin extends Plugin {
 
         this.updateAndSortDueNotes();
 
-        new Notice(t("RESPONSE_RECEIVED"));
+        if(!this.data.settings.reviewResponseFloatBar){
+            new Notice(t("RESPONSE_RECEIVED"));
+        } 
 
         if (this.data.settings.autoNextNote) {
             if (!this.lastSelectedReviewDeck) {

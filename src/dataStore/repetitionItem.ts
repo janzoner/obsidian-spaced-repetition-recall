@@ -122,14 +122,14 @@ export class RepetitionItem {
                     newitvl,
             );
         }
-        const dt = new Date(this.nextReview).toISOString();
-        debug("review result after:", [
-            this.nextReview,
-            dt,
-            (this.nextReview - Date.now()) / DateUtils.DAYS_TO_MILLIS,
-            result.nextReview / DateUtils.DAYS_TO_MILLIS,
-            newitvl,
-        ]);
+        // const dt = new Date(this.nextReview).toISOString();
+        // debug("review result after:", [
+        //     this.nextReview,
+        //     dt,
+        //     (this.nextReview - Date.now()) / DateUtils.DAYS_TO_MILLIS,
+        //     result.nextReview / DateUtils.DAYS_TO_MILLIS,
+        //     newitvl,
+        // ]);
     }
 
     /**

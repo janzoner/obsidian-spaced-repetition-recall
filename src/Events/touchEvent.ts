@@ -31,7 +31,7 @@ export class TouchOnMobile {
         }
         setTimeout(() => {
             console.debug("time up");
-            if (this.isLongClick(0)) {
+            if (this.originTouches.length > 0 && this.isLongClick(0)) {
                 evt.preventDefault();
                 this.showcb();
                 this.handleCancel(evt);
