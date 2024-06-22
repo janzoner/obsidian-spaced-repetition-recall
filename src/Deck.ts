@@ -327,7 +327,7 @@ export class DeckTreeFilter {
         return deckTree.copyWithCardFilter(
             (card) =>
                 (reviewMode == FlashcardReviewMode.Cram || card.isNew || card.isDue) &&
-                !questionPostponementList.includes(card.question),
+                card.getIsNotBury(questionPostponementList),
         );
     }
 }
