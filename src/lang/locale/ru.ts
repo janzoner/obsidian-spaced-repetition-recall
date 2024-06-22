@@ -43,6 +43,7 @@ export default {
     REVIEW_CARDS_IN_NOTE: "Изучать карточки в этой заметке",
     CRAM_CARDS_IN_NOTE: "Зубрить карточки в этой заметке",
     VIEW_STATS: "Посмотреть статистику",
+    OPEN_REVIEW_QUEUE_VIEW: "Открыть очередь повторения заметок на боковой панели",
     STATUS_BAR: "Повторить: ${dueNotesCount} заметок, ${dueFlashcardsCount} карточек",
     SYNC_TIME_TAKEN: "Синхронизация заняла ${t}мс",
     NOTE_IN_IGNORED_FOLDER: "Заметка сохранена в игнорируемую папку (см. настройки).",
@@ -87,6 +88,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Прятать родственные карточки до следующего дня?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Родственные карточки - те, которые образованы из одного текста, пример: карточки с пропусками ([...])",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Показывать контекст (уровень) в карточках (во время повторения)?",
     SHOW_CARD_CONTEXT_DESC: "пример: Title > Heading 1 > Subheading > ... > Subheading",
     CARD_MODAL_HEIGHT_PERCENT: "Высота карточки в процентах",

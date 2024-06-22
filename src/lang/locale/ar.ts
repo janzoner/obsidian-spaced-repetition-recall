@@ -34,6 +34,7 @@ export default {
     REVIEW_CARDS_IN_NOTE: "مراجعة البطاقات  من هذه الملاحظة",
     CRAM_CARDS_IN_NOTE: "أحشر جميع بطاقات هذه الملاحظة",
     VIEW_STATS: "عرض الإحصائيات",
+    OPEN_REVIEW_QUEUE_VIEW: "Open Notes Review Queue in sidebar",
     STATUS_BAR: "البطاقات المستحقة ${dueFlashcardsCount},ملاحظات ${dueNotesCount}:مراجعة",
     SYNC_TIME_TAKEN: "${t}ms استغراق المزامنة",
     NOTE_IN_IGNORED_FOLDER: ".الملاحظة يتم حفظها ضمن المجلد الذي تم تجاهله (تحقق من الإعدادات)",
@@ -76,6 +77,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "أخفي البطاقات الشقيقة حتى اليوم التالي",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "cloze deletions : البطاقات الشقيقة هي بطاقات تم إنشاؤها من نفس نص البطاقة كـ",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "إظهار السياق في البطاقات؟",
     SHOW_CARD_CONTEXT_DESC: "i.e. Title > Heading 1 > Subheading > ... > Subheading",
     CARD_MODAL_HEIGHT_PERCENT: "نسبة ارتفاع البطاقة",

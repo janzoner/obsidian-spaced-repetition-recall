@@ -34,6 +34,7 @@ export default {
     REVIEW_CARDS_IN_NOTE: "이 노트의 플래시카드들을 리뷰합니다",
     CRAM_CARDS_IN_NOTE: "이 노트의 플래시카드들을 벼락치기합니다.",
     VIEW_STATS: "통계 확인",
+    OPEN_REVIEW_QUEUE_VIEW: "Open Notes Review Queue in sidebar",
     STATUS_BAR: "--리뷰: ${dueNotesCount} 노트, ${dueFlashcardsCount} 카드 남았습니다.",
     SYNC_TIME_TAKEN: "동기화에 ${t}밀리초 걸렸습니다",
     NOTE_IN_IGNORED_FOLDER: "노트가 무시된 폴더 아래에 저장되어 있습니다. (설정을 확인해주세요)",
@@ -79,6 +80,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Sibling 카드를 다음날까지 묻어두시겠습니까?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Sibling 카드는 동일한 카드 텍스트에서 생성된 카드입니다. i.e. cloze deletions",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "카드의 문맥(context)을 표시하시겠습니까?",
     SHOW_CARD_CONTEXT_DESC:
         "카드에서 'Title > Heading 1 > Subheading > ... > Subheading' 의 표시를 할지 설정합니다.",

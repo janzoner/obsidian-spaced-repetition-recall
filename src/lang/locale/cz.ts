@@ -34,6 +34,7 @@ export default {
     REVIEW_CARDS_IN_NOTE: "Revidovat kartičky v této poznámce.",
     CRAM_CARDS_IN_NOTE: "Cram kartičky v této poznámce.",
     VIEW_STATS: "Ukázat statistiky",
+    OPEN_REVIEW_QUEUE_VIEW: "Open Notes Review Queue in sidebar",
     STATUS_BAR: "Revize: ${dueNotesCount} poznámek, ${dueFlashcardsCount} kartiček po termínu",
     SYNC_TIME_TAKEN: "Synchronizace trvala ${t}ms",
     NOTE_IN_IGNORED_FOLDER: "Poznámka je uložena v ignorované složce (zkontrolujte nastavení).",
@@ -79,6 +80,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Odložit příbuzné kartičky na další den?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Příbuzné kartičky jsou kartičky generované z textu stejné poznámky například cloze smazání",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Ukázat kontext v kartičce?",
     SHOW_CARD_CONTEXT_DESC: "například Titulek > Nadpis1 > Podnadpis > ... > Podnadpis",
     CARD_MODAL_HEIGHT_PERCENT: "Výška kartiček v procentech",

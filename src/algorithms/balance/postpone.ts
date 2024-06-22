@@ -1,4 +1,5 @@
 import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { globalDateProvider } from "src/util/DateProvider";
 import { DateUtils, debug } from "src/util/utils_recall";
 
 export function postponeItems(items: RepetitionItem[], days?: number): RepetitionItem[] {
@@ -6,7 +7,7 @@ export function postponeItems(items: RepetitionItem[], days?: number): Repetitio
     const newdue: number = days ? now + days * DateUtils.DAYS_TO_MILLIS : undefined;
     let fltItems = items.filter((item) => item.isTracked);
     const safe_fltItems = fltItems
-        .filter((item) => item.nextReview < DateUtils.StartofToday)
+        .filter((item) => item.nextReview < globalDateProvider.startofToday.valueOf())
         .sort((a, b) => currentRetention(a) - currentRetention(b))
         // https://github.com/open-spaced-repetition/fsrs4anki-helper/blob/58bcfcf8b5eeb60835c5cbde1d0d0ef769af62b0/schedule/postpone.py#L73
         .filter((item) => {

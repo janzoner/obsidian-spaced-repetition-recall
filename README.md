@@ -23,6 +23,8 @@ This is a modified version of [obsidian-spaced-repetition](https://github.com/st
 -   Postpone notes/cards;
 -   postpone to review after x days;
 -   reschedule all scheduled items;
+-   support multi-clozes;
+-   setting `burySiblingCards` split into `burySiblingCards`(origin) and `burySiblingCardsByNoteReview`, and multi-clozes will not be buried;
 
 ## Maintainers Wanted
 

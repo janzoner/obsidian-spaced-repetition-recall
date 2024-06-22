@@ -23,7 +23,7 @@ export class reviewResponseModal {
     // mode: FlashcardModalMode;
     private answerBtn: HTMLElement;
     private buttons: HTMLButtonElement[];
-    private responseDiv: HTMLElement;
+    private response: HTMLElement;
     private responseInterval: number[];
     private showInterval = true;
     private buttonTexts: string[];
@@ -82,17 +82,16 @@ export class reviewResponseModal {
         }
         this.containerEl = createEl("div");
         this.containerEl.setAttribute("id", this.barId);
-        this.containerEl.addClass("ResponseFloatBarDefaultAesthetic");
         // this.containerEl.setAttribute("style", `grid-template-columns: ${"1fr ".repeat(btnCols)}`);
-        this.containerEl.setAttribute("style", `grid-template-rows: ${"1fr ".repeat(1)}`);
+        // this.containerEl.setAttribute("style", `grid-template-rows: ${"1fr ".repeat(1)}`);
         this.containerEl.style.visibility = "visible"; // : "hidden"
         document.body
             .querySelector(".mod-vertical.mod-root")
             .insertAdjacentElement("afterbegin", this.containerEl);
 
         this.contentEl = this.containerEl.createDiv("sr-show-response");
-        this.responseDiv = this.contentEl.createDiv("sr-flashcard-response");
-        this.responseDiv.setAttribute("style", `grid-template-columns: ${"1fr ".repeat(btnCols)}`);
+        this.response = this.contentEl.createDiv("sr-show-response");
+        this.response.setAttribute("style", `grid-template-columns: ${"1fr ".repeat(btnCols)}`);
 
         this.buttons = [];
         this.createButtons_responses();
@@ -126,16 +125,15 @@ export class reviewResponseModal {
         this.options.forEach((opt: string, index) => {
             const btn = document.createElement("button");
             btn.setAttribute("id", "sr-" + opt.toLowerCase() + "-btn");
-            btn.setAttribute("class", this.barItemId);
+            btn.addClasses(["sr-response-button"]); //, "sr-is-hidden"
             // btn.setAttribute("aria-label", "Hotkey: " + (index + 1));
             // btn.setAttribute("style", `width: calc(95%/${buttonCounts});`);
             // setIcon(btn, item.icon);
-            // let text = btnText[algo][index];
             const text = this.getTextWithInterval(index);
             btn.setText(text);
             btn.addEventListener("click", () => this.buttonClick(opt));
             this.buttons.push(btn);
-            this.responseDiv.appendChild(btn);
+            this.response.appendChild(btn);
         });
     }
 
@@ -248,7 +246,7 @@ export class reviewResponseModal {
         // this.mode = FlashcardModalMode.Back;
 
         this.answerBtn.style.display = "none";
-        this.responseDiv.style.display = "grid";
+        this.response.style.display = "grid";
 
         this.options.forEach((opt, index) => {
             const btn = document.getElementById("sr-" + opt.toLowerCase() + "-btn");
@@ -262,7 +260,7 @@ export class reviewResponseModal {
         // this.mode = FlashcardModalMode.Front;
 
         this.answerBtn.style.display = "block";
-        this.responseDiv.style.display = "none";
+        this.response.style.display = "none";
         // this.responseDiv.toggleVisibility(false);       //还是会占位
     }
 

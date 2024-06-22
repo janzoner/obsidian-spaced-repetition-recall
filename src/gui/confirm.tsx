@@ -22,7 +22,7 @@ export default class ConfirmModal {
         // contentEl.createEl("p").setText(this.message);
 
         const buttonDiv = contentEl.createDiv("srs-flex-row");
-        // buttonDiv.setAttribute("align", "center");
+        // buttonDiv.setAttribute("justify-content", "space-evenly");
 
         new ButtonComponent(buttonDiv)
             .setButtonText("Confirm")

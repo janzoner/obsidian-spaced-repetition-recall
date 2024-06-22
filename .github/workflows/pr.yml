@@ -7,6 +7,9 @@ on:
         branches:
             - "**"
 
+env:
+    COREPACK_ENABLE_STRICT: 0
+
 jobs:
     # https://github.com/snezhig/obsidian-front-matter-title/blob/master/.github/workflows/main.yml
     validate:

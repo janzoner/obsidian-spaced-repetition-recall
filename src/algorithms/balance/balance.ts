@@ -1,4 +1,3 @@
-import { Notice } from "obsidian";
 import { RPITEMTYPE } from "src/dataStore/repetitionItem";
 
 let dueDatesDict: { [type: string]: Record<number, number> };
@@ -43,12 +42,12 @@ export function balance(
             dueDates[interval] = 0;
         } else if (dueDates[interval] >= lowestCount) {
             // disable fuzzing for small intervals
-            if (interval >= 1) {
+            if (interval >= 3) {
                 const fuzz = getFuzz(interval);
 
                 const originalInterval = interval;
                 outer: for (let i = 1; i <= fuzz; i++) {
-                    for (const ivl of [originalInterval - i, originalInterval + i]) {
+                    for (const ivl of [originalInterval + i, originalInterval - i]) {
                         if (!Object.prototype.hasOwnProperty.call(dueDates, ivl)) {
                             dueDates[ivl] = 0;
                             interval = ivl;
@@ -70,7 +69,6 @@ export function balance(
     if (isChange) {
         const msg = `balance: interval from ${beforeIntvl} balance to ${interval} days.`;
         console.debug(msg);
-        // new Notice(msg);
     } else {
         interval = beforeIntvl;
     }

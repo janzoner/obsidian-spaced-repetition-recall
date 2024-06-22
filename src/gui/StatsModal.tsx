@@ -21,7 +21,7 @@ import { getKeysPreserveType, getTypedObjectEntries } from "src/util/utils";
 import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
 import { ReviewedCounts } from "src/dataStore/data";
-import { State } from "fsrs.js";
+import { State } from "ts-fsrs";
 import { algorithmNames } from "src/algorithms/algorithms";
 import { Stats } from "src/stats";
 import { CardListType } from "src/Deck";
@@ -259,7 +259,10 @@ export class StatsModal extends Modal {
         );
 
         // Add card types
-        // const totalCardsCount: number = this.plugin.deckTree.getCardCount(CardListType.All, true);
+        // const totalCardsCount: number = this.plugin.deckTree.getDistinctCardCount(
+        //     CardListType.All,
+        //     true,
+        // );
         createStatsChart(
             "pie",
             "cardTypesChart",

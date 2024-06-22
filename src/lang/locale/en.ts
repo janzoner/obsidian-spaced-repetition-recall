@@ -34,6 +34,7 @@ export default {
     REVIEW_CARDS_IN_NOTE: "Review flashcards in this note",
     CRAM_CARDS_IN_NOTE: "Cram flashcards in this note",
     VIEW_STATS: "View statistics",
+    OPEN_REVIEW_QUEUE_VIEW: "Open Notes Review Queue in sidebar",
     STATUS_BAR: "Review: ${dueNotesCount} note(s), ${dueFlashcardsCount} card(s) due",
     SYNC_TIME_TAKEN: "Sync took ${t}ms",
     NOTE_IN_IGNORED_FOLDER: "Note is saved under ignored folder (check settings).",
@@ -78,6 +79,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "Bury sibling cards until the next day?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Siblings are cards generated from the same card text i.e. cloze deletions",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "Show context in cards?",
     SHOW_CARD_CONTEXT_DESC: "i.e. Title > Heading 1 > Subheading > ... > Subheading",
     CARD_MODAL_HEIGHT_PERCENT: "Flashcard Height Percentage",

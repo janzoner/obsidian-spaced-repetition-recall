@@ -15,10 +15,6 @@ export enum DeckOrder {
     PrevDeckComplete_Sequential,
     PrevDeckComplete_Random,
 }
-export enum IteratorDeckSource {
-    UpdatedByIterator,
-    CloneBeforeUse,
-}
 
 export interface IIteratorOrder {
     // Within a deck this specifies the order the cards should be reviewed
@@ -33,9 +29,10 @@ export interface IDeckTreeIterator {
     get currentDeck(): Deck;
     get currentCard(): Card;
     get hasCurrentCard(): boolean;
-    setDeck(deck: Deck): void;
-    deleteCurrentCard(): boolean;
-    deleteCurrentQuestion(): boolean;
+    setBaseDeck(baseDeck: Deck): void;
+    setIteratorTopicPath(topicPath: TopicPath): void;
+    deleteCurrentCardFromAllDecks(): boolean;
+    deleteCurrentQuestionFromAllDecks(): boolean;
     moveCurrentCardToEndOfList(): void;
     nextCard(): boolean;
 }
@@ -47,6 +44,8 @@ class SingleDeckIterator {
     cardIdx?: number;
     cardListType?: CardListType;
     weightedRandomNumber: WeightedRandomNumber;
+
+    previousCard?: Card;
 
     get hasCurrentCard(): boolean {
         return this.cardIdx != null;
@@ -114,6 +113,41 @@ class SingleDeckIterator {
         return this.cardIdx != null;
     }
 
+    private setMultiCloze(card: Card): boolean {
+        let idx = -2;
+        if (card.isMultiCloze) {
+            const cardList = this.deck.getCardListForCardType(card.cardListType);
+            // console.debug("cardList: ", cardList, this.deck);
+            idx = cardList.findIndex((v) => v === card);
+            this.previousCard = card;
+        }
+        if (idx >= 0) {
+            this.setCardListType(card.cardListType, idx);
+        }
+        // console.debug("this.idx: ", this.cardIdx, idx, card);
+        return idx >= 0;
+    }
+
+    firstMultiCloze(card: Card): void {
+        if (card.isMultiCloze) {
+            const fCard = card.getFirstClozeCard();
+            this.setMultiCloze(fCard);
+        }
+    }
+
+    nextMultiClozeCard(card: Card): boolean {
+        // console.debug("nextMultiCloze: prev card: ", card, card?.multiClozeIndex);
+        let nCard: Card;
+        if (card.hasNextMultiCloze) {
+            nCard = this.previousCard.getNextClozeCard();
+            // console.debug(" next Nulti card: ", nCard, nCard?.multiClozeIndex);
+            return this.setMultiCloze(nCard);
+        } else {
+            this.setCardListType(this.preferredCardListType);
+        }
+        return false;
+    }
+
     private nextRandomCard(): void {
         const newCount: number = this.deck.newFlashcards.length;
         const dueCount: number = this.deck.dueFlashcards.length;
@@ -153,45 +187,21 @@ class SingleDeckIterator {
         return result;
     }
 
-    deleteCurrentQuestion(): void {
-        this.ensureCurrentCard();
-        const q: Question = this.currentCard.question;
-
-        // A question could have some cards in the new list and some in the due list
-        this.deleteQuestionFromList(q, CardListType.NewCard);
-        this.deleteQuestionFromList(q, CardListType.DueCard);
-
-        this.setNoCurrentCard();
-    }
-
-    private deleteQuestionFromList(q: Question, cardListType: CardListType): void {
-        const cards: Card[] = this.deck.getCardListForCardType(cardListType);
-        for (let i = cards.length - 1; i >= 0; i--) {
-            if (Object.is(q, cards[i].question)) this.deck.deleteCardAtIndex(i, cardListType);
-        }
-    }
-
-    deleteCurrentCard(): void {
-        this.ensureCurrentCard();
-        this.deck.deleteCardAtIndex(this.cardIdx, this.cardListType);
-        this.setNoCurrentCard();
-    }
-
     moveCurrentCardToEndOfList(): void {
         this.ensureCurrentCard();
         const cardList: Card[] = this.deck.getCardListForCardType(this.cardListType);
         if (cardList.length <= 1) return;
         const card = this.currentCard;
         this.deck.deleteCardAtIndex(this.cardIdx, this.cardListType);
-        this.deck.appendCard(TopicPath.emptyPath, card);
+        this.deck.appendCardToRootDeck(card);
         this.setNoCurrentCard();
     }
 
-    private setNoCurrentCard() {
+    setNoCurrentCard() {
         this.cardIdx = null;
     }
 
-    private ensureCurrentCard() {
+    ensureCurrentCard() {
         if (this.cardIdx == null || this.cardListType == null) throw "no current card";
     }
 
@@ -212,17 +222,39 @@ class SingleDeckIterator {
     }
 }
 
+//
+// Note that this iterator is destructive over the deck tree supplied to setBaseDeck()
+// The caller is required to first make a clone if this behavior is unwanted.
+//
+// Handling of multi-deck cards (implemented for https://github.com/st3v3nmw/obsidian-spaced-repetition/issues/495):
+//      A "multi-deck card" is a card that is present in multiple decks, e.g. the following cat question is present in
+//      two separate decks.
+//
+//      #flashcards/language/words #flashcards/trivia/interesting
+//      A group of cats is called a::clowder
+//
+//      1. Whilst iterating, any multi-deck card is only returned once.
+//      2. All copies are removed from the deck tree supplied to setBaseDeck()
+//
 export class DeckTreeIterator implements IDeckTreeIterator {
     private iteratorOrder: IIteratorOrder;
-    private deckSource: IteratorDeckSource;
 
     private singleDeckIterator: SingleDeckIterator;
+    private baseDeckTree: Deck;
+
+    // The subset of baseDeckTree over which we are iterating
+    // Each item is treated as a single deck, i.e. any subdecks are ignored
     private deckArray: Deck[];
     private deckIdx?: number;
+
     private weightedRandomNumber: WeightedRandomNumber;
 
     get hasCurrentCard(): boolean {
         return this.deckIdx != null && this.singleDeckIterator.hasCurrentCard;
+    }
+
+    get currentTopicPath(): TopicPath {
+        return this.currentDeck?.getTopicPath();
     }
 
     get currentDeck(): Deck {
@@ -237,18 +269,25 @@ export class DeckTreeIterator implements IDeckTreeIterator {
         return result;
     }
 
-    constructor(iteratorOrder: IIteratorOrder, deckSource: IteratorDeckSource) {
-        this.singleDeckIterator = new SingleDeckIterator(iteratorOrder);
-        this.iteratorOrder = iteratorOrder;
-        this.deckSource = deckSource;
-        this.weightedRandomNumber = WeightedRandomNumber.create();
+    get currentQuestion(): Question {
+        return this.currentCard?.question;
     }
 
-    setDeck(deck: Deck): void {
-        // We don't want to change the supplied deck, so first clone
-        if (this.deckSource == IteratorDeckSource.CloneBeforeUse) deck = deck.clone();
+    constructor(iteratorOrder: IIteratorOrder, baseDeckTree: Deck) {
+        this.singleDeckIterator = new SingleDeckIterator(iteratorOrder);
+        this.iteratorOrder = iteratorOrder;
+        this.weightedRandomNumber = WeightedRandomNumber.create();
+        this.setBaseDeck(baseDeckTree);
+    }
 
-        this.deckArray = DeckTreeIterator.filterForDecksWithCards(deck.toDeckArray());
+    setBaseDeck(baseDeck: Deck): void {
+        this.baseDeckTree = baseDeck;
+        this.singleDeckIterator.setNoCurrentCard();
+    }
+
+    setIteratorTopicPath(topicPath: TopicPath): void {
+        const iteratorDeck: Deck = this.baseDeckTree.getDeck(topicPath);
+        this.deckArray = DeckTreeIterator.filterForDecksWithCards(iteratorDeck.toDeckArray());
         this.setDeckIdx(null);
     }
 
@@ -274,7 +313,18 @@ export class DeckTreeIterator implements IDeckTreeIterator {
 
         // Delete the current card so we don't return it again
         if (this.hasCurrentCard) {
-            this.singleDeckIterator.deleteCurrentCard();
+            this.baseDeckTree.deleteCardFromAllDecks(this.currentCard, true);
+        }
+
+        if (this.singleDeckIterator?.previousCard) {
+            result = this.singleDeckIterator.nextMultiClozeCard(
+                this.singleDeckIterator.previousCard,
+            );
+            if (result) {
+                return result;
+            } else {
+                this.singleDeckIterator.previousCard = undefined;
+            }
         }
 
         if (this.iteratorOrder.cardOrder == CardOrder.EveryCardRandomDeckAndCard) {
@@ -293,7 +343,12 @@ export class DeckTreeIterator implements IDeckTreeIterator {
                 this.chooseNextDeck(false);
             }
         }
+        // console.debug("before ", result, this?.deckIdx, "currCard:", this.currentCard);
+        if (result && this.currentCard.isMultiCloze) {
+            this.singleDeckIterator.firstMultiCloze(this.currentCard);
+        }
         if (!result) this.deckIdx = null;
+        // console.debug(result, this?.deckIdx, "currCard:", this.currentCard);
         return result;
     }
 
@@ -345,13 +400,20 @@ export class DeckTreeIterator implements IDeckTreeIterator {
         return true;
     }
 
-    deleteCurrentQuestion(): boolean {
-        this.singleDeckIterator.deleteCurrentQuestion();
+    deleteCurrentQuestionFromAllDecks(): boolean {
+        this.singleDeckIterator.ensureCurrentCard();
+
+        // Delete every card of this question from every deck specified for the question
+        // Note that not every card will necessarily be present, so we pass false to the following
+        this.baseDeckTree.deleteQuestionFromAllDecks(this.currentQuestion, false);
+        this.singleDeckIterator.setNoCurrentCard();
         return this.nextCard();
     }
 
-    deleteCurrentCard(): boolean {
-        this.singleDeckIterator.deleteCurrentCard();
+    deleteCurrentCardFromAllDecks(): boolean {
+        this.singleDeckIterator.ensureCurrentCard();
+        this.baseDeckTree.deleteCardFromAllDecks(this.currentCard, true);
+        this.singleDeckIterator.setNoCurrentCard();
         return this.nextCard();
     }
 

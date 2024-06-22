@@ -83,15 +83,15 @@ test("CardType.Cloze", () => {
         ),
     ).toEqual([
         new CardFrontBack(
-            "This is a really very <span style='color:#2196f3'>[...............]</span> and fascinating and great test",
+            "This is a really very <span style='color:#2196f3'>[.........]</span> and fascinating and great test",
             "This is a really very <span style='color:#2196f3'>interesting</span> and fascinating and great test",
         ),
         new CardFrontBack(
-            "This is a really very interesting and <span style='color:#2196f3'>[...............]</span> and great test",
+            "This is a really very interesting and <span style='color:#2196f3'>[.........]</span> and great test",
             "This is a really very interesting and <span style='color:#2196f3'>fascinating</span> and great test",
         ),
         new CardFrontBack(
-            "This is a really very interesting and fascinating and <span style='color:#2196f3'>[.........]</span> test",
+            "This is a really very interesting and fascinating and <span style='color:#2196f3'>[......]</span> test",
             "This is a really very interesting and fascinating and <span style='color:#2196f3'>great</span> test",
         ),
     ]);

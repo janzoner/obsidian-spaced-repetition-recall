@@ -67,7 +67,6 @@ export class Stats {
             return;
         }
         if (now == undefined) {
-            // now = DateUtils.EndofToday;
             now = Date.now();
         }
 
@@ -76,13 +75,6 @@ export class Stats {
         const delayedDays: number = Math.ceil(
             (parseFloat(scheduling[1]) - now) / DateUtils.DAYS_TO_MILLIS,
         );
-        // const delayedDays: number = Math.ceil(
-        //     (window
-        //         .moment(scheduling[1], ["YYYY-MM-DD", "DD-MM-YYYY", "ddd MMM DD YYYY"])
-        //         .valueOf() -
-        //         now) /
-        //         DateUtils.DAYS_TO_MILLIS,
-        // );
         this.update(delayedDays, interval, ease);
     }
 

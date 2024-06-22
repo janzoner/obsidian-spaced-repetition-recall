@@ -34,6 +34,7 @@ export default {
     REVIEW_CARDS_IN_NOTE: "このノートのフラッシュカードをレビューする",
     CRAM_CARDS_IN_NOTE: "このノートのフラッシュカードを詰め込み学習する",
     VIEW_STATS: "統計を閲覧する",
+    OPEN_REVIEW_QUEUE_VIEW: "Open Notes Review Queue in sidebar",
     STATUS_BAR: "レビュー: ${dueNotesCount}ノート, ${dueFlashcardsCount}カードが期日",
     SYNC_TIME_TAKEN: "同期に${t}msかかりました。",
     NOTE_IN_IGNORED_FOLDER: "ノートが無視するフォルダに保存されています(設定を確認してください)。",
@@ -81,6 +82,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "次のレビューまでシブリングを延期しますか？",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "シブリングは同一のカードテキストから生成されたカード、つまり穴埋め問題の派生カードです。",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "カードにコンテキストを表示しますか？",
     SHOW_CARD_CONTEXT_DESC:
         "｢タイトル > 見出し 1 > 副見出し > ... > 副見出し｣の表示を行うかどうかを決めます。",

@@ -1,7 +1,7 @@
 import { SRSettings } from "src/settings";
 import { BlockUtils } from "src/util/utils_recall";
 import { CardType } from "src/Question";
-import { parse } from "src/parser";
+import { parseEx, ParsedQuestionInfo } from "src/parser";
 import { RPITEMTYPE } from "./repetitionItem";
 import { DEFAULT_DECKNAME } from "src/constants";
 import { Tags } from "src/tags";
@@ -165,7 +165,7 @@ export class TrackedFile implements ITrackedFile {
         const lines: number[] = [];
         const cardHashList: Record<number, string> = {};
 
-        const parsedCards: [CardType, string, number][] = parse(
+        const parsedCards: ParsedQuestionInfo[] = parseEx(
             fileText,
             settings.singleLineCardSeparator,
             settings.singleLineReversedCardSeparator,
@@ -178,8 +178,8 @@ export class TrackedFile implements ITrackedFile {
 
         for (const parsedCard of parsedCards) {
             // deckPath = noteDeckPath;
-            const lineNo: number = parsedCard[2];
-            let cardText: string = parsedCard[1];
+            const lineNo: number = parsedCard.firstLineNum;
+            let cardText: string = parsedCard.text;
 
             if (cardText.includes(settings.editLaterTag)) {
                 continue;

@@ -34,6 +34,7 @@ export default {
     REVIEW_CARDS_IN_NOTE: "Revisar tarjetas en esta nota",
     CRAM_CARDS_IN_NOTE: "Memorizar tarjetas en esta nota",
     VIEW_STATS: "Ver estadísticas",
+    OPEN_REVIEW_QUEUE_VIEW: "Open Notes Review Queue in sidebar",
     STATUS_BAR: "Revisar: ${dueNotesCount} nota(s), ${dueFlashcardsCount} tarjetas vencidas",
     SYNC_TIME_TAKEN: "La sincronización tomó ${t} milisegundos",
     NOTE_IN_IGNORED_FOLDER: "La nota está guardada en un directorio ignorado (revisa los ajustes).",
@@ -80,6 +81,8 @@ export default {
     BURY_SIBLINGS_TILL_NEXT_DAY: "¿Enterrar tarjetas hermanas hasta el siguiente día?",
     BURY_SIBLINGS_TILL_NEXT_DAY_DESC:
         "Los hermanos son tarjetas generadas del mismo texto de la tarjeta, por ejemplo, deletreos de huecos (cloze deletions en inglés)",
+    MULTI_CLOZE: "enable multi-cloze card?",
+    MULTI_CLOZE_DESC: "Combine new/ondue sibling clozes into one card.",
     SHOW_CARD_CONTEXT: "¿Mostrar contexto en las tarjetas?",
     SHOW_CARD_CONTEXT_DESC: "Por Ejemplo: Título > Cabecera > Sub-Cabecera > ... > Sub-Cabecera",
     CARD_MODAL_HEIGHT_PERCENT: "Porcentaje de la altura de las tarjetas de memoria",

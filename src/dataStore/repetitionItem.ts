@@ -1,7 +1,9 @@
+import { Notice } from "obsidian";
 import { AnkiData } from "src/algorithms/anki";
 import { balance } from "src/algorithms/balance/balance";
 import { FsrsData } from "src/algorithms/fsrs";
-import { DateUtils } from "src/util/utils_recall";
+import { globalDateProvider } from "src/util/DateProvider";
+import { DateUtils, debug } from "src/util/utils_recall";
 
 export enum RPITEMTYPE {
     NOTE = "note",
@@ -98,6 +100,7 @@ export class RepetitionItem {
      * @return {*}
      */
     reviewUpdate(result: ReviewResult) {
+        const old_nr = this.nextReview;
         const newitvl = balance(result.nextReview / DateUtils.DAYS_TO_MILLIS, this.itemType);
         this.nextReview = DateUtils.fromNow(newitvl * DateUtils.DAYS_TO_MILLIS).getTime();
         this.timesReviewed += 1;
@@ -107,6 +110,26 @@ export class RepetitionItem {
         } else {
             this.errorStreak += 1;
         }
+        if (this.nextReview - Date.now() < 100) {
+            new Notice(
+                "Error: reviewUpdate: " +
+                    this.nextReview +
+                    "\t last:" +
+                    old_nr +
+                    "\t itvl:" +
+                    result.nextReview +
+                    "\t new itvl:" +
+                    newitvl,
+            );
+        }
+        const dt = new Date(this.nextReview).toISOString();
+        debug("review result after:", [
+            this.nextReview,
+            dt,
+            (this.nextReview - Date.now()) / DateUtils.DAYS_TO_MILLIS,
+            result.nextReview / DateUtils.DAYS_TO_MILLIS,
+            newitvl,
+        ]);
     }
 
     /**
@@ -251,7 +274,7 @@ export class RepetitionItem {
             if (this.nextReview < now_number) {
                 return true;
             }
-            if (this.nextReview < DateUtils.EndofToday) {
+            if (this.nextReview < globalDateProvider.endofToday.valueOf()) {
                 if (this.isFsrs) {
                     const data: FsrsData = this.data as FsrsData;
                     if (data.scheduled_days >= 1) {

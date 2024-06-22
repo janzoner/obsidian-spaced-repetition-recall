@@ -1,6 +1,7 @@
 import { Notice, PluginSettingTab, Setting, App, Platform } from "obsidian";
 import type SRPlugin from "src/main";
 import { t } from "src/lang/helpers";
+import { addMultiClozeSetting } from "./settings/multiClozeSetting";
 
 // https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
 
@@ -16,6 +17,7 @@ import {
 } from "./settings/algorithmSetting";
 import { addUntrackSetting, addTrackedNoteToDecksSetting } from "./settings/trackSetting";
 import { buildDonation } from "./settings/donation";
+import { addburySiblingSetting } from "./settings/burySiblingSetting";
 
 export interface SRSettings {
     // flashcards
@@ -27,6 +29,8 @@ export interface SRSettings {
     convertFoldersToDecks: boolean;
     cardCommentOnSameLine: boolean;
     burySiblingCards: boolean;
+    burySiblingCardsByNoteReview: boolean;
+    multiClozeCard: boolean;
     showContextInCards: boolean;
     flashcardHeightPercentage: number;
     flashcardWidthPercentage: number;
@@ -88,6 +92,8 @@ export const DEFAULT_SETTINGS: SRSettings = {
     convertFoldersToDecks: false,
     cardCommentOnSameLine: false,
     burySiblingCards: false,
+    burySiblingCardsByNoteReview: false,
+    multiClozeCard: false,
     showContextInCards: true,
     flashcardHeightPercentage: Platform.isMobile ? 100 : 80,
     flashcardWidthPercentage: Platform.isMobile ? 100 : 40,
@@ -152,6 +158,21 @@ export function upgradeSettings(settings: SRSettings) {
 
         // After the upgrade, we don't need the old attribute any more
         settings.randomizeCardOrder = null;
+    }
+}
+
+export class SettingsUtil {
+    static isFlashcardTag(settings: SRSettings, tag: string): boolean {
+        return SettingsUtil.isTagInList(settings.flashcardTags, tag);
+    }
+
+    private static isTagInList(tagList: string[], tag: string): boolean {
+        for (const tagFromList of tagList) {
+            if (tag === tagFromList || tag.startsWith(tagFromList + "/")) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -261,7 +282,8 @@ export class SRSettingTab extends PluginSettingTab {
                         await this.plugin.savePluginData();
                     }),
             );
-
+        addburySiblingSetting(containerEl, this.plugin);
+        addMultiClozeSetting(containerEl, this.plugin);
         new Setting(containerEl)
             .setName(t("SHOW_CARD_CONTEXT"))
             .setDesc(t("SHOW_CARD_CONTEXT_DESC"))
