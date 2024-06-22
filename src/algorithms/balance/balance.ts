@@ -43,12 +43,12 @@ export function balance(
             dueDates[interval] = 0;
         } else if (dueDates[interval] >= lowestCount) {
             // disable fuzzing for small intervals
-            if (interval >= 1) {
+            if (interval >= 3) {
                 const fuzz = getFuzz(interval);
 
                 const originalInterval = interval;
                 outer: for (let i = 1; i <= fuzz; i++) {
-                    for (const ivl of [originalInterval - i, originalInterval + i]) {
+                    for (const ivl of [originalInterval + i, originalInterval - i]) {
                         if (!Object.prototype.hasOwnProperty.call(dueDates, ivl)) {
                             dueDates[ivl] = 0;
                             interval = ivl;
