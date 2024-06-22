@@ -4,6 +4,7 @@ import { AnkiData } from "src/algorithms/anki";
 import { FsrsData } from "src/algorithms/fsrs";
 import { DataStore } from "src/dataStore/data";
 import { RepetitionItem } from "src/dataStore/repetitionItem";
+import { TrackedFile } from "src/dataStore/trackedFile";
 import { SRSettings } from "src/settings";
 
 export class ItemInfoModal extends Modal {
@@ -32,20 +33,23 @@ export class ItemInfoModal extends Modal {
         const { contentEl } = this;
         //TODO: Implement Item info.
         // const item = this.store.getItemsOfFile(this.file.path)[0];
-        // const path = this.store.getFilePath(item);
+        const path = this.file.path;
         // contentEl.createEl("p").setText("Item info of " + this.file.path);
         const buttonDivAll = contentEl.createDiv("srs-flex-row");
         const contentdiv = contentEl.createEl("div");
 
-        this.displayitem(contentdiv, this.item);
-
-        // new ButtonComponent(buttonDivAll).setButtonText("Current").onClick(() => {
-        //     this.displayitem(contentdiv, item);
-        // });
-        // new ButtonComponent(buttonDivAll).setButtonText("All").onClick(() => {
-        //     this.displayAllitems(contentdiv, this.store.data.items);
-        //     // this.close();
-        // });
+        const tkfile = this.store.getTrackedFile(path);
+        const noteItem = this.store.getNoteItem(path);
+        if (tkfile.hasCards) {
+            new ButtonComponent(buttonDivAll).setButtonText("Note").onClick(() => {
+                this.displayitem(contentdiv, noteItem);
+            });
+            new ButtonComponent(buttonDivAll).setButtonText("Cards in this Note").onClick(() => {
+                this.displayAllitems(contentdiv, tkfile);
+                // this.close();
+            });
+        }
+        this.displayitem(contentdiv, noteItem);
 
         const buttonDiv = contentEl.createDiv("srs-flex-row");
 
@@ -62,24 +66,27 @@ export class ItemInfoModal extends Modal {
         });
     }
 
-    displayAllitems(contentEl: HTMLElement, items: RepetitionItem[]) {
+    displayAllitems(contentEl: HTMLElement, tkfile: TrackedFile) {
         contentEl.empty();
-        items.forEach((item) => {
-            this.displayitemWithSummary(contentEl, item);
+        const stext = "LineNo:";
+        tkfile.cardItems.forEach((cinfo) => {
+            const ln = cinfo.lineNo + 1;
+            this.displayitemWithSummary(contentEl, this.store.getItems(cinfo.itemIds), stext + ln);
         });
     }
 
-    displayitemWithSummary(contentEl: HTMLElement, item: RepetitionItem) {
+    displayitemWithSummary(contentEl: HTMLElement, items: RepetitionItem[], text: string) {
         const details = contentEl.createEl("details");
         const summary = details.createEl("summary");
-        const div = details.createDiv();
 
-        // const plugin = this.plugin;
-        const path = this.store.getFilePath(item);
-        // details.createEl("p").setText("Item info of "+path);
-        summary.setText(path);
-
-        this.displayitem(div, item);
+        summary.setText(text);
+        items.forEach((item) => {
+            const divdetails = details.createEl("details");
+            const divsummary = divdetails.createEl("summary");
+            divsummary.setText("ID:" + item.ID.toString());
+            const div = divdetails.createDiv();
+            this.displayitem(div, item);
+        });
     }
 
     displayitem(contentEl: HTMLElement, item: RepetitionItem) {
