@@ -2,6 +2,7 @@ import { DateUtils, isArray, logExecutionTime } from "src/util/utils_recall";
 import { DataStore } from "./data";
 import { TrackedFile } from "./trackedFile";
 import { RepetitionItem } from "./repetitionItem";
+import { getKeysPreserveType } from "src/util/utils";
 
 export interface IQueue {
     /**
@@ -289,7 +290,6 @@ export class Queue implements IQueue {
     //             // if (!Object.keys(repeatDeckCounts).includes(dname)) {
     //             //     repeatDeckCounts[dname] = 0;
     //             // }
-    //             rvdecks[dname].dueNotesCount++;
     //             this.plugin.dueNotesCount++;
     //         });
     //         // return repeatDeckCounts;
@@ -351,6 +351,22 @@ export class Queue implements IQueue {
         this.remove(item, this.queue[item.deckName]);
         if (repeatItems && !correct) {
             this.push(this.repeatQueue, item.ID); // Re-add until correct.
+        } else {
+            // update this.toDayLatterQueue
+            const store = DataStore.getInstance();
+            if (item.nextReview <= DateUtils.EndofToday) {
+                this.toDayLatterQueue[item.ID] = item.deckName;
+            }
+            getKeysPreserveType(this.toDayLatterQueue)
+                .map((idStr) => {
+                    const id: number = Number(idStr);
+                    return store.getItembyID(id);
+                })
+                .forEach((item) => {
+                    if (item.nextReview - Date.now() < 0) {
+                        delete this.toDayLatterQueue[item.ID];
+                    }
+                });
         }
     }
 

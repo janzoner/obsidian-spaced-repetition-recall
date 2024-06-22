@@ -161,7 +161,10 @@ export class FlashcardReviewSequencer implements IFlashcardReviewSequencer {
             this.cardSequencer.moveCurrentCardToEndOfList();
             this.cardSequencer.nextCard();
         } else {
-            if (this.settings.burySiblingCards && !this.currentCard.isMultiCloze) {
+            if (
+                (this.settings.burySiblingCards || this.settings.burySiblingCardsByNoteReview) &&
+                !this.currentCard.isMultiCloze
+            ) {
                 await this.burySiblingCards();
                 this.cardSequencer.deleteCurrentQuestionFromAllDecks();
             } else {

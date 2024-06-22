@@ -2,6 +2,7 @@ import { TFile } from "obsidian";
 
 import { t } from "src/lang/helpers";
 import { RepetitionItem } from "./dataStore/repetitionItem";
+import { DateUtils } from "./util/utils_recall";
 
 export interface SchedNote {
     note: TFile;
@@ -18,7 +19,7 @@ export class ReviewDeck {
     public newNotes: SchedNote[] = [];
     public scheduledNotes: SchedNote[] = [];
     public activeFolders: Set<string>;
-    public dueNotesCount = 0;
+    private _dueNotesCount = 0;
 
     constructor(name: string) {
         this.deckName = name;
@@ -40,5 +41,11 @@ export class ReviewDeck {
             }
             return (pageranks[b.note.path] || 0) - (pageranks[a.note.path] || 0);
         });
+    }
+
+    get dueNotesCount(): number {
+        return this.scheduledNotes.filter((snote) => {
+            return snote.item?.isDue || snote.dueUnix <= DateUtils.EndofToday;
+        }).length;
     }
 }

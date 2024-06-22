@@ -285,7 +285,7 @@ class RNonTrackfiles extends ReviewNote {
             item.updateAlgorithmData("ease", ease);
         }
         const buryList: string[] = [];
-        if (this.settings.burySiblingCards) {
+        if (this.settings.burySiblingCardsByNoteReview) {
             const trackFile = store.getTrackedFile(note.path);
             if (trackFile.hasCards) {
                 for (const cardinfo of trackFile.cardItems) {
@@ -324,9 +324,6 @@ function preUpdateDeck(deck: ReviewDeck, note: TFile) {
             return sNote.note === note;
         });
         deck.scheduledNotes.splice(index, 1);
-        if (index < deck.dueNotesCount) {
-            deck.dueNotesCount--;
-        }
     }
     return;
 }

@@ -17,6 +17,7 @@ import {
 } from "./settings/algorithmSetting";
 import { addUntrackSetting, addTrackedNoteToDecksSetting } from "./settings/trackSetting";
 import { buildDonation } from "./settings/donation";
+import { addburySiblingSetting } from "./settings/burySiblingSetting";
 
 export interface SRSettings {
     // flashcards
@@ -28,6 +29,7 @@ export interface SRSettings {
     convertFoldersToDecks: boolean;
     cardCommentOnSameLine: boolean;
     burySiblingCards: boolean;
+    burySiblingCardsByNoteReview: boolean;
     multiClozeCard: boolean;
     showContextInCards: boolean;
     flashcardHeightPercentage: number;
@@ -90,6 +92,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
     convertFoldersToDecks: false,
     cardCommentOnSameLine: false,
     burySiblingCards: false,
+    burySiblingCardsByNoteReview: false,
     multiClozeCard: false,
     showContextInCards: true,
     flashcardHeightPercentage: Platform.isMobile ? 100 : 80,
@@ -279,7 +282,7 @@ export class SRSettingTab extends PluginSettingTab {
                         await this.plugin.savePluginData();
                     }),
             );
-
+        addburySiblingSetting(containerEl, this.plugin);
         addMultiClozeSetting(containerEl, this.plugin);
         new Setting(containerEl)
             .setName(t("SHOW_CARD_CONTEXT"))

@@ -5,8 +5,7 @@ import { ReviewDeck } from "src/ReviewDeck";
 import { SrTFile } from "src/SRFile";
 import { TopicPath } from "src/TopicPath";
 import { DataStore } from "src/dataStore/data";
-import { getKeysPreserveType } from "src/util/utils";
-import { BlockUtils, DateUtils, debug, logExecutionTime } from "src/util/utils_recall";
+import { BlockUtils, debug, logExecutionTime } from "src/util/utils_recall";
 import { CardInfo } from "./trackedFile";
 import { Card } from "src/Card";
 import { DataLocation } from "./dataLocation";
@@ -115,8 +114,6 @@ export class ItemToDecks {
         const trackedFile = store.getTrackedFile(note.path);
         const fileid = store.getTrackedFile(note.path).noteID;
         const item = store.getItembyID(fileid);
-        let now_number: number = now;
-        const nowToday: number = DateUtils.EndofToday;
 
         if (item == null) {
             // store._updateItem(fileid, ind, RPITEMTYPE.NOTE, rdeck.deckName);
@@ -129,34 +126,6 @@ export class ItemToDecks {
         }
         const latterQue = store.data.queues.toDayLatterQueue;
         delete latterQue[fileid];
-        if (now == null) {
-            now_number = Date.now();
-        } else {
-            getKeysPreserveType(latterQue).forEach((idStr, _idx, _arr) => {
-                const id: number = Number(idStr);
-                const item = store.getItembyID(id);
-                if (item.deckName === rdeck.deckName && item.nextReview - Date.now() < 0) {
-                    rdeck.dueNotesCount++;
-                    // console.debug(
-                    //     `${rdeck.deckName}keysPreserve dueCnt: ${rdeck.dueNotesCount} \
-                    // item:  toQ:`,
-                    //     item,
-                    //     latterQue,
-                    // );
-                    delete latterQue[id];
-                }
-            });
-        }
-
-        if (item.nextReview - now_number > 0 && item.nextReview <= nowToday) {
-            // console.debug(
-            //     `add ${rdeck.deckName} dueCnt: ${rdeck.dueNotesCount} \
-            // item:  toQ:`,
-            //     item,
-            //     latterQue,
-            // );
-            latterQue[fileid] = rdeck.deckName;
-        }
 
         if (item.hasDue) {
             rdeck.scheduledNotes.push({
@@ -166,10 +135,6 @@ export class ItemToDecks {
                 interval: item.interval,
                 ease: item.ease,
             });
-            if (item.nextReview <= now_number) {
-                rdeck.dueNotesCount++;
-                // console.debug(`${rdeck.deckName} isDue dueCnt: ${rdeck.dueNotesCount}`, item);
-            }
         } else {
             rdeck.newNotes.push({ note, item });
         }

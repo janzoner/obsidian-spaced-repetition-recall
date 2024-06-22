@@ -1,6 +1,9 @@
 import { Question } from "./Question";
 import { CardScheduleInfo } from "./CardSchedule";
 import { CardListType } from "./Deck";
+import { IQuestionPostponementList } from "./QuestionPostponementList";
+import { globalDateProvider } from "./util/DateProvider";
+import { Queue } from "./dataStore/queue";
 
 export class Card {
     question: Question;
@@ -32,6 +35,21 @@ export class Card {
 
     get isDue(): boolean {
         return this.hasSchedule && this.scheduleInfo.isDue();
+    }
+
+    getIsNotBury(questionPostponementList: IQuestionPostponementList): boolean {
+        let notBury = !questionPostponementList.includes(this.question);
+        if (notBury) {
+            return true;
+        } else if (this.hasSchedule) {
+            if (
+                this.scheduleInfo.dueDate.isSameOrBefore(globalDateProvider.today) &&
+                Object.keys(Queue.getInstance().toDayLatterQueue).includes(this.Id?.toString())
+            ) {
+                notBury = true;
+            }
+        }
+        return notBury;
     }
 
     get isMultiCloze(): boolean {

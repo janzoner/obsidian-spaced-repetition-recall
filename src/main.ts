@@ -538,10 +538,8 @@ export default class SRPlugin extends Plugin {
 
         const now = window.moment(Date.now());
         Object.values(this.reviewDecks).forEach((reviewDeck: ReviewDeck) => {
-            reviewDeck.dueNotesCount = 0;
             reviewDeck.scheduledNotes.forEach((scheduledNote: SchedNote) => {
                 if (scheduledNote.dueUnix <= now.valueOf()) {
-                    reviewDeck.dueNotesCount++;
                     this.dueNotesCount++;
                 }
 
@@ -596,7 +594,7 @@ export default class SRPlugin extends Plugin {
         }
 
         const result = await revnote.responseProcess(note, response, ease);
-        if (settings.burySiblingCards) {
+        if (settings.burySiblingCardsByNoteReview) {
             this.data.buryList.push(...result.buryList);
             await this.savePluginData();
         }
@@ -699,7 +697,7 @@ export default class SRPlugin extends Plugin {
         await this.app.vault.modify(note, fileText);
 
         const buryList: string[] = [];
-        if (this.data.settings.burySiblingCards) {
+        if (this.data.settings.burySiblingCardsByNoteReview) {
             const noteX: Note = await this.loadNote(note);
             for (const question of noteX.questionList) {
                 buryList.push(question.questionText.textHash);
