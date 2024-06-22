@@ -3,6 +3,7 @@ import { TFile } from "obsidian";
 import { t } from "src/lang/helpers";
 import { RepetitionItem } from "./dataStore/repetitionItem";
 import { DateUtils } from "./util/utils_recall";
+import { globalDateProvider } from "./util/DateProvider";
 
 export interface SchedNote {
     note: TFile;
@@ -45,7 +46,7 @@ export class ReviewDeck {
 
     get dueNotesCount(): number {
         return this.scheduledNotes.filter((snote) => {
-            return snote.item?.isDue || snote.dueUnix <= DateUtils.EndofToday;
+            return snote.item?.isDue || snote.dueUnix <= globalDateProvider.endofToday.valueOf();
         }).length;
     }
 }

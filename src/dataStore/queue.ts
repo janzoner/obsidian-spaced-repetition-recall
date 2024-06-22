@@ -3,6 +3,7 @@ import { DataStore } from "./data";
 import { TrackedFile } from "./trackedFile";
 import { RepetitionItem } from "./repetitionItem";
 import { getKeysPreserveType } from "src/util/utils";
+import { globalDateProvider } from "src/util/DateProvider";
 
 export interface IQueue {
     /**
@@ -236,7 +237,10 @@ export class Queue implements IQueue {
                     if (item.nextReview <= now.getTime()) {
                         this.remove(item, this.repeatQueue);
                         oldAdd += this.push(this.queue[KEY_ALL], item.ID);
-                    } else if (newDayFlag && item.nextReview <= DateUtils.EndofToday) {
+                    } else if (
+                        newDayFlag &&
+                        item.nextReview <= globalDateProvider.endofToday.valueOf()
+                    ) {
                         this.push(this.queue[item.deckName], item.ID);
                     }
                 }
@@ -354,7 +358,7 @@ export class Queue implements IQueue {
         } else {
             // update this.toDayLatterQueue
             const store = DataStore.getInstance();
-            if (item.nextReview <= DateUtils.EndofToday) {
+            if (item.nextReview <= globalDateProvider.endofToday.valueOf()) {
                 this.toDayLatterQueue[item.ID] = item.deckName;
             }
             getKeysPreserveType(this.toDayLatterQueue)

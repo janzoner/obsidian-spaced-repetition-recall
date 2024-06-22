@@ -2,6 +2,7 @@ import { Notice } from "obsidian";
 import { AnkiData } from "src/algorithms/anki";
 import { balance } from "src/algorithms/balance/balance";
 import { FsrsData } from "src/algorithms/fsrs";
+import { globalDateProvider } from "src/util/DateProvider";
 import { DateUtils, debug } from "src/util/utils_recall";
 
 export enum RPITEMTYPE {
@@ -99,7 +100,6 @@ export class RepetitionItem {
      * @return {*}
      */
     reviewUpdate(result: ReviewResult) {
-        debug("review result:", [this.nextReview, this.data.due, result]);
         const old_nr = this.nextReview;
         const newitvl = balance(result.nextReview / DateUtils.DAYS_TO_MILLIS, this.itemType);
         this.nextReview = DateUtils.fromNow(newitvl * DateUtils.DAYS_TO_MILLIS).getTime();
@@ -122,7 +122,7 @@ export class RepetitionItem {
                     newitvl,
             );
         }
-        const dt = window.moment(this.nextReview).format("YYYY-MM-DD HH:mm:ss");
+        const dt = new Date(this.nextReview).toISOString();
         debug("review result after:", [
             this.nextReview,
             dt,
@@ -274,7 +274,7 @@ export class RepetitionItem {
             if (this.nextReview < now_number) {
                 return true;
             }
-            if (this.nextReview < DateUtils.EndofToday) {
+            if (this.nextReview < globalDateProvider.endofToday.valueOf()) {
                 if (this.isFsrs) {
                     const data: FsrsData = this.data as FsrsData;
                     if (data.scheduled_days >= 1) {

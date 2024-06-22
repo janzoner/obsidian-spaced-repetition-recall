@@ -22,6 +22,7 @@ import { RPITEMTYPE } from "./repetitionItem";
 import deepcopy from "deepcopy";
 import { NoteCardScheduleParser } from "src/CardSchedule";
 import { DataLocation, getStorePath } from "./dataLocation";
+import { globalDateProvider } from "src/util/DateProvider";
 
 export class LocationSwitch {
     public plugin: SRPlugin;
@@ -338,7 +339,10 @@ export class LocationSwitch {
                                         scheduling.push(sched);
                                         dueIds.push(citem.ID);
                                     }
-                                    this.aftercardStats.updateStats(citem, DateUtils.EndofToday);
+                                    this.aftercardStats.updateStats(
+                                        citem,
+                                        globalDateProvider.endofToday.valueOf(),
+                                    );
                                     // }
                                 });
                             const newCardText = updateCardSchedXml(
@@ -367,7 +371,10 @@ export class LocationSwitch {
                             }
                             // console.debug(tkfile.path, this.afternoteStats.youngCount);
                         }
-                        this.afternoteStats.updateStats(item, DateUtils.EndofToday);
+                        this.afternoteStats.updateStats(
+                            item,
+                            globalDateProvider.endofToday.valueOf(),
+                        );
                         //update tag to note
                         if (item?.itemType === RPITEMTYPE.NOTE) {
                             const noteTag = Tags.getNoteDeckName(note, this.settings);

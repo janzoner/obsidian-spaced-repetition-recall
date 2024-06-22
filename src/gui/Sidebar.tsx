@@ -6,6 +6,7 @@ import { ReviewDeck, SchedNote } from "src/ReviewDeck";
 import { t } from "src/lang/helpers";
 import { DataLocation } from "src/dataStore/dataLocation";
 import { DateUtils } from "src/util/utils_recall";
+import { globalDateProvider } from "src/util/DateProvider";
 
 export const REVIEW_QUEUE_VIEW_TYPE = "review-queue-list-view";
 
@@ -98,7 +99,7 @@ export class ReviewQueueListView extends ItemView {
                     now = Date.now();
                 } else {
                     // end of today
-                    now = DateUtils.EndofToday;
+                    now = globalDateProvider.endofToday.valueOf();
                 }
                 let currnDays: number | null = null;
                 let schedFolderEl: HTMLElement | null = null,

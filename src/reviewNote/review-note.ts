@@ -11,6 +11,7 @@ import { Decks, ReviewDeck, SchedNote } from "src/ReviewDeck";
 import { ReviewResponse } from "src/scheduling";
 import { SRSettings } from "src/settings";
 import { Tags } from "src/tags";
+import { globalDateProvider } from "src/util/DateProvider";
 import { DateUtils, isIgnoredPath } from "src/util/utils_recall";
 
 type Tsync = (notes: TFile[], reviewDecks?: Decks, easeByPath?: NoteEaseList) => Promise<void>;
@@ -202,7 +203,7 @@ export class ReviewNote {
 
     static updateminNextView(minNextView: number, nextReview: number): number {
         const now = Date.now();
-        const nowToday: number = DateUtils.EndofToday;
+        const nowToday: number = globalDateProvider.endofToday.valueOf();
 
         if (nextReview <= nowToday) {
             if (minNextView == undefined || minNextView < now || minNextView > nextReview) {
@@ -329,7 +330,9 @@ function preUpdateDeck(deck: ReviewDeck, note: TFile) {
 }
 
 export function updatenDays(dueDates: Record<number, number>, dueUnix: number) {
-    const nDays: number = Math.ceil((dueUnix - DateUtils.EndofToday) / DateUtils.DAYS_TO_MILLIS);
+    const nDays: number = Math.ceil(
+        (dueUnix - globalDateProvider.endofToday.valueOf()) / DateUtils.DAYS_TO_MILLIS,
+    );
     if (!Object.prototype.hasOwnProperty.call(dueDates, nDays)) {
         dueDates[nDays] = 0;
     }

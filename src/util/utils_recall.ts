@@ -6,12 +6,6 @@ export class DateUtils {
      * ms
      * @type {number}
      */
-    static get StartofToday() {
-        return window.moment().startOf("day").valueOf();
-    }
-    static get EndofToday() {
-        return window.moment().endOf("day").valueOf();
-    }
 
     static addTime(date: Date, time: number): Date {
         return new Date(date.getTime() + time);
