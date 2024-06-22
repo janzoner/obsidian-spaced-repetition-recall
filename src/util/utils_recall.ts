@@ -180,7 +180,7 @@ export const debug = (functionname: string, ...data: unknown[]) => {
         data = data.slice(1);
     }
     const msg = { plugin: "SRR", func: functionname, ...data };
-    console.debug(msg);
+    console.debug("plugin: SRR, func: " + functionname + "\t" + JSON.stringify(data));
     if (Platform.isMobile) {
         MiscUtils.notice(JSON.stringify(msg), duration);
     }
