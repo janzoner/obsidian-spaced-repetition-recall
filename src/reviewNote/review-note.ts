@@ -142,7 +142,7 @@ export class ReviewNote {
             return;
         }
 
-        this.nextReviewNotice(store.data.queues.toDayLatterQueue);
+        this.nextReviewNotice(store.data.queues.laterSize);
 
         // plugin.updateStatusBar();
 
@@ -214,8 +214,8 @@ export class ReviewNote {
         return minNextView;
     }
 
-    static nextReviewNotice(toDayLatterQueue: Record<number, string>) {
-        if (this.minNextView > 0 && Object.keys(toDayLatterQueue).length > 0) {
+    static nextReviewNotice(laterSize: number) {
+        if (this.minNextView > 0 && laterSize > 0) {
             const now = Date.now();
             const interval = Math.round((this.minNextView - now) / 1000 / 60);
             if (interval < 60) {

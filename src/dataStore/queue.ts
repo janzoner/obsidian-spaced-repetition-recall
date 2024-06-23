@@ -14,16 +14,9 @@ export interface IQueue {
      * @type {number[]}
      */
     repeatQueue: number[];
-    /**
-     * @type {number[]}
-     */
-    cardQueue: number[];
-    /**
-     * @type {number[]}
-     */
-    cardRepeatQueue: number[];
+
     toDayAllQueue: Record<number, string>;
-    toDayLatterQueue: Record<number, string>;
+    toDayLaterQueue: Record<number, string>;
 
     /**
      * @type {number}
@@ -44,16 +37,9 @@ export const DEFAULT_QUEUE_DATA: IQueue = {
      * @type {number[]}
      */
     repeatQueue: [],
-    /**
-     * @type {number[]}
-     */
-    cardQueue: [],
-    /**
-     * @type {number[]}
-     */
-    cardRepeatQueue: [],
+
     toDayAllQueue: {},
-    toDayLatterQueue: {},
+    toDayLaterQueue: {},
     /**
      * @type {number}
      */
@@ -70,22 +56,16 @@ export class Queue implements IQueue {
     static instance: Queue;
     /**
      * @type {number[]}
+     * e.g. review: [1,2,3]
      */
     queue: Record<string, number[]>;
     /**
      * @type {number[]}
      */
     repeatQueue: number[];
-    /**
-     * @type {number[]}
-     */
-    cardQueue: number[];
-    /**
-     * @type {number[]}
-     */
-    cardRepeatQueue: number[];
+
     toDayAllQueue: Record<number, string>;
-    toDayLatterQueue: Record<number, string>;
+    toDayLaterQueue: Record<number, string>;
 
     // maxNewPerDay: number;
     lastQueue: number;
@@ -109,10 +89,8 @@ export class Queue implements IQueue {
     constructor() {
         this.queue = {};
         this.repeatQueue = [];
-        this.cardQueue = [];
-        this.cardRepeatQueue = [];
         this.toDayAllQueue = {};
-        this.toDayLatterQueue = {};
+        this.toDayLaterQueue = {};
         Queue.instance = this;
     }
 
@@ -130,7 +108,11 @@ export class Queue implements IQueue {
         }
         return this.queue[key]?.length ?? 0;
     }
-    todaylatterSize(): number {
+    get laterSize(): number {
+        const len = Object.keys(this.toDayLaterQueue).length;
+        if (len) {
+            return len;
+        }
         const keys = Object.keys(this.queue);
         keys.remove(KEY_ALL);
         return keys
@@ -183,8 +165,6 @@ export class Queue implements IQueue {
 
         let oldAdd = 0;
         let newAdd = 0;
-        let oldAdd_card = 0;
-        let newAdd_card = 0;
 
         let untrackedFiles = 0;
         let removedItems = 0;
@@ -208,20 +188,7 @@ export class Queue implements IQueue {
             }),
         );
         const validItems = store.items.filter((item) => item != null && item.isTracked);
-        validItems
-            .filter((item) => item.isCard)
-            .forEach((item) => {
-                if (item.isNew) {
-                    // This is a new item.
-                    if (maxNew == -1 || this.newAdded < maxNew) {
-                        this.newAdded += 1;
-                        newAdd_card += this.push(this.cardQueue, item.ID);
-                    }
-                } else if (item.nextReview <= now.getTime()) {
-                    this.remove(item, this.cardRepeatQueue);
-                    oldAdd_card += this.push(this.cardQueue, item.ID);
-                }
-            });
+
         validItems
             .filter((item) => !item.isCard)
             .forEach(async (item) => {
@@ -304,10 +271,8 @@ export class Queue implements IQueue {
         if (queue == null) {
             this.queue = {};
             this.repeatQueue = [];
-            this.cardQueue = [];
-            this.cardRepeatQueue = [];
             this.toDayAllQueue = {};
-            this.toDayLatterQueue = {};
+            this.toDayLaterQueue = {};
             console.debug("all queue are cleared!");
         } else if (isArray(queue)) {
             queue = [];
@@ -326,6 +291,9 @@ export class Queue implements IQueue {
         return queue?.includes(id) ?? false;
     }
 
+    isInLaterQueue(id: number): boolean {
+        return Object.keys(this.toDayLaterQueue).includes(id.toString());
+    }
     InitQIfMissing(key: string, queueR?: Record<string, number[]>): void {
         if (!this.hasQueue(key, queueR)) queueR[key] = [];
     }
@@ -344,7 +312,7 @@ export class Queue implements IQueue {
      * @returns {boolean}
      */
     isInRepeatQueue(item: number): boolean {
-        return this.repeatQueue.includes(item) || this.cardRepeatQueue.includes(item);
+        return this.repeatQueue.includes(item);
     }
 
     updateWhenReview(item: RepetitionItem, correct: boolean, repeatItems: boolean) {
@@ -356,19 +324,20 @@ export class Queue implements IQueue {
         if (repeatItems && !correct) {
             this.push(this.repeatQueue, item.ID); // Re-add until correct.
         } else {
-            // update this.toDayLatterQueue
+            // update this.toDayLaterQueue
             const store = DataStore.getInstance();
+            delete this.toDayLaterQueue[item.ID];
             if (item.nextReview <= globalDateProvider.endofToday.valueOf()) {
-                this.toDayLatterQueue[item.ID] = item.deckName;
+                this.toDayLaterQueue[item.ID] = item.deckName;
             }
-            getKeysPreserveType(this.toDayLatterQueue)
+            getKeysPreserveType(this.toDayLaterQueue)
                 .map((idStr) => {
                     const id: number = Number(idStr);
                     return store.getItembyID(id);
                 })
                 .forEach((item) => {
                     if (item.nextReview - Date.now() < 0) {
-                        delete this.toDayLatterQueue[item.ID];
+                        delete this.toDayLaterQueue[item.ID];
                     }
                 });
         }
@@ -384,8 +353,8 @@ export class Queue implements IQueue {
                 this.remove(item, this.queue[KEY_ALL]);
             }
 
-            if (this.toDayLatterQueue[item.ID] !== null) {
-                delete this.toDayLatterQueue[item.ID];
+            if (this.toDayLaterQueue[item.ID] !== null) {
+                delete this.toDayLaterQueue[item.ID];
             }
         } else {
             if (this.isQueued(queue, item.ID)) {

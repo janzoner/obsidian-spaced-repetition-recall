@@ -36,7 +36,13 @@ export class ReviewDeck {
 
         // sort scheduled notes by date & within those days, sort them by importance
         this.scheduledNotes = this.scheduledNotes.sort((a: SchedNote, b: SchedNote) => {
-            const result = a.dueUnix - b.dueUnix;
+            const adue = isDue(a) ? -1 : 1;
+            const bdue = isDue(b) ? 1 : -1;
+            let result = adue + bdue;
+            if (result != 0) {
+                return result;
+            }
+            result = a.dueUnix - b.dueUnix;
             if (result != 0) {
                 return result;
             }
@@ -45,8 +51,14 @@ export class ReviewDeck {
     }
 
     get dueNotesCount(): number {
-        return this.scheduledNotes.filter((snote) => {
-            return snote.item?.isDue || snote.dueUnix <= globalDateProvider.endofToday.valueOf();
-        }).length;
+        return this.scheduledNotes.filter(isDue).length;
+    }
+}
+
+function isDue(snote: SchedNote): boolean {
+    if (Object.prototype.hasOwnProperty.call(snote, "item")) {
+        return snote.item.isDue;
+    } else {
+        return snote.dueUnix <= globalDateProvider.endofToday.valueOf();
     }
 }

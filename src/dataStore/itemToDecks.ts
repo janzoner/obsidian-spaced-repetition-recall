@@ -112,8 +112,7 @@ export class ItemToDecks {
         // const queue = store.data.queues;
         const ind = store.getFileIndex(note.path);
         const trackedFile = store.getTrackedFile(note.path);
-        const fileid = store.getTrackedFile(note.path).noteID;
-        const item = store.getItembyID(fileid);
+        const item = store.getNoteItem(note.path);
 
         if (item == null) {
             // store._updateItem(fileid, ind, RPITEMTYPE.NOTE, rdeck.deckName);
@@ -124,8 +123,6 @@ export class ItemToDecks {
         if (!trackedFile.isDefault && !item.isTracked) {
             item.setTracked(ind);
         }
-        const latterQue = store.data.queues.toDayLatterQueue;
-        delete latterQue[fileid];
 
         if (item.hasDue) {
             rdeck.scheduledNotes.push({

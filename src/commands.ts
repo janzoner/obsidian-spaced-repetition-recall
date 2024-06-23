@@ -36,7 +36,7 @@ export default class Commands {
                                 tkfile,
                                 noteDelayed: this.plugin.noteStats.delayedDays.dict,
                                 // decks: deck.scheduledNotes.map((sn) => [sn.note.path, sn.item]),
-                                que: store.data.queues.toDayLatterQueue,
+                                que: store.data.queues.toDayLaterQueue,
                             });
                             new ItemInfoModal(plugin.data.settings, file).open();
                         }
@@ -154,8 +154,6 @@ export default class Commands {
         //         console.log("There are " + plugin.store.data.queue.length + " items in queue.");
         //         console.log(plugin.store.data.newAdded + " new where added to today.");
         //         console.log("repeatQueue: " + plugin.store.data.repeatQueue);
-        //         console.log("cardQueue: " + plugin.store.data.cardQueue);
-        //         console.log("cardRepeatQueue: " + plugin.store.data.cardRepeatQueue);
         //     },
         // });
 

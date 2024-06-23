@@ -44,7 +44,7 @@ export class Card {
         } else if (this.hasSchedule) {
             if (
                 this.scheduleInfo.dueDate.isSameOrBefore(globalDateProvider.today) &&
-                Object.keys(Queue.getInstance().toDayLatterQueue).includes(this.Id?.toString())
+                Queue.getInstance().isInLaterQueue(this?.Id)
             ) {
                 notBury = true;
             }

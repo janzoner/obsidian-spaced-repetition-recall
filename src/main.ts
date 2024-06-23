@@ -538,11 +538,9 @@ export default class SRPlugin extends Plugin {
 
         const now = window.moment(Date.now());
         Object.values(this.reviewDecks).forEach((reviewDeck: ReviewDeck) => {
+            this.dueNotesCount += reviewDeck.dueNotesCount;
+            this.noteStats.newCount += reviewDeck.newNotes.length;
             reviewDeck.scheduledNotes.forEach((scheduledNote: SchedNote) => {
-                if (scheduledNote.dueUnix <= now.valueOf()) {
-                    this.dueNotesCount++;
-                }
-
                 const nDays: number = Math.ceil(
                     (scheduledNote.dueUnix - now.valueOf()) / (24 * 3600 * 1000),
                 );
@@ -552,7 +550,6 @@ export default class SRPlugin extends Plugin {
                 this.dueDatesNotes[nDays]++;
                 this.noteStats.update(nDays, scheduledNote.interval, scheduledNote.ease);
             });
-            this.noteStats.newCount += reviewDeck.newNotes.length;
 
             reviewDeck.sortNotes(this.linkRank.pageranks);
         });
@@ -666,7 +663,6 @@ export default class SRPlugin extends Plugin {
         );
         interval = schedObj.interval;
         ease = schedObj.ease;
-        this.easeByPath.setEaseForPath(note.path, ease);
 
         const due = window.moment(now + interval * 24 * 3600 * 1000);
         const dueString: string = due.format("YYYY-MM-DD");
@@ -733,9 +729,9 @@ export default class SRPlugin extends Plugin {
 
         this.updateAndSortDueNotes();
 
-        if(!this.data.settings.reviewResponseFloatBar){
+        if (!this.data.settings.reviewResponseFloatBar) {
             new Notice(t("RESPONSE_RECEIVED"));
-        } 
+        }
 
         if (this.data.settings.autoNextNote) {
             if (!this.lastSelectedReviewDeck) {
@@ -781,10 +777,7 @@ export default class SRPlugin extends Plugin {
         let index = -1;
 
         const isPreviewUndueNote = (item: RepetitionItem) => {
-            return (
-                item.nextReview > Date.now() &&
-                !Object.keys(this.store.data.queues.toDayLatterQueue).includes(item.ID.toString())
-            );
+            return item.nextReview > Date.now() && !Queue.getInstance().isInLaterQueue(item.ID);
         };
         const fShowItemInfo = (item: RepetitionItem, msg: string) => {
             if (this.data.settings.dataLocation !== DataLocation.SaveOnNoteFile) {
@@ -795,11 +788,11 @@ export default class SRPlugin extends Plugin {
                     if (calcDueCnt !== deck.dueNotesCount) {
                         debug(
                             "check cnt",
-                            msg,
                             0,
-                            deck,
+                            msg,
                             `${deck.deckName} due cnt error: calc ${calcDueCnt}, dnc: ${deck.dueNotesCount}`,
                         );
+                        console.debug("schedNotes:", deck.scheduledNotes);
                     }
                     const id = "obsidian-spaced-repetition-recall:view-item-info";
                     // eslint-disable-next-line
@@ -864,7 +857,7 @@ export default class SRPlugin extends Plugin {
             }
         }
 
-        ReviewNote.nextReviewNotice(Queue.getInstance().toDayLatterQueue);
+        ReviewNote.nextReviewNotice(Queue.getInstance().laterSize);
 
         this.reviewFloatBar.selfDestruct();
         this.reviewQueueView.redraw();
@@ -943,7 +936,7 @@ export default class SRPlugin extends Plugin {
     updateStatusBar() {
         this.statusBar.setText(
             t("STATUS_BAR", {
-                dueNotesCount: this.noteStats.onDueCount + this.store.data.queues.todaylatterSize(), // this.dueNotesCount,
+                dueNotesCount: this.noteStats.onDueCount, // this.dueNotesCount, + this.store.data.queues.todaylatterSize()
                 dueFlashcardsCount: this.remainingDeckTree.getDistinctCardCount(
                     CardListType.All,
                     true,
