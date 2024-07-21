@@ -46,11 +46,8 @@ export class ReviewQueueListView extends ItemView {
     public redraw(): void {
         const activeFile: TFile | null = this.app.workspace.getActiveFile();
 
-        // const rootEl: HTMLElement = createDiv("tree-item mod-root");
-        // const childrenEl: HTMLElement = rootEl.createDiv("tree-item-children");
-        // const childrenEl: HTMLElement = createDiv("tree-item mod-root");
-        const childrenEl: HTMLElement = createDiv();
-        const rootEl = childrenEl;
+        const rootEl: HTMLElement = createDiv();
+        const childrenEl: HTMLElement = rootEl;
 
         for (const deckKey in this.plugin.reviewDecks) {
             const deck: ReviewDeck = this.plugin.reviewDecks[deckKey];
@@ -184,7 +181,7 @@ export class ReviewQueueListView extends ItemView {
             (collapseIconEl.childNodes[0] as HTMLElement).style.transform = "rotate(-90deg)";
         }
 
-        folderTitleEl.createDiv("tree-item-self-content").setText(folderTitle);
+        folderTitleEl.createDiv("tree-item-content").setText(folderTitle);
 
         if (hidden) {
             folderEl.style.display = "none";
@@ -228,7 +225,7 @@ export class ReviewQueueListView extends ItemView {
             navFileTitle.addClass("is-active");
         }
 
-        navFileTitle.createDiv("tree-item-self-content").setText(file.note.basename);
+        navFileTitle.createDiv("tree-item-content").setText(file.note.basename);
         navFileTitle.addEventListener(
             "click",
             async (event: MouseEvent) => {

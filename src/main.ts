@@ -68,6 +68,7 @@ import { RepetitionItem } from "./dataStore/repetitionItem";
 import { IReviewNote } from "./reviewNote/review-note";
 import { ReviewView } from "./gui/reviewView";
 import { MixQueSet } from "./dataStore/mixQueSet";
+import { isEqualOrSubPath } from "./util/utils";
 
 interface PluginData {
     settings: SRSettings;
