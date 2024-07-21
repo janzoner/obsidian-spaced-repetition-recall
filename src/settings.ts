@@ -18,6 +18,8 @@ import {
 import { addUntrackSetting, addTrackedNoteToDecksSetting } from "./settings/trackSetting";
 import { buildDonation } from "./settings/donation";
 import { addburySiblingSetting } from "./settings/burySiblingSetting";
+import { addcardBlockIDSetting } from "./settings/cardBlockIDSetting";
+import { addmixQueueSetting } from "./settings/mixQueueSetting";
 
 export interface SRSettings {
     // flashcards
@@ -31,6 +33,7 @@ export interface SRSettings {
     burySiblingCards: boolean;
     burySiblingCardsByNoteReview: boolean;
     multiClozeCard: boolean;
+    cardBlockID: boolean;
     showContextInCards: boolean;
     flashcardHeightPercentage: number;
     flashcardWidthPercentage: number;
@@ -52,6 +55,8 @@ export interface SRSettings {
     noteFoldersToIgnore: string[];
     openRandomNote: boolean;
     autoNextNote: boolean;
+    mixDue: number;
+    mixNew: number;
     reviewResponseFloatBar: boolean;
     responseBarPositionPercentage: number;
     reviewingNoteDirectly: boolean;
@@ -94,6 +99,7 @@ export const DEFAULT_SETTINGS: SRSettings = {
     burySiblingCards: false,
     burySiblingCardsByNoteReview: false,
     multiClozeCard: false,
+    cardBlockID: false,
     showContextInCards: true,
     flashcardHeightPercentage: Platform.isMobile ? 100 : 80,
     flashcardWidthPercentage: Platform.isMobile ? 100 : 40,
@@ -116,6 +122,8 @@ export const DEFAULT_SETTINGS: SRSettings = {
     noteFoldersToIgnore: [],
     openRandomNote: false,
     autoNextNote: false,
+    mixDue: 3,
+    mixNew: 2,
     reviewResponseFloatBar: false,
     responseBarPositionPercentage: 5,
     reviewingNoteDirectly: false,
@@ -193,7 +201,7 @@ export class SRSettingTab extends PluginSettingTab {
 
     display(): void {
         const { containerEl } = this;
-
+        const settings = this.plugin.data.settings;
         containerEl.empty();
 
         const header = containerEl.createEl("h1", { text: `${t("SETTINGS_HEADER")}` });
@@ -284,6 +292,11 @@ export class SRSettingTab extends PluginSettingTab {
             );
         addburySiblingSetting(containerEl, this.plugin);
         addMultiClozeSetting(containerEl, this.plugin);
+        if (settings.dataLocation !== DataLocation.SaveOnNoteFile) {
+            addcardBlockIDSetting(containerEl, this.plugin);
+        } else {
+            settings.cardBlockID = false;
+        }
         new Setting(containerEl)
             .setName(t("SHOW_CARD_CONTEXT"))
             .setDesc(t("SHOW_CARD_CONTEXT_DESC"))
@@ -574,6 +587,7 @@ export class SRSettingTab extends PluginSettingTab {
             }),
         );
 
+        addmixQueueSetting(containerEl.createDiv(), this.plugin);
         addTrackedNoteToDecksSetting(containerEl.createDiv(), this.plugin);
         addUntrackSetting(containerEl.createDiv(), this.plugin);
         addResponseFloatBarSetting(containerEl.createDiv(), this.plugin);
