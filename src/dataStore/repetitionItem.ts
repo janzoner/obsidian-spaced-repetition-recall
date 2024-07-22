@@ -277,7 +277,8 @@ export class RepetitionItem {
             if (this.nextReview < globalDateProvider.endofToday.valueOf()) {
                 if (this.isFsrs) {
                     const data: FsrsData = this.data as FsrsData;
-                    if (data.scheduled_days >= 1) {
+                    const lastr = data.last_review.valueOf();
+                    if (lastr > 0 && lastr < globalDateProvider.startofToday.valueOf()) {
                         return true;
                     }
                 } else {
