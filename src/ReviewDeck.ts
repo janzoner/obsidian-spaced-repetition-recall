@@ -27,12 +27,8 @@ export class ReviewDeck {
     }
 
     public sortNotes(pageranks: Record<string, number>): void {
-        // sort new notes by importance
+        // sort new notes by file create time.
         this.newNotes = this.newNotes.sort((a: SchedNote, b: SchedNote) => {
-            const result = (pageranks[b.note.path] || 0) - (pageranks[a.note.path] || 0);
-            if (result != 0) {
-                return result;
-            }
             return a.note.stat.ctime - b.note.stat.ctime;
         });
 

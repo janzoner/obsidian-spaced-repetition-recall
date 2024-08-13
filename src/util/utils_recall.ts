@@ -1,5 +1,5 @@
 import { Notice, Platform } from "obsidian";
-import { cyrb53 } from "src/util/utils";
+import { cyrb53, isEqualOrSubPath } from "src/util/utils";
 
 export class DateUtils {
     /**
@@ -214,9 +214,6 @@ export const logExecutionTime = () => {
 };
 
 export function isIgnoredPath(noteFoldersToIgnore: string[], path: string) {
-    if (noteFoldersToIgnore.some((folder) => path.includes(folder))) {
-        return true;
-    } else {
-        return false;
-    }
+    // return noteFoldersToIgnore.some((folder) => isEqualOrSubPath(path, folder));
+    return noteFoldersToIgnore.some((folder) => path.includes(folder));
 }
