@@ -47,6 +47,7 @@ export default {
     STATUS_BAR: "Повторить: ${dueNotesCount} заметок, ${dueFlashcardsCount} карточек",
     SYNC_TIME_TAKEN: "Синхронизация заняла ${t}мс",
     NOTE_IN_IGNORED_FOLDER: "Заметка сохранена в игнорируемую папку (см. настройки).",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE: "Для изучения, пожалуйста, правильно пометьте заметку тегом (см. настройки).",
     RESPONSE_RECEIVED: "Ответ получен.",
     NO_DECK_EXISTS: "Не существует уровня ${deckName}",
@@ -66,10 +67,31 @@ export default {
 
     // settings.ts
     SETTINGS_HEADER: "Плагин Spaced Repetition - Настройки",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: 'Для дополнительной информации посетите: <a href="${wiki_url}">wiki</a>.',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "Игнорируемые папки",
-    FOLDERS_TO_IGNORE_DESC:
-        "Укажите пути папок, каждый на своей строке, например: Templates Meta/Scripts",
+    FOLDERS_TO_IGNORE_DESC: `Укажите пути папок, каждый на своей строке, например: Templates Meta/Scripts.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "Карточки",
     FLASHCARD_EASY_LABEL: 'Текст кнопки "Легко"',
     FLASHCARD_GOOD_LABEL: 'Текст кнопки "Нормально"',
@@ -123,6 +145,7 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "Разделитель для обратных внутристрочных карточек",
     MULTILINE_CARDS_SEPARATOR: "Разделитель для многострочных карточек",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "Разделитель для обратных многострочных карточек",
+    MULTILINE_CARDS_END_MARKER: "Символы, обозначающие конец клозов и многострочных карточек",
     NOTES: "Заметки",
     REVIEW_PANE_ON_STARTUP: "Включить панель изучения карточек при запуске программы",
     TAGS_TO_REVIEW: "Теги для изучения",
@@ -164,7 +187,9 @@ export default {
     MAX_LINK_CONTRIB_DESC:
         'Максимальный вклад среднего значения "Лёгкости" связанных заметок в начальную "Лёгкость".',
     LOGGING: "Журналирование",
-    DISPLAY_DEBUG_INFO: "Отображать отладочную информацию в консоли разработчика?",
+    DISPLAY_DEBUG_INFO: "Отображать отладочную информацию в консоли разработчика",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Display debugging information for the parser on the developer console",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",

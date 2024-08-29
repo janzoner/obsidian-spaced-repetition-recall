@@ -1,7 +1,7 @@
 import moment from "moment";
 import { Moment } from "moment";
-import { normalize, sep } from "path";
-import { PREFERRED_DATE_FORMAT, YAML_FRONT_MATTER_REGEX } from "src/constants";
+import { sep } from "path";
+import { PREFERRED_DATE_FORMAT } from "src/constants";
 
 type Hex = number;
 
@@ -100,36 +100,13 @@ export function stringTrimStart(str: string): [string, string] {
     return [ws, trimmed];
 }
 
-/**
- * Checks a path is equal or a subpath of the other rootPath
- *
- * @param toCheck The path to check it is equal or a subpath of path.
- * @param rootPath The ref path to check the other is equal to or a subpath of this.
- * @tutorial
- * rootPath = "root/sub/sub2"
- * if toCheck = "notRoot/..." -> false
- * if toCheck = "root" -> true
- * if toCheck = "root/sub" -> true
- * if toCheck = "root/s" -> false
- */
-export function isEqualOrSubPath(toCheck: string, rootPath: string): boolean {
-    const rootPathSections = normalize(rootPath.toLowerCase())
-        .replaceAll(/(\\|\/)/g, sep)
-        .split(sep)
-        .filter((p) => p !== "");
-    const pathSections = normalize(toCheck.toLowerCase())
-        .replaceAll(/(\\|\/)/g, sep)
-        .split(sep)
-        .filter((p) => p !== "");
-    if (pathSections.length < rootPathSections.length) {
-        return false;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function convertToStringOrEmpty(v: any): string {
+    let result: string = "";
+    if (v != null && v != undefined) {
+        result = v + "";
     }
-    for (let i = 0; i < rootPathSections.length; i++) {
-        if (rootPathSections[i] !== pathSections[i]) {
-            return false;
-        }
-    }
-    return true;
+    return result;
 }
 
 //
@@ -144,33 +121,94 @@ export function isEqualOrSubPath(toCheck: string, rootPath: string): boolean {
 // 2. The lines are blanked out rather than deleted so that line numbers are not affected
 // e.g. for calls to getQuestionContext(cardLine: number)
 //
-export function extractFrontmatter(str: string): [string, string] {
-    let frontmatter: string = "";
-    let content: string = "";
-    let frontmatterEndLineNum: number = null;
-    if (YAML_FRONT_MATTER_REGEX.test) {
-        const lines: string[] = splitTextIntoLineArray(str);
 
-        // The end "---" marker must be on the third line (index 2) or later
-        for (let i = 2; i < lines.length; i++) {
-            if (lines[i] == "---") {
-                frontmatterEndLineNum = i;
-                break;
-            }
-        }
-
-        if (frontmatterEndLineNum) {
-            const frontmatterStartLineNum: number = 0;
-            const frontmatterLines: string[] = [];
-            for (let i = frontmatterStartLineNum; i <= frontmatterEndLineNum; i++) {
-                frontmatterLines.push(lines[i]);
-                lines[i] = "";
-            }
-            frontmatter = frontmatterLines.join("\n");
-            content = lines.join("\n");
+/**
+ * Determines if a given path (`toCheck`) is either equal to or a sub-path of a specified root path (`rootPath`).
+ * The function compares the paths in a case-insensitive manner and normalizes the directory separators for consistency across different platforms.
+ *
+ * @param {string} toCheck - The path that needs to be checked against the root path.
+ * @param {string} rootPath - The root path to check against. The function determines if `toCheck` is equal to or a sub-path of this path.
+ * @returns {boolean} - Returns `true` if `toCheck` is either equal to or a sub-path of `rootPath`. Otherwise, returns `false`.
+ *
+ * @example
+ * // Example 1: Sub-path scenario
+ * isEqualOrSubPath('/user/docs/letter.txt', '/user/docs'); // returns true
+ *
+ * @example
+ * // Example 2: Equal paths scenario
+ * isEqualOrSubPath('/user/docs', '/user/docs'); // returns true
+ *
+ * @example
+ * // Example 3: Non-matching path scenario
+ * isEqualOrSubPath('/user/docs/letter.txt', '/user/projects'); // returns false
+ *
+ * @example
+ * // Example 4: Case-insensitive matching
+ * isEqualOrSubPath('/User/Docs', '/user/docs'); // returns true
+ *
+ * @example
+ * // Example 5: Handles different path separators
+ * isEqualOrSubPath('C:\\user\\docs', 'C:/user/docs'); // returns true
+ */
+export function isEqualOrSubPath(toCheck: string, rootPath: string): boolean {
+    const rootPathSections = rootPath
+        .toLowerCase()
+        .replaceAll(/(\\|\/)+/g, sep)
+        .split(sep)
+        .filter((p) => p !== "");
+    const pathSections = toCheck
+        .toLowerCase()
+        .replaceAll(/(\\|\/)+/g, sep)
+        .split(sep)
+        .filter((p) => p !== "");
+    if (pathSections.length < rootPathSections.length) {
+        return false;
+    }
+    for (let i = 0; i < rootPathSections.length; i++) {
+        if (rootPathSections[i] !== pathSections[i]) {
+            return false;
         }
     }
-    if (frontmatter.length == 0) content = str;
+    return true;
+}
+
+/**
+ * The returned content has the same number of lines as the supplied string, but with the frontmatter lines (if present) blanked out.
+ *
+ * 1. We don't want the parser to see the frontmatter, as it would deem it to be part of a multi-line question if one started on the line immediately after the "---" closing marker.
+ *
+ * 2. The lines are blanked out rather than deleted so that line numbers are not affected e.g. for calls to getQuestionContext(cardLine: number)
+ *
+ * @param str The file content as string
+ * @returns [frontmatter, content]
+ */
+export function extractFrontmatter(str: string): [string, string] {
+    const lines = splitTextIntoLineArray(str);
+    let lineIndex = 0;
+    let hasFrontmatter = false;
+    do {
+        // Starts file with '---'
+        if (lineIndex === 0 && lines[lineIndex] === "---") {
+            hasFrontmatter = true;
+        }
+        // Line is end of front matter
+        else if (hasFrontmatter && lines[lineIndex] === "---") {
+            hasFrontmatter = false;
+            lineIndex++;
+        }
+        if (hasFrontmatter) {
+            lineIndex++;
+        }
+    } while (hasFrontmatter && lineIndex < lines.length);
+    // No end of Frontmatter found
+    if (hasFrontmatter) {
+        lineIndex = 0;
+    }
+
+    const frontmatter: string = lines.slice(0, lineIndex).join("\n");
+    const emptyLines: string[] = lineIndex > 0 ? Array(lineIndex).join(".").split(".") : [];
+    const content: string = emptyLines.concat(lines.slice(lineIndex)).join("\n");
+
     return [frontmatter, content];
 }
 

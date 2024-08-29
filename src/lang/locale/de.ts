@@ -43,6 +43,7 @@ export default {
     SYNC_TIME_TAKEN: "Synchronisierung dauerte ${t}ms",
     NOTE_IN_IGNORED_FOLDER:
         "Notiz befindet sich in einem ausgeschlossenen Ordner (siehe Einstellungen).",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE:
         "Bitte die Notiz für Wiederholungen entsprechend taggen (siehe Einstellungen).",
     RESPONSE_RECEIVED: "Antwort erhalten.",
@@ -62,11 +63,32 @@ export default {
     MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
-    SETTINGS_HEADER: "Spaced Repetition Plugin - Einstellungen",
+    SETTINGS_HEADER: "Spaced Repetition - Einstellungen",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: 'Weitere Informationen gibt es im <a href="${wiki_url}">Wiki</a> (english).',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "Ausgeschlossene Ordner",
-    FOLDERS_TO_IGNORE_DESC:
-        "Mehrere Ordner mit Zeilenumbrüchen getrennt angeben. Bsp. OrdnerA[Zeilenumbruch]OrdnerB/Unterordner",
+    FOLDERS_TO_IGNORE_DESC: `Mehrere Ordner mit Zeilenumbrüchen getrennt angeben. Bsp. OrdnerA[Zeilenumbruch]OrdnerB/Unterordner.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "Lernkarten",
     FLASHCARD_EASY_LABEL: "Einfach Knopf Text",
     FLASHCARD_GOOD_LABEL: "Gut Knopf Text",
@@ -124,6 +146,8 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "Trennzeichen für einzeilige beidseitige Lernkarten",
     MULTILINE_CARDS_SEPARATOR: "Trennzeichen für mehrzeilige Lernkarten",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "Trennzeichen für mehrzeilige beidseitige Lernkarten",
+    MULTILINE_CARDS_END_MARKER:
+        "Zeichen, die das Ende von Lückentexten und mehrzeiligen Flashcards kennzeichnen",
     NOTES: "Notizen",
     REVIEW_PANE_ON_STARTUP: "Öffne Überprüfungswarteschlage beim start",
     TAGS_TO_REVIEW: "Zu wiederholende Tags",
@@ -167,7 +191,9 @@ export default {
     MAX_LINK_CONTRIB_DESC:
         "Maximaler Einfluss der Einfachheiten verlinkter Notizen zur gewichteten initialen Einfachheit einer neuen Lernkarte.",
     LOGGING: "Protokollierung",
-    DISPLAY_DEBUG_INFO: "Informationen zum Debugging in der Entwicklerkonsole anzeigen?",
+    DISPLAY_DEBUG_INFO: "Informationen zum Debugging in der Entwicklerkonsole anzeigen",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Informationen zum parser Debugging in der Entwicklerkonsole anzeigen",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",

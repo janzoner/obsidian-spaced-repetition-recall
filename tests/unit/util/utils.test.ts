@@ -1,5 +1,6 @@
 import { YAML_FRONT_MATTER_REGEX } from "src/constants";
 import {
+    convertToStringOrEmpty,
     extractFrontmatter,
     findLineIndexOfSearchStringIgnoringWs,
     isEqualOrSubPath,
@@ -76,6 +77,28 @@ $$\\huge F_g=\\frac {G m_1 m_2}{d^2}$$
 
         const actual: string = literalStringReplace(originalStr, searchStr, replacementStr);
         expect(actual).toEqual(expectedStr);
+    });
+});
+
+describe("convertToStringOrEmpty", () => {
+    test("undefined returns empty string", () => {
+        expect(convertToStringOrEmpty(undefined)).toEqual("");
+    });
+
+    test("null returns empty string", () => {
+        expect(convertToStringOrEmpty(null)).toEqual("");
+    });
+
+    test("empty string returns empty string", () => {
+        expect(convertToStringOrEmpty("")).toEqual("");
+    });
+
+    test("string returned unchanged", () => {
+        expect(convertToStringOrEmpty("Hello")).toEqual("Hello");
+    });
+
+    test("number is converted to string", () => {
+        expect(convertToStringOrEmpty(5)).toEqual("5");
     });
 });
 
@@ -176,6 +199,176 @@ ${content}`;
 `;
         const expectedContent: string = `${frontmatterBlankedOut}
 ${content}`;
+        expect(c).toEqual(expectedContent);
+    });
+
+    test("With frontmatter and content (Horizontal line)", () => {
+        const frontmatter: string = `---
+sr-due: 2024-01-17
+sr-interval: 16
+sr-ease: 278
+tags:
+  - flashcards/aws
+  - flashcards/datascience
+---`;
+        const frontmatterBlankedOut: string = `
+
+
+
+
+
+
+`;
+        const content: string = `#flashcards/science/chemistry
+
+
+---
+# Questions
+---
+
+
+Chemistry Question from file underelephant 4A::goodby
+
+<!--SR:!2023-11-02,17,290-->
+
+Chemistry Question from file underdog 4B::goodby
+
+<!--SR:!2023-12-18,57,310-->
+
+---
+
+Chemistry Question from file underdog 4C::goodby
+
+<!--SR:!2023-10-25,3,210-->
+
+This single {{question}} turns into {{3 separate}} {{cards}}
+
+<!--SR:!2023-10-20,1,241!2023-10-25,3,254!2023-10-23,1,221-->
+
+---`;
+
+        const text: string = `${frontmatter}
+${content}`;
+        const expectedContent: string = `${frontmatterBlankedOut}
+${content}`;
+
+        const [f, c] = extractFrontmatter(text);
+        expect(f).toEqual(frontmatter);
+        expect(c).toEqual(expectedContent);
+    });
+
+    test("With frontmatter and content (Horizontal line newLine)", () => {
+        const frontmatter: string = `---
+sr-due: 2024-01-17
+sr-interval: 16
+sr-ease: 278
+tags:
+  - flashcards/aws
+  - flashcards/datascience
+---`;
+        const frontmatterBlankedOut: string = `
+
+
+
+
+
+
+`;
+        const content: string = `#flashcards/science/chemistry
+
+
+---
+# Questions
+---
+
+
+Chemistry Question from file underelephant 4A::goodby
+
+<!--SR:!2023-11-02,17,290-->
+
+Chemistry Question from file underdog 4B::goodby
+
+<!--SR:!2023-12-18,57,310-->
+
+---
+
+Chemistry Question from file underdog 4C::goodby
+
+<!--SR:!2023-10-25,3,210-->
+
+This single {{question}} turns into {{3 separate}} {{cards}}
+
+<!--SR:!2023-10-20,1,241!2023-10-25,3,254!2023-10-23,1,221-->
+
+---
+`;
+
+        const text: string = `${frontmatter}
+${content}`;
+        const expectedContent: string = `${frontmatterBlankedOut}
+${content}`;
+
+        const [f, c] = extractFrontmatter(text);
+        expect(f).toEqual(frontmatter);
+        expect(c).toEqual(expectedContent);
+    });
+
+    test("With frontmatter and content (Horizontal line codeblock)", () => {
+        const frontmatter: string = `---
+sr-due: 2024-01-17
+sr-interval: 16
+sr-ease: 278
+tags:
+  - flashcards/aws
+  - flashcards/datascience
+---`;
+        const frontmatterBlankedOut: string = `
+
+
+
+
+
+
+`;
+        const content: string = [
+            "```",
+            "---",
+            "```",
+            "#flashcards/science/chemistry",
+            "# Questions",
+            "  ",
+            "",
+            "Chemistry Question from file underelephant 4A::goodby",
+            "",
+            "<!--SR:!2023-11-02,17,290-->",
+            "",
+            "Chemistry Question from file underdog 4B::goodby",
+            "",
+            "<!--SR:!2023-12-18,57,310-->",
+            "```",
+            "---",
+            "```",
+            "",
+            "Chemistry Question from file underdog 4C::goodby",
+            "",
+            "<!--SR:!2023-10-25,3,210-->",
+            "",
+            "This single {{question}} turns into {{3 separate}} {{cards}}",
+            "",
+            "<!--SR:!2023-10-20,1,241!2023-10-25,3,254!2023-10-23,1,221-->",
+            "",
+            "```",
+            "---",
+            "```",
+        ].join("\n");
+
+        const text: string = `${frontmatter}
+${content}`;
+        const expectedContent: string = `${frontmatterBlankedOut}
+${content}`;
+
+        const [f, c] = extractFrontmatter(text);
+        expect(f).toEqual(frontmatter);
         expect(c).toEqual(expectedContent);
     });
 });
@@ -303,6 +496,14 @@ describe("isEqualOrSubPath", () => {
                 true,
             );
         });
+
+        test("Multiple separators", () => {
+            expect(isEqualOrSubPath(root + sep + sep, root)).toBe(true);
+            expect(isEqualOrSubPath(root, root + sep + sep)).toBe(true);
+            expect(isEqualOrSubPath(root, root + sep + sep + sub_1)).toBe(false);
+            expect(isEqualOrSubPath(root + sep + sep + sub_1, root)).toBe(true);
+            expect(isEqualOrSubPath(root + winSep + linSep + sub_1, root)).toBe(true);
+        });
     });
     describe("Linux", () => {
         const sep = linSep;
@@ -352,5 +553,20 @@ describe("isEqualOrSubPath", () => {
                 true,
             );
         });
+
+        test("Multiple separators", () => {
+            expect(isEqualOrSubPath(root + sep + sep, root)).toBe(true);
+            expect(isEqualOrSubPath(root, root + sep + sep)).toBe(true);
+            expect(isEqualOrSubPath(root, root + sep + sep + sub_1)).toBe(false);
+            expect(isEqualOrSubPath(root + sep + sep + sub_1, root)).toBe(true);
+            expect(isEqualOrSubPath(root + winSep + linSep + sub_1, root)).toBe(true);
+        });
+    });
+    test("Examples", () => {
+        expect(isEqualOrSubPath("/user/docs/letter.txt", "/user/docs")).toBe(true);
+        expect(isEqualOrSubPath("/user/docs", "/user/docs")).toBe(true);
+        expect(isEqualOrSubPath("/user/docs/letter.txt", "/user/projects")).toBe(false);
+        expect(isEqualOrSubPath("/User/Docs", "/user/docs")).toBe(true);
+        expect(isEqualOrSubPath("C:\\user\\docs", "C:/user/docs")).toBe(true);
     });
 });

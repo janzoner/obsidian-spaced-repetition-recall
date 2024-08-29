@@ -38,6 +38,7 @@ export default {
     STATUS_BAR: "レビュー: ${dueNotesCount}ノート, ${dueFlashcardsCount}カードが期日",
     SYNC_TIME_TAKEN: "同期に${t}msかかりました。",
     NOTE_IN_IGNORED_FOLDER: "ノートが無視するフォルダに保存されています(設定を確認してください)。",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE:
         "レビューを行うにはノートに対して正しくタグ付けしてください(設定を確認してください)。",
     RESPONSE_RECEIVED: "答えを受け取りました。",
@@ -57,11 +58,32 @@ export default {
     MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
-    SETTINGS_HEADER: "Spaced Repetition Plugin - 設定",
+    SETTINGS_HEADER: "Spaced Repetition - 設定",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: '詳細については<a href="${wiki_url}">wiki</a>を確認してください。',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "無視するフォルダ",
-    FOLDERS_TO_IGNORE_DESC:
-        'フォルダパスを改行で区切って入力してください。"Templates Meta/Scripts" のようなスペースによる区切りでの書き方は無効です。',
+    FOLDERS_TO_IGNORE_DESC: `フォルダパスを改行で区切って入力してください。"Templates Meta/Scripts" のようなスペースによる区切りでの書き方は無効です。.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "フラッシュカード",
     FLASHCARD_EASY_LABEL: "Easy Button Text",
     FLASHCARD_GOOD_LABEL: "Good Button Text",
@@ -115,6 +137,7 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "インラインの表裏反転フラッシュカードに使用するセパレーター",
     MULTILINE_CARDS_SEPARATOR: "複数行のフラッシュカードに使用するセパレーター",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "複数行の表裏反転フラッシュカードに使用するセパレーター",
+    MULTILINE_CARDS_END_MARKER: "クローズと複数行フラッシュカードの終わりを示す文字",
     NOTES: "ノート",
     REVIEW_PANE_ON_STARTUP: "Enable note review pane on startup",
     TAGS_TO_REVIEW: "レビューに使用するタグ",
@@ -154,7 +177,9 @@ export default {
     MAX_LINK_CONTRIB_DESC:
         "最初の易しさに対して、リンクされたノートの重み付けされた易しさが寄与する最大値を指定してください。",
     LOGGING: "ログ管理",
-    DISPLAY_DEBUG_INFO: "デベロッパーコンソールにてデバッグ情報を表示しますか？",
+    DISPLAY_DEBUG_INFO: "デベロッパーコンソールにてデバッグ情報を表示しますか",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Display debugging information for the parser on the developer console",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",

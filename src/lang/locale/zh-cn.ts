@@ -34,10 +34,11 @@ export default {
     REVIEW_CARDS_IN_NOTE: "复习此笔记中的卡片",
     CRAM_CARDS_IN_NOTE: "集中复习此笔记中的卡片",
     VIEW_STATS: "查看数据",
-    OPEN_REVIEW_QUEUE_VIEW: "Open Notes Review Queue in sidebar",
+    OPEN_REVIEW_QUEUE_VIEW: "打开侧边栏的笔记复习队列",
     STATUS_BAR: "复习: ${dueNotesCount} 笔记, ${dueFlashcardsCount} 卡片已到期",
     SYNC_TIME_TAKEN: "同步时间 ${t}ms",
     NOTE_IN_IGNORED_FOLDER: "笔记保存在已被忽略的路径中（检查设置选项）。",
+    NOTE_IN_IGNORED_TAGS: "保存的笔记带有已被忽略的标签（检查设置选项）。",
     PLEASE_TAG_NOTE: "请将需要复习的笔记中加入正确的标签（检查设置选项）。",
     RESPONSE_RECEIVED: "反馈已收到",
     NO_DECK_EXISTS: "没有 ${deckName} 卡组",
@@ -57,9 +58,31 @@ export default {
 
     // settings.ts
     SETTINGS_HEADER: "间隔重复插件 - 设置",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: '了解更多, 请点击<a href="${wiki_url}">wiki</a>.',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "忽略此文件夹",
-    FOLDERS_TO_IGNORE_DESC: "输入文件夹路径，用新建行分隔，例如：Templates Meta/Scripts",
+    FOLDERS_TO_IGNORE_DESC: `输入文件夹路径，用新建行分隔，例如：Templates Meta/Scripts.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "忽略此标签",
+    TAGS_TO_IGNORE_DESC: `输入标签，用新建行分隔，例如： #excalidraw.
+    注意卡片与笔记共用该项设置。`,
     FLASHCARDS: "卡片",
     FLASHCARD_EASY_LABEL: "“简单”按钮文本",
     FLASHCARD_GOOD_LABEL: "“记得”按钮文本",
@@ -103,6 +126,7 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "单行翻转卡片的分隔符",
     MULTILINE_CARDS_SEPARATOR: "多行卡片的分隔符",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "多行翻转卡片的分隔符",
+    MULTILINE_CARDS_END_MARKER: "表示填空和多行闪卡结束的字符",
     NOTES: "笔记",
     REVIEW_PANE_ON_STARTUP: "启动时开启笔记复习窗格",
     TAGS_TO_REVIEW: "复习标签",
@@ -136,7 +160,9 @@ export default {
     MAX_LINK_CONTRIB: "最大链接收益",
     MAX_LINK_CONTRIB_DESC: "链接笔记的加权掌握程度对原始掌握程度的最大贡献。",
     LOGGING: "记录中",
-    DISPLAY_DEBUG_INFO: "在开发者控制台中显示调试信息？",
+    DISPLAY_DEBUG_INFO: "在开发者控制台中显示调试信息",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Display debugging information for the parser on the developer console",
 
     DATA_LOC: "数据位置",
     DATA_LOC_DESC: "间隔重复数据项的文件的保存位置.",
