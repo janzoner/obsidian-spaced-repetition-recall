@@ -14,7 +14,7 @@ This is a modified version of [obsidian-spaced-repetition](https://github.com/st
         -   save on note file, just as used do.
         -   save on seperate tracked_files.json.
     -   setting convert tracked note to decks
-    -   switch Algorithm(only work on saving on seperate tracked_files.json.): Default, anki, [Fsrs](https://github.com/open-spaced-repetition/fsrs.js)
+    -   switch Algorithm(only work on saving on seperate tracked_files.json.): Default, anki, [Fsrs](https://github.com/open-spaced-repetition/ts-fsrs)
     -   file menu to tracknote/untracknote
 -   show floatbar for reviewing response when reviewing note by click statusbar or review command or sidebar, and can set whether showing the interval or not;
 -   Reviewing a Notes directly [#635];
@@ -30,14 +30,14 @@ This is a modified version of [obsidian-spaced-repetition](https://github.com/st
 
 ## Maintainers Wanted
 
-Since I am not a programmer, I don't know much about typescript programming, so I can only do some bug fixes and small feature updates. I can only do some bug fixes and small feature updates, but it is difficult to realize some of the proposed features. Welcome to join us if you are interested in this plugin, and work together to maintain and update this plugin.
+Since I am not a programmer, I don't know much about typescript programming, so I can only do some bug fixes and small feature updates. but it is difficult to realize some of the proposed features. Welcome to join us if you are interested in this plugin, and work together to maintain and update this plugin.
 
 You can join us by submitting an [issue](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues)/[PR](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/pulls)、或[论坛讨论](https://forum-zh.obsidian.md/t/topic/20551) directly.
 
 ## How to install the plugin
 
 1. Download main.js, manifest.json, styles.css from the latest release (see [releases](https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/releases/))
-2. Create a new folder in `Vault-name/.obsidian/plugins` and put the downloaded files in there
+2. Create a new folder `obsidian-spaced-repetition-recall` in `Vault-name/.obsidian/plugins` and put the downloaded files in there
 3. Reload your plugins and enable the plugin
 
 OR USE BRAT pulgin;
@@ -67,5 +67,5 @@ Thank you to everyone who has created a plugin that inspired me and I took code 
 
 -   first, thanks to [@st3v3nmw's obsidian-spaced-repetition](https://github.com/st3v3nmw/obsidian-spaced-repetition) and [@martin-jw recall plugin](https://github.com/martin-jw/obsidian-recall)
 -   floatbar(thanks to [@chetachi's cMenu](https://github.com/chetachiezikeuzor/cMenu-Plugin))
--   [Fsrs Algorithm](https://github.com/open-spaced-repetition/fsrs.js)
+-   [Fsrs Algorithm](https://github.com/open-spaced-repetition)
 -   ReleaseNotes(thanks to [@Zsolt Viczian Excalidraw](https://zsolt.blog))
