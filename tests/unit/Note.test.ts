@@ -52,8 +52,8 @@ Q3:::A3
 describe("create Multiple Cloze", () => {
     test("Multiple cloze, some with  schedule details", async () => {
         let originalText: string = `#flashcards/test
-Q1::A1
-#flashcards "This is a really very {{interesting}} and ==fascinating== and **great** test"
+
+This is a really very {{interesting}} and ==fascinating== and **great** test
 <!--SR:!2023-09-02,4,270!2023-09-02,5,270-->
 `;
         let settings2 = DEFAULT_SETTINGS;
@@ -65,31 +65,31 @@ Q1::A1
         var noteFileLoader: NoteFileLoader = new NoteFileLoader(settings2);
 
         let file: UnitTestSRFile = new UnitTestSRFile(originalText);
-        let note: Note = await noteFileLoader.load(file, TopicPath.emptyPath);
+        let note: Note = await noteFileLoader.load(file, TextDirection.Ltr, TopicPath.emptyPath);
 
         note.createMultiCloze(settings2);
 
         let deck: Deck = Deck.emptyDeck;
         note.appendCardsToDeck(deck);
-        let subdeck: Deck = deck.getDeck(new TopicPath(["flashcards"]));
+        let subdeck: Deck = deck.getDeck(new TopicPath(["flashcards", "test"]));
         expect(subdeck.newFlashcards[0].front).toEqual(
-            `"This is a really very {{interesting}} and ==fascinating== and <span style='color:#2196f3'>[......]</span> test"\n`,
+            "This is a really very {{interesting}} and ==fascinating== and <span style='color:#2196f3'>[......]</span> test",
         );
         expect(subdeck.newFlashcards[0].back).toEqual(
-            `"This is a really very interesting and fascinating and <span style='color:#2196f3'>great</span> test"\n`,
+            "This is a really very interesting and fascinating and <span style='color:#2196f3'>great</span> test",
         );
 
         expect(subdeck.dueFlashcards[0].front).toEqual(
-            `"This is a really very <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
+            "This is a really very <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test",
         );
         expect(subdeck.dueFlashcards[0].back).toEqual(
-            `"This is a really very <span style='color:#2196f3'>interesting</span> and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
+            "This is a really very <span style='color:#2196f3'>interesting</span> and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test",
         );
         expect(subdeck.dueFlashcards[1].front).toEqual(
-            `"This is a really very {{interesting}} and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
+            "This is a really very {{interesting}} and <span style='color:#2196f3'>[.........]</span> and <span style='color:#2196f3'>[......]</span> test",
         );
         expect(subdeck.dueFlashcards[1].back).toEqual(
-            `"This is a really very interesting and <span style='color:#2196f3'>fascinating</span> and <span style='color:#2196f3'>[......]</span> test"\n`,
+            "This is a really very interesting and <span style='color:#2196f3'>fascinating</span> and <span style='color:#2196f3'>[......]</span> test",
         );
     });
 });

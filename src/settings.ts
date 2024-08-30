@@ -1050,12 +1050,14 @@ export class SRSettingTab extends PluginSettingTab {
 
         const issue_url =
             "https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues";
-        newSettingEl(containerEl).createEl("p").insertAdjacentHTML(
-            "beforeend",
-            t("GITHUB_ISSUES", {
-                issues_url: "https://github.com/st3v3nmw/obsidian-spaced-repetition/issues/",
-            }) + `about this modified sr-plugin `,
-        );
+        newSettingEl(containerEl)
+            .createEl("p")
+            .insertAdjacentHTML(
+                "beforeend",
+                t("GITHUB_ISSUES", {
+                    issues_url: "https://github.com/st3v3nmw/obsidian-spaced-repetition/issues/",
+                }) + `about this modified sr-plugin `,
+            );
 
         /* 
         // Documentation link & GitHub links

@@ -182,16 +182,18 @@ export class TrackedFile implements ITrackedFile {
         const lines: number[] = [];
         const cardHashList: Record<number, string> = {};
 
-        const parsedCards: ParsedQuestionInfo[] = parseEx(
-            fileText,
-            settings.singleLineCardSeparator,
-            settings.singleLineReversedCardSeparator,
-            settings.multilineCardSeparator,
-            settings.multilineReversedCardSeparator,
-            settings.convertHighlightsToClozes,
-            settings.convertBoldTextToClozes,
-            settings.convertCurlyBracketsToClozes,
-        );
+        const parserOptions = {
+            singleLineCardSeparator: settings.singleLineCardSeparator,
+            singleLineReversedCardSeparator: settings.singleLineReversedCardSeparator,
+            multilineCardSeparator: settings.multilineCardSeparator,
+            multilineReversedCardSeparator: settings.multilineReversedCardSeparator,
+            multilineCardEndMarker: settings.multilineCardEndMarker,
+            convertHighlightsToClozes: settings.convertHighlightsToClozes,
+            convertBoldTextToClozes: settings.convertBoldTextToClozes,
+            convertCurlyBracketsToClozes: settings.convertCurlyBracketsToClozes,
+        };
+
+        const parsedCards: ParsedQuestionInfo[] = parseEx(fileText, parserOptions);
         if (!this.hasCards && parsedCards.length === 0) {
             return false;
         }

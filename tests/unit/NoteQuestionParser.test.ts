@@ -439,6 +439,7 @@ Q3::A3
         );
         let questionList: Question[] = await parser_trackedNoteToDecks.createQuestionList(
             noteFile,
+            TextDirection.Ltr,
             folderTopicPath,
             true,
         );
