@@ -19,9 +19,13 @@ export const DEFAULT_responseOptionBtnsText: Record<string, string[]> = {
 export function addAlgorithmSetting(containerEl: HTMLElement, plugin: SRPlugin) {
     // const plugin = this.plugin;
     const settings = plugin.data.settings;
+    const desc = createFragment((frag) => {
+        frag.createDiv().innerHTML = t("ALGORITHMS_DESC");
+    });
 
     new Setting(containerEl)
         .setName(t("ALGORITHM"))
+        .setDesc(desc)
         .addDropdown((dropdown) => {
             Object.keys(algorithms).forEach((val) => {
                 dropdown.addOption(val, val);
@@ -74,8 +78,7 @@ export function addAlgorithmSetting(containerEl: HTMLElement, plugin: SRPlugin) 
                     }
                 }).open();
             });
-        })
-        .settingEl.querySelector(".setting-item-description").innerHTML = t("ALGORITHMS_DESC");
+        });
 }
 
 export function addAlgorithmSpecificDisplaySetting(containerEl: HTMLElement, plugin: SRPlugin) {

@@ -297,14 +297,14 @@ export class SRSettingTab extends PluginSettingTab {
                         }),
                 );
             this.createSetting_FoldersToIgnore(containerEl);
-            addignoreSetting(containerEl.createDiv(), this.plugin);
+            addignoreSetting(newSettingEl(containerEl), this.plugin);
         }
 
         containerEl.createEl("h3", { text: t("GROUP_FLASHCARD_REVIEW") });
         {
-            addMultiClozeSetting(containerEl.createDiv(), this.plugin);
-            addburySiblingSetting(containerEl.createDiv(), this.plugin);
-            addcardBlockIDSetting(containerEl.createDiv(), this.plugin);
+            addMultiClozeSetting(newSettingEl(containerEl), this.plugin);
+            addburySiblingSetting(newSettingEl(containerEl), this.plugin);
+            addcardBlockIDSetting(newSettingEl(containerEl), this.plugin);
             new Setting(containerEl)
                 .setName(t("BURY_SIBLINGS_TILL_NEXT_DAY"))
                 .setDesc(t("BURY_SIBLINGS_TILL_NEXT_DAY_DESC"))
@@ -369,7 +369,7 @@ export class SRSettingTab extends PluginSettingTab {
                         await this.plugin.savePluginData();
                     }),
             );
-            this.addIntervalShowHideSetting(containerEl.createDiv());
+            this.addIntervalShowHideSetting(newSettingEl(containerEl));
         }
 
         containerEl.createEl("h3", { text: t("GROUP_FLASHCARD_SEPARATORS") });
@@ -586,7 +586,7 @@ export class SRSettingTab extends PluginSettingTab {
             );
 
         this.createSetting_FoldersToIgnore(containerEl);
-        addignoreSetting(containerEl.createDiv(), this.plugin);
+        addignoreSetting(newSettingEl(containerEl), this.plugin);
 
         new Setting(containerEl)
             .setName(t("OPEN_RANDOM_NOTE"))
@@ -607,11 +607,11 @@ export class SRSettingTab extends PluginSettingTab {
             }),
         );
 
-        addmixQueueSetting(containerEl.createDiv(), this.plugin);
-        addTrackedNoteToDecksSetting(containerEl.createDiv(), this.plugin);
-        addUntrackSetting(containerEl.createDiv(), this.plugin);
-        addResponseFloatBarSetting(containerEl.createDiv(), this.plugin);
-        this.addReviewNoteDirectlySetting(containerEl.createDiv());
+        addmixQueueSetting(newSettingEl(containerEl), this.plugin);
+        addTrackedNoteToDecksSetting(newSettingEl(containerEl), this.plugin);
+        addUntrackSetting(newSettingEl(containerEl), this.plugin);
+        addResponseFloatBarSetting(newSettingEl(containerEl), this.plugin);
+        this.addReviewNoteDirectlySetting(newSettingEl(containerEl));
 
         new Setting(containerEl)
             .setName(t("DISABLE_FILE_MENU_REVIEW_OPTIONS"))
@@ -684,7 +684,7 @@ export class SRSettingTab extends PluginSettingTab {
 
     private async tabUiPreferences(containerEl: HTMLElement): Promise<void> {
         containerEl.createEl("h3", { text: t("FLASHCARDS") });
-        this.addIntervalShowHideSetting(containerEl.createDiv());
+        this.addIntervalShowHideSetting(newSettingEl(containerEl));
         new Setting(containerEl)
             .setName(t("INITIALLY_EXPAND_SUBDECKS_IN_TREE"))
             .setDesc(t("INITIALLY_EXPAND_SUBDECKS_IN_TREE_DESC"))
@@ -760,7 +760,7 @@ export class SRSettingTab extends PluginSettingTab {
             });
 
         containerEl.createEl("h3", { text: t("GROUP_FLASHCARDS_NOTES") });
-        addResponseButtonTextSetting(containerEl.createDiv(), this.plugin);
+        addResponseButtonTextSetting(newSettingEl(containerEl), this.plugin);
         return;
         new Setting(containerEl)
             .setName(t("FLASHCARD_EASY_LABEL"))
@@ -838,15 +838,15 @@ export class SRSettingTab extends PluginSettingTab {
 
         const issue_url =
             "https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues";
-        containerEl.createEl("p").innerHTML =
+        newSettingEl(containerEl).createEl("p").innerHTML =
             `Post an <a href= ${issue_url} > issue </a> about this modified sr-plugin .`;
 
         // trackfile_setting
         // https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
-        addDataLocationSettings(containerEl.createDiv(), this.plugin);
+        addDataLocationSettings(newSettingEl(containerEl), this.plugin);
 
-        addAlgorithmSetting(containerEl.createDiv(), this.plugin);
-        addAlgorithmSpecificDisplaySetting(containerEl.createDiv(), this.plugin);
+        addAlgorithmSetting(newSettingEl(containerEl), this.plugin);
+        addAlgorithmSpecificDisplaySetting(newSettingEl(containerEl), this.plugin);
         return;
 
         containerEl.createEl("p").insertAdjacentHTML(
@@ -1050,7 +1050,7 @@ export class SRSettingTab extends PluginSettingTab {
 
         const issue_url =
             "https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues";
-        containerEl.createEl("p").insertAdjacentHTML(
+        newSettingEl(containerEl).createEl("p").insertAdjacentHTML(
             "beforeend",
             t("GITHUB_ISSUES", {
                 issues_url: "https://github.com/st3v3nmw/obsidian-spaced-repetition/issues/",
@@ -1103,4 +1103,10 @@ export class SRSettingTab extends PluginSettingTab {
             });
         }
     }
+}
+
+export function newSettingEl(containerEl: HTMLElement) {
+    const el = containerEl.createDiv();
+    el.addClass("sr-setting-tab-bg");
+    return el;
 }

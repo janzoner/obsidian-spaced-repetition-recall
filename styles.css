@@ -379,6 +379,13 @@ button.sr-tab-header-button:hover {
     display: block;
 }
 
+.sr-setting-tab-bg {
+    /* background-color: var(--background-modifier-border); */
+    /* background-color: var(--background-modifier-hover);
+    background-color: var(--background-secondary); */
+    background-color: var(--text-selection);
+}
+
 /* https://img.shields.io/github/v/release/chetachiezikeuzor/cMenu-Plugin */
 /*----------------------------------------------------------------
 ResponseFloatBar TOOLBAR
