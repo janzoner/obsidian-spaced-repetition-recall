@@ -23,6 +23,7 @@ import deepcopy from "deepcopy";
 import { NoteCardScheduleParser } from "src/CardSchedule";
 import { DataLocation, getStorePath } from "./dataLocation";
 import { globalDateProvider } from "src/util/DateProvider";
+import { Iadapter } from "./adapter";
 
 export class LocationSwitch {
     public plugin: SRPlugin;
@@ -54,7 +55,7 @@ export class LocationSwitch {
      * @returns {boolean}
      */
     async moveStoreLocation(): Promise<boolean> {
-        const adapter = app.vault.adapter;
+        const adapter = Iadapter.instance.adapter;
         const store = DataStore.getInstance();
 
         const newPath = this.getStorePath();
@@ -123,7 +124,7 @@ export class LocationSwitch {
 
         // await plugin.sync_Algo();
 
-        let notes: TFile[] = app.vault.getMarkdownFiles();
+        let notes: TFile[] = Iadapter.instance.vault.getMarkdownFiles();
         notes = notes.filter(
             (noteFile) =>
                 !isIgnoredPath(settings.noteFoldersToIgnore, noteFile.path) &&
@@ -163,7 +164,7 @@ export class LocationSwitch {
             }
 
             if (deckname !== null) {
-                const fileCachedData = app.metadataCache.getFileCache(noteFile) || {};
+                const fileCachedData = Iadapter.instance.metadataCache.getFileCache(noteFile) || {};
                 fileText = await _convertFrontMatter(noteFile, fileCachedData, deckname, fileText);
                 if (fileText == null) {
                     console.warn("_convertFrontMatter: fileText null: ");
@@ -271,7 +272,7 @@ export class LocationSwitch {
             fileText: string,
         ) {
             // console.debug("_convertFrontMatter");
-            // const fileCachedData = app.metadataCache.getFileCache(note) || {};
+            // const fileCachedData = Iadapter.instance.metadataCache.getFileCache(note) || {};
             const frontmatter: FrontMatterCache | Record<string, unknown> =
                 fileCachedData.frontmatter || {};
             const sched = getReviewNoteHeaderData(frontmatter);
@@ -312,7 +313,9 @@ export class LocationSwitch {
                 .filter((tkfile) => !isIgnoredPath(this.settings.noteFoldersToIgnore, tkfile.path))
                 .map(async (tkfile) => {
                     const item = store.getItembyID(tkfile.noteID);
-                    const note = app.vault.getAbstractFileByPath(tkfile.path) as TFile;
+                    const note = Iadapter.instance.vault.getAbstractFileByPath(
+                        tkfile.path,
+                    ) as TFile;
                     if (!(note instanceof TFile)) {
                         return;
                     }

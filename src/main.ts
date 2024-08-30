@@ -73,6 +73,8 @@ import { RepetitionItem } from "./dataStore/repetitionItem";
 import { IReviewNote } from "./reviewNote/review-note";
 import { ReviewView } from "./gui/reviewView";
 import { MixQueSet } from "./dataStore/mixQueSet";
+import { Tags } from "./tags";
+import { Iadapter } from "./dataStore/adapter";
 
 interface PluginData {
     settings: SRSettings;
@@ -155,6 +157,7 @@ export default class SRPlugin extends Plugin {
         if (isVersionNewerThanOther(PLUGIN_VERSION, this.data.settings.previousRelease)) {
             new ReleaseNotes(this.app, this, obsidianJustInstalled ? null : PLUGIN_VERSION).open();
         }
+        Iadapter.create(this.app);
 
         const settings = this.data.settings;
         this.algorithm = algorithms[settings.algorithm];

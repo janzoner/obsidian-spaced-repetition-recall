@@ -2,10 +2,11 @@
 
 import { TAbstractFile, TFolder } from "obsidian";
 import { TextInputSuggest } from "./suggest";
+import { Iadapter } from "src/dataStore/adapter";
 
 export class FolderSuggest extends TextInputSuggest<TFolder> {
     getSuggestions(inputStr: string): TFolder[] {
-        const abstractFiles = app.vault.getAllLoadedFiles();
+        const abstractFiles = Iadapter.instance.vault.getAllLoadedFiles();
         const folders: TFolder[] = [];
         const lowerCaseInputStr = inputStr.toLowerCase();
 
