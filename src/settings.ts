@@ -839,7 +839,7 @@ export class SRSettingTab extends PluginSettingTab {
         const issue_url =
             "https://github.com/open-spaced-repetition/obsidian-spaced-repetition-recall/issues";
         newSettingEl(containerEl).createEl("p").innerHTML =
-            `Post an <a href= ${issue_url} > issue </a> about this modified sr-plugin .`;
+            `Post an <a href= ${issue_url} > issue </a> about this modified sr-plugin which has backgroud color for settings.`;
 
         // trackfile_setting
         // https://github.com/martin-jw/obsidian-recall/blob/main/src/settings.ts
