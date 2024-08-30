@@ -38,6 +38,7 @@ export default {
     STATUS_BAR: "Revize: ${dueNotesCount} poznámek, ${dueFlashcardsCount} kartiček po termínu",
     SYNC_TIME_TAKEN: "Synchronizace trvala ${t}ms",
     NOTE_IN_IGNORED_FOLDER: "Poznámka je uložena v ignorované složce (zkontrolujte nastavení).",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE: "Prosím označne poznámku odpovídajícím tagem pro revizi (v nastavení).",
     RESPONSE_RECEIVED: "Odpověď přijata.",
     NO_DECK_EXISTS: "Neexistuje žádný balíček pro ${deckName}",
@@ -56,11 +57,32 @@ export default {
     MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
-    SETTINGS_HEADER: "Spaced Repetition Plugin - Nastavení",
+    SETTINGS_HEADER: "Spaced Repetition - Nastavení",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: 'Pro více informací jděte na <a href="${wiki_url}">wiki</a>.',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "Ignorované složky",
-    FOLDERS_TO_IGNORE_DESC:
-        "Zadejte cesty ke složkám oddělené odřádkováním napříkad. Šablony Meta/Scripts",
+    FOLDERS_TO_IGNORE_DESC: `Zadejte cesty ke složkám oddělené odřádkováním napříkad. Šablony Meta/Scripts.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "Kartičky",
     FLASHCARD_EASY_LABEL: "Easy Button Text",
     FLASHCARD_GOOD_LABEL: "Good Button Text",
@@ -112,6 +134,7 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "Oddělovač pro otočené inline kartičky",
     MULTILINE_CARDS_SEPARATOR: "Oddělovač pro víceřádkové kartičky",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "Oddělovač pro víceřádkove otočené kartičky",
+    MULTILINE_CARDS_END_MARKER: "Znaky označující konec clozes a víceřádkových flash karet",
     NOTES: "Poznámky",
     REVIEW_PANE_ON_STARTUP: "Enable note review pane on startup",
     TAGS_TO_REVIEW: "Tag pro revizi",
@@ -150,7 +173,9 @@ export default {
     MAX_LINK_CONTRIB_DESC:
         "Maximální příspěvek vážené složitosti prolinkovaných poznámek použitý pro určení počáteční složitosti.",
     LOGGING: "Zaznamenávám",
-    DISPLAY_DEBUG_INFO: "Zobrazit informace pro ladění na vývojářské konzoli?",
+    DISPLAY_DEBUG_INFO: "Zobrazit informace pro ladění na vývojářské konzoli",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Display debugging information for the parser on the developer console",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",

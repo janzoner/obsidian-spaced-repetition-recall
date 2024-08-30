@@ -9,6 +9,7 @@ import deepcopy from "deepcopy";
 import { AnkiData } from "./anki";
 import { Rating, ReviewLog } from "ts-fsrs";
 import { RepetitionItem, ReviewResult } from "src/dataStore/repetitionItem";
+import { Iadapter } from "src/dataStore/adapter";
 
 // https://github.com/mgmeyers/obsidian-kanban/blob/main/src/Settings.ts
 let applyDebounceTimer = 0;
@@ -208,7 +209,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
             }
         }
 
-        const adapter = app.vault.adapter;
+        const adapter = Iadapter.instance.adapter;
         const duration = this.review_duration > 0 ? new Date().getTime() - this.review_duration : 0;
         this.review_duration = 0;
         const rlog = new RevLog(item, reviewLog, duration);
@@ -230,7 +231,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
      * @param rating
      */
     reWriteRevlog(data: string, withTitle = false) {
-        const adapter = app.vault.adapter;
+        const adapter = Iadapter.instance.adapter;
 
         if (withTitle) {
             data = this.REVLOG_TITLE + data;
@@ -239,7 +240,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
     }
 
     async readRevlog() {
-        const adapter = app.vault.adapter;
+        const adapter = Iadapter.instance.adapter;
         let data = "";
         if (await adapter.exists(this.logfilepath)) {
             data = await adapter.read(this.logfilepath);
@@ -434,7 +435,7 @@ export class FsrsAlgorithm extends SrsAlgorithm {
                     });
             })
             .settingEl.querySelector(".setting-item-description").innerHTML =
-            '查阅 <a href= "https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm"> FSRS V4 WIKI </a> 和\
+            '查阅 <a href= "https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm"> FSRS V5 WIKI </a> 和\
             <a href= "https://open-spaced-repetition.github.io/anki_fsrs_visualizer"> FSRS w参数可视化 </a> \
             以对各参数进行设置.';
 

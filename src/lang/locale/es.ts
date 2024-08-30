@@ -38,6 +38,7 @@ export default {
     STATUS_BAR: "Revisar: ${dueNotesCount} nota(s), ${dueFlashcardsCount} tarjetas vencidas",
     SYNC_TIME_TAKEN: "La sincronización tomó ${t} milisegundos",
     NOTE_IN_IGNORED_FOLDER: "La nota está guardada en un directorio ignorado (revisa los ajustes).",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE: "Por favor etiquete apropiadamente la nota para revisión (en los ajustes).",
     RESPONSE_RECEIVED: "Respuesta Recibida",
     NO_DECK_EXISTS: "No existen mazos para: ${deckName}",
@@ -57,10 +58,31 @@ export default {
 
     // settings.ts
     SETTINGS_HEADER: "Extensión de Repetición Espaciada - Ajustes",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: 'Para más información revisa la <a href="${wiki_url}">wiki</a>.',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "Directorios a ignorar",
-    FOLDERS_TO_IGNORE_DESC:
-        "Escriba las rutas de los directorios separadas por saltos de línea, por ejemplo, Plantillas Extra/Guiones",
+    FOLDERS_TO_IGNORE_DESC: `Escriba las rutas de los directorios separadas por saltos de línea, por ejemplo, Plantillas Extra/Guiones.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "Tarjetas de Memorización",
     FLASHCARD_EASY_LABEL: "Texto del botón: Fácil",
     FLASHCARD_GOOD_LABEL: "Texto del botón: Bien",
@@ -114,6 +136,8 @@ export default {
     MULTILINE_CARDS_SEPARATOR: "Separador para tarjetas de memorización multilínea",
     MULTILINE_REVERSED_CARDS_SEPARATOR:
         "Separador para tarjetas de memorización multilínea invertidas",
+    MULTILINE_CARDS_END_MARKER:
+        "Caracteres que denotan el fin de los clozes y tarjetas didácticas de varias líneas",
     NOTES: "Notes",
     REVIEW_PANE_ON_STARTUP: "Activar panel de revisión de notas al arrancar",
     TAGS_TO_REVIEW: "Etiquetas a revisar",
@@ -155,7 +179,9 @@ export default {
     MAX_LINK_CONTRIB_DESC:
         "Contribución máxima de la facilidad ponderada de las notas vinculadas a la facilidad inicial.",
     LOGGING: "Registro",
-    DISPLAY_DEBUG_INFO: "¿Mostrar información de depuración en la consola de desarrollador?",
+    DISPLAY_DEBUG_INFO: "¿Mostrar información de depuración en la consola de desarrollador",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Display debugging information for the parser on the developer console",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",

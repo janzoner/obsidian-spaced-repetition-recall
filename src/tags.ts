@@ -1,6 +1,7 @@
 import { TFile, getAllTags } from "obsidian";
 import { SRSettings } from "./settings";
 import { DEFAULT_DECKNAME } from "./constants";
+import { Iadapter } from "./dataStore/adapter";
 
 export class Tags {
     static isDefaultDackName(tag: string) {
@@ -8,7 +9,7 @@ export class Tags {
     }
 
     static getFileTags(note: TFile) {
-        const fileCachedData = app.metadataCache.getFileCache(note) || {};
+        const fileCachedData = Iadapter.instance.metadataCache.getFileCache(note) || {};
         const tags = getAllTags(fileCachedData) || [];
         return tags;
     }

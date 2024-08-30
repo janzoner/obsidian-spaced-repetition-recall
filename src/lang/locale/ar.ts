@@ -38,6 +38,7 @@ export default {
     STATUS_BAR: "البطاقات المستحقة ${dueFlashcardsCount},ملاحظات ${dueNotesCount}:مراجعة",
     SYNC_TIME_TAKEN: "${t}ms استغراق المزامنة",
     NOTE_IN_IGNORED_FOLDER: ".الملاحظة يتم حفظها ضمن المجلد الذي تم تجاهله (تحقق من الإعدادات)",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE: ".يرجى وضع وسم على الملاحظة بشكل مناسب للمراجعة (في الإعدادات)",
     RESPONSE_RECEIVED: ".استُلمت الاستجابة",
     NO_DECK_EXISTS: "${deckName} لا يوجد رُزمَة",
@@ -57,10 +58,31 @@ export default {
 
     // settings.ts
     SETTINGS_HEADER: "Spaced Repetition Plugin - Settings",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: '.<a href="${wiki_url}">wiki</a> لمزيد من المعلومات ، تحقق من',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "مجلدات لتجاهلها",
-    FOLDERS_TO_IGNORE_DESC:
-        "Templates Meta/Scripts : أدخل مسارات المجلد مفصولة بواسطة سطور جديدة,مثال",
+    FOLDERS_TO_IGNORE_DESC: `Templates Meta/Scripts.
+Note that this setting is common to both Flashcards and Notes. : أدخل مسارات المجلد مفصولة بواسطة سطور جديدة,مثال`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "البطاقات",
     FLASHCARD_EASY_LABEL: "نص الزر سهل",
     FLASHCARD_GOOD_LABEL: "نص الزر جيد",
@@ -109,6 +131,7 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "فاصل من أجل البطاقات العكسية المضمنة",
     MULTILINE_CARDS_SEPARATOR: "فاصل من أجل البطاقات المتعددة",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "فاصل من أجل البطاقات العكسية المتعددة",
+    MULTILINE_CARDS_END_MARKER: "الأحرف التي تدل على نهاية الكلوزات وبطاقات التعلم المتعددة الأسطر",
     NOTES: "ملاحظات",
     REVIEW_PANE_ON_STARTUP: "تمكين جزء مراجعة الملاحظات عند بدء التشغيل",
     TAGS_TO_REVIEW: "وسوم للمراجعة",
@@ -146,7 +169,9 @@ export default {
     MAX_LINK_CONTRIB: "أقصى مساهمة ارتباط",
     MAX_LINK_CONTRIB_DESC: "أقصى مساهمة للسهولة المرجحة للملاحظات المرتبطة بالسهولة الأولية.",
     LOGGING: "تسجيل",
-    DISPLAY_DEBUG_INFO: "عرض معلومات التصحيح على وحدة تحكم المطور؟",
+    DISPLAY_DEBUG_INFO: "عرض معلومات التصحيح على وحدة تحكم المطور",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Display debugging information for the parser on the developer console",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",

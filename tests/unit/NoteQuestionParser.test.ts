@@ -7,6 +7,7 @@ import { TopicPath, TopicPathList } from "src/TopicPath";
 import { createTest_NoteQuestionParser } from "./SampleItems";
 import { ISRFile, frontmatterTagPseudoLineNum } from "src/SRFile";
 import { setupStaticDateProvider_20230906 } from "src/util/DateProvider";
+import { TextDirection } from "src/util/TextDirection";
 import { UnitTestSRFile } from "./helpers/UnitTestSRFile";
 import { Card } from "src/Card";
 
@@ -28,7 +29,12 @@ describe("No flashcard questions", () => {
         let noteFile: ISRFile = new UnitTestSRFile(noteText);
 
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toEqual([]);
     });
 
@@ -38,7 +44,12 @@ describe("No flashcard questions", () => {
         let noteFile: ISRFile = new UnitTestSRFile(noteText);
 
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toEqual([]);
     });
 });
@@ -70,7 +81,12 @@ A::B
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
@@ -109,7 +125,12 @@ A::B
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
@@ -131,7 +152,12 @@ A::B
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
@@ -160,7 +186,12 @@ In computer-science, a *heap* is a tree-based data-structure, that satisfies the
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 });
@@ -199,7 +230,12 @@ A::B ^d7cee0
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
@@ -244,7 +280,12 @@ A::B ^d7cee0
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
@@ -287,7 +328,12 @@ A::B <!--SR:!2023-09-03,1,230--> ^d7cee0
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
@@ -329,7 +375,12 @@ A::B <!--SR:!2023-09-03,1,230--> ^d7cee0
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 });
@@ -344,6 +395,7 @@ Q2::A2
         let folderTopicPath: TopicPath = TopicPath.emptyPath;
         let questionList: Question[] = await parser_ConvertFoldersToDecks.createQuestionList(
             noteFile,
+            TextDirection.Ltr,
             folderTopicPath,
             true,
         );
@@ -361,6 +413,7 @@ Q3::A3
         let folderTopicPath: TopicPath = new TopicPath(["flashcards", "science"]);
         let questionList: Question[] = await parser_ConvertFoldersToDecks.createQuestionList(
             noteFile,
+            TextDirection.Ltr,
             folderTopicPath,
             true,
         );
@@ -386,6 +439,7 @@ Q3::A3
         );
         let questionList: Question[] = await parser_trackedNoteToDecks.createQuestionList(
             noteFile,
+            TextDirection.Ltr,
             folderTopicPath,
             true,
         );
@@ -412,6 +466,7 @@ Q3::A3
         let folderTopicPath: TopicPath = TopicPath.emptyPath;
         let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
             noteFile,
+            TextDirection.Ltr,
             folderTopicPath,
             true,
         );
@@ -438,9 +493,9 @@ Multiline answer2
  
 `;
         let noteFile: ISRFile = new UnitTestSRFile(noteText);
-
         let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
             noteFile,
+            TextDirection.Ltr,
             TopicPath.emptyPath,
             true,
         );
@@ -487,6 +542,7 @@ describe("Handling tags within note", () => {
             let folderTopicPath: TopicPath = new TopicPath(["folder", "subfolder"]);
             let questionList: Question[] = await parser2.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -504,6 +560,7 @@ Q1::A1
             let folderTopicPath: TopicPath = new TopicPath(["folder", "subfolder"]);
             let questionList: Question[] = await parser2.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -523,6 +580,7 @@ Q1::A1
             let folderTopicPath: TopicPath = new TopicPath(["folder", "subfolder"]);
             let questionList: Question[] = await parser2.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -546,6 +604,7 @@ Q1::A1
             let folderTopicPath: TopicPath = TopicPath.emptyPath;
             let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -583,7 +642,12 @@ Stop trying ==to milk the crowd== for sympathy. // доить толпу
                 },
             ];
             expect(
-                await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+                await parserWithDefaultSettings.createQuestionList(
+                    noteFile,
+                    TextDirection.Ltr,
+                    folderTopicPath,
+                    true,
+                ),
             ).toMatchObject(expected);
         });
 
@@ -598,6 +662,7 @@ Stop trying ==to milk the crowd== for sympathy. // доить толпу
             let folderTopicPath: TopicPath = TopicPath.emptyPath;
             let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -620,6 +685,7 @@ Stop trying ==to milk the crowd== for sympathy. // доить толпу
             let folderTopicPath: TopicPath = TopicPath.emptyPath;
             let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -641,6 +707,7 @@ Stop trying ==to milk the crowd== for sympathy. // доить толпу
             let folderTopicPath: TopicPath = TopicPath.emptyPath;
             let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -664,6 +731,7 @@ Stop trying ==to milk the crowd== for sympathy. // доить толпу
             let folderTopicPath: TopicPath = TopicPath.emptyPath;
             let questionList: Question[] = await parserWithDefaultSettings.createQuestionList(
                 noteFile,
+                TextDirection.Ltr,
                 folderTopicPath,
                 true,
             );
@@ -705,7 +773,12 @@ What year was the Taliban Emirate founded?::1996 #flashcards
                 },
             ];
             expect(
-                await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+                await parserWithDefaultSettings.createQuestionList(
+                    noteFile,
+                    TextDirection.Ltr,
+                    folderTopicPath,
+                    true,
+                ),
             ).toMatchObject(expected);
         });
     });
@@ -742,11 +815,16 @@ In computer-science, a *heap* is a tree-based data-structure, that satisfies the
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
-    test("Multi-line without question (i.e. question is blank)", async () => {
+    test("Multi-line without question is ignored", async () => {
         let noteText: string = `---
 created: 2024-03-11 10:41
 tags:
@@ -754,7 +832,11 @@ tags:
   - data-structure
 ---
 ?
-In computer-science, a *heap* is a tree-based data-structure, that satisfies the *heap property*. A heap is a complete *binary-tree*!
+A1
+
+Q2
+?
+A2
     `;
         let noteFile: ISRFile = new UnitTestSRFile(noteText);
 
@@ -764,16 +846,23 @@ In computer-science, a *heap* is a tree-based data-structure, that satisfies the
                 questionType: CardType.MultiLineBasic,
                 // Explicitly checking that #data-structure is not included
                 topicPathList: TopicPathList.fromPsv("#flashcards", frontmatterTagPseudoLineNum),
+
+                // No card A1; only card Q2/A2
                 cards: [
                     new Card({
-                        front: "",
-                        back: "In computer-science, a *heap* is a tree-based data-structure, that satisfies the *heap property*. A heap is a complete *binary-tree*!",
+                        front: "Q2",
+                        back: "A2",
                     }),
                 ],
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 
@@ -813,7 +902,12 @@ A::B
             },
         ];
         expect(
-            await parserWithDefaultSettings.createQuestionList(noteFile, folderTopicPath, true),
+            await parserWithDefaultSettings.createQuestionList(
+                noteFile,
+                TextDirection.Ltr,
+                folderTopicPath,
+                true,
+            ),
         ).toMatchObject(expected);
     });
 });

@@ -2,6 +2,7 @@
 
 import { ISuggestOwner, Scope } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
+import { Iadapter } from "src/dataStore/adapter";
 
 const wrapAround = (value: number, size: number): number => {
     return ((value % size) + size) % size;
@@ -133,15 +134,14 @@ export abstract class TextInputSuggest<T> implements ISuggestOwner<T> {
             this.suggest.setSuggestions(suggestions);
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             //@ts-ignore
-            this.open(app.dom.appContainerEl, this.inputEl);
+            this.open(Iadapter.instance.app.dom.appContainerEl, this.inputEl);
         } else {
             this.close();
         }
     }
 
     open(container: HTMLElement, inputEl: HTMLElement): void {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.keymap.pushScope(this.scope);
+        Iadapter.instance.app.keymap.pushScope(this.scope);
 
         container.appendChild(this.suggestEl);
         this.popper = createPopper(inputEl, this.suggestEl, {
@@ -170,7 +170,7 @@ export abstract class TextInputSuggest<T> implements ISuggestOwner<T> {
     }
 
     close(): void {
-        app.keymap.popScope(this.scope);
+        Iadapter.instance.app.keymap.popScope(this.scope);
 
         this.suggest.setSuggestions([]);
         if (this.popper) this.popper.destroy();

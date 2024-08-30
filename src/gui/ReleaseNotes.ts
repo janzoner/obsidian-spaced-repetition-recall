@@ -11,7 +11,7 @@ import README from "README.md";
 import README_ZH from "docs/README_ZH.md";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import RELEASE_changelog from "docs/changelog.md";
+import RELEASE_changelog from "docs/docs/changelog.md";
 import { buildDonation } from "src/settings/donation";
 
 // const fmd = fs.readFileSync("CHANGELOG.md", "utf8");

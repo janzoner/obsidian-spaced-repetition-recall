@@ -41,6 +41,11 @@ import { NoteEaseCalculator } from "./NoteEaseCalculator";
 import { DeckTreeStatsCalculator } from "./DeckTreeStatsCalculator";
 import { NoteEaseList } from "./NoteEaseList";
 import { QuestionPostponementList } from "./QuestionPostponementList";
+import { TextDirection } from "./util/TextDirection";
+import { convertToStringOrEmpty } from "./util/utils";
+import { isEqualOrSubPath } from "./util/utils";
+import { generateParser } from "./generateParser";
+import { setDebugParser } from "./parser";
 
 // https://github.com/martin-jw/obsidian-recall
 import { DataStore } from "./dataStore/data";
@@ -68,7 +73,8 @@ import { RepetitionItem } from "./dataStore/repetitionItem";
 import { IReviewNote } from "./reviewNote/review-note";
 import { ReviewView } from "./gui/reviewView";
 import { MixQueSet } from "./dataStore/mixQueSet";
-import { isEqualOrSubPath } from "./util/utils";
+import { Tags } from "./tags";
+import { Iadapter } from "./dataStore/adapter";
 
 interface PluginData {
     settings: SRSettings;
@@ -132,6 +138,8 @@ export default class SRPlugin extends Plugin {
         return SRPlugin._instance;
     }
 
+    private debouncedGenerateParserTimeout: number | null = null;
+
     async onload(): Promise<void> {
         SRPlugin._instance = this;
         await this.loadPluginData();
@@ -149,6 +157,7 @@ export default class SRPlugin extends Plugin {
         if (isVersionNewerThanOther(PLUGIN_VERSION, this.data.settings.previousRelease)) {
             new ReleaseNotes(this.app, this, obsidianJustInstalled ? null : PLUGIN_VERSION).open();
         }
+        Iadapter.create(this.app);
 
         const settings = this.data.settings;
         this.algorithm = algorithms[settings.algorithm];
@@ -428,9 +437,17 @@ export default class SRPlugin extends Plugin {
         }
 
         let notes: TFile[] = this.app.vault.getMarkdownFiles();
-        notes = notes.filter(
-            (noteFile) => !isIgnoredPath(this.data.settings.noteFoldersToIgnore, noteFile.path),
-        );
+        notes = notes.filter((noteFile) => {
+            const fileCachedData = this.app.metadataCache.getFileCache(noteFile) || {};
+            const tags = getAllTags(fileCachedData) || [];
+            const isIgnoredTags = this.data.settings.tagsToIgnore.some((igntag) =>
+                tags.some((notetag) => notetag.startsWith(igntag)),
+            );
+            return (
+                !isIgnoredPath(this.data.settings.noteFoldersToIgnore, noteFile.path) &&
+                !isIgnoredTags
+            );
+        });
         this.linkRank.readLinks(notes);
         await Promise.all(
             notes.map(async (noteFile) => {
@@ -578,13 +595,24 @@ export default class SRPlugin extends Plugin {
             this.data.settings,
         );
 
-        const note: Note = await loader.load(srFile, folderTopicPath);
+        const note: Note = await loader.load(
+            this.createSrTFile(noteFile),
+            this.getObsidianRtlSetting(),
+            folderTopicPath,
+        );
         ItemTrans.updateCardsSchedbyItems(note, folderTopicPath);
         note.createMultiCloze(this.data.settings);
         if (note.hasChanged) {
             note.writeNoteFile(this.data.settings);
         }
         return note;
+    }
+
+    private getObsidianRtlSetting(): TextDirection {
+        // Get the direction with Obsidian's own setting
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const v: any = (this.app.vault as any).getConfig("rightToLeft");
+        return convertToStringOrEmpty(v) == "true" ? TextDirection.Rtl : TextDirection.Ltr;
     }
 
     async saveReviewResponse(note: TFile, response: ReviewResponse): Promise<void> {
@@ -612,11 +640,29 @@ export default class SRPlugin extends Plugin {
         this.postponeResponse(note, result.sNote);
     }
 
+    // return false if is ignored
     tagCheck(note: TFile) {
         const fileCachedData = this.app.metadataCache.getFileCache(note) || {};
 
         const tags = getAllTags(fileCachedData) || [];
         let shouldIgnore = true;
+        if (
+            this.data.settings.noteFoldersToIgnore.some((folder) =>
+                isEqualOrSubPath(note.path, folder),
+            )
+        ) {
+            new Notice(t("NOTE_IN_IGNORED_FOLDER"));
+            return false;
+        }
+        if (
+            this.data.settings.tagsToIgnore.some((igntag) =>
+                tags.some((notetag) => notetag.startsWith(igntag)),
+            )
+        ) {
+            new Notice(t("NOTE_IN_IGNORED_TAGS"));
+            return false;
+        }
+
         for (const tag of tags) {
             if (
                 this.data.settings.tagsToReview.some(
@@ -654,13 +700,7 @@ export default class SRPlugin extends Plugin {
         let interval: number, delayBeforeReview: number;
         const now: number = Date.now();
         // new note
-        if (
-            !(
-                Object.prototype.hasOwnProperty.call(frontmatter, "sr-due") &&
-                Object.prototype.hasOwnProperty.call(frontmatter, "sr-interval") &&
-                Object.prototype.hasOwnProperty.call(frontmatter, "sr-ease")
-            )
-        ) {
+        if (this.noteIsNew(note)) {
             ease = this.linkRank.getContribution(note, this.easeByPath).ease;
             ease = Math.round(ease);
             interval = 1.0;
@@ -901,10 +941,32 @@ export default class SRPlugin extends Plugin {
         this.data.settings = Object.assign({}, DEFAULT_SETTINGS, this.data.settings);
         this.store = new DataStore(this.data.settings, this.manifest.dir);
         await this.store.load();
+        setDebugParser(this.data.settings.showPaserDebugMessages);
     }
 
     async savePluginData(): Promise<void> {
         await this.saveData(this.data);
+    }
+
+    async debouncedGenerateParser(timeout_ms = 250) {
+        if (this.debouncedGenerateParserTimeout) {
+            clearTimeout(this.debouncedGenerateParserTimeout);
+        }
+
+        this.debouncedGenerateParserTimeout = window.setTimeout(async () => {
+            const parserOptions = {
+                singleLineCardSeparator: this.data.settings.singleLineCardSeparator,
+                singleLineReversedCardSeparator: this.data.settings.singleLineReversedCardSeparator,
+                multilineCardSeparator: this.data.settings.multilineCardSeparator,
+                multilineReversedCardSeparator: this.data.settings.multilineReversedCardSeparator,
+                multilineCardEndMarker: this.data.settings.multilineCardEndMarker,
+                convertHighlightsToClozes: this.data.settings.convertHighlightsToClozes,
+                convertBoldTextToClozes: this.data.settings.convertBoldTextToClozes,
+                convertCurlyBracketsToClozes: this.data.settings.convertCurlyBracketsToClozes,
+            };
+            generateParser(parserOptions);
+            this.debouncedGenerateParserTimeout = null;
+        }, timeout_ms);
     }
 
     private getActiveLeaf(type: string): WorkspaceLeaf | null {

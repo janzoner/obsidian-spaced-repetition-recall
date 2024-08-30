@@ -38,6 +38,7 @@ export default {
     STATUS_BAR: "Da rivedere: ${dueNotesCount} scheda/e, ${dueFlashcardsCount} schede in ritardo",
     SYNC_TIME_TAKEN: "Sincronizzato in ${t}ms",
     NOTE_IN_IGNORED_FOLDER: "La nota è salvata in una cartella ignorata (rivedi le impostazioni).",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE:
         "Per favore etichetta la nota appropriatamente per la revisione (nelle impostazioni).",
     RESPONSE_RECEIVED: "Risposta ricevuta.",
@@ -58,10 +59,31 @@ export default {
 
     // settings.ts
     SETTINGS_HEADER: "Plugin per ripetizione spaziata - Impostazioni",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: 'Per maggiori informazioni, rivolgersi alla <a href="${wiki_url}">wiki</a>.',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "Cartelle da ignorare",
-    FOLDERS_TO_IGNORE_DESC:
-        "Inserisci i percorsi delle cartelle separati da a capo, per esempio, Templates Meta/Scripts",
+    FOLDERS_TO_IGNORE_DESC: `Inserisci i percorsi delle cartelle separati da a capo, per esempio, Templates Meta/Scripts.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "Schede",
     FLASHCARD_EASY_LABEL: "Testo del bottone facile",
     FLASHCARD_GOOD_LABEL: "Testo del bottone buono",
@@ -117,6 +139,8 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "Separatore per schede all'incontrario sulla stessa riga",
     MULTILINE_CARDS_SEPARATOR: "Separatore per schede su più righe",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "Separatore per schede all'incontrario su più righe",
+    MULTILINE_CARDS_END_MARKER:
+        "Caratteri che denotano la fine di carte con spazi da riempiere e carte multilinea",
     NOTES: "Note",
     REVIEW_PANE_ON_STARTUP: "Abilita il pannello di revisione note all'avvio",
     TAGS_TO_REVIEW: "Etichette da rivedere",
@@ -158,7 +182,9 @@ export default {
     MAX_LINK_CONTRIB_DESC:
         "Contributo massimo della difficoltà pasata delle note collegate alla difficoltà iniziale.",
     LOGGING: "Registrando",
-    DISPLAY_DEBUG_INFO: "Visualizza informazione di debug sulla console per sviluppatori?",
+    DISPLAY_DEBUG_INFO: "Visualizza informazione di debug sulla console per sviluppatori",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Visualizza informazione di debug riguardanti il parser sulla console per sviluppatori",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",

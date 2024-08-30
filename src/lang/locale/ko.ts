@@ -38,6 +38,7 @@ export default {
     STATUS_BAR: "--리뷰: ${dueNotesCount} 노트, ${dueFlashcardsCount} 카드 남았습니다.",
     SYNC_TIME_TAKEN: "동기화에 ${t}밀리초 걸렸습니다",
     NOTE_IN_IGNORED_FOLDER: "노트가 무시된 폴더 아래에 저장되어 있습니다. (설정을 확인해주세요)",
+    NOTE_IN_IGNORED_TAGS: "Note is saved with ignored tag (check settings).",
     PLEASE_TAG_NOTE: "리뷰를 하기위해 노트에 적절히 태그해주세요. (설정을 확인해주세요)",
     RESPONSE_RECEIVED: "요청이 완료되었습니다",
     NO_DECK_EXISTS: "${deckName}이라는 이름의 덱이 존재하지 않습니다.",
@@ -56,11 +57,32 @@ export default {
     MINUTES_STR_IVL_MOBILE: "${interval}min",
 
     // settings.ts
-    SETTINGS_HEADER: "Spaced Repetition Plugin - 설정",
+    SETTINGS_HEADER: "Spaced Repetition - 설정",
+    GROUP_TAGS_FOLDERS: "Tags & Folders",
+    GROUP_FLASHCARD_REVIEW: "Flashcard Review",
+    GROUP_FLASHCARD_SEPARATORS: "Flashcard Separators",
+    GROUP_DATA_STORAGE: "Storage of Scheduling Data",
+    GROUP_FLASHCARDS_NOTES: "Flashcards & Notes",
+    GROUP_CONTRIBUTING: "Contributing",
     CHECK_WIKI: '더 많은 정보를 원하시면, <a href="${wiki_url}">wiki</a>를 확인해주세요.',
+    GITHUB_DISCUSSIONS:
+        'Visit the <a href="${discussions_url}">discussions</a> section for Q&A help, feedback, and general discussion.',
+    GITHUB_ISSUES:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report.',
+    GITHUB_SOURCE_CODE:
+        'Project source code available on <a href="${github_project_url}">GitHub</a>',
+    CODE_CONTRIBUTION_INFO:
+        'Information on <a href="${code_contribution_url}">code contributions</a>',
+    TRANSLATION_CONTRIBUTION_INFO:
+        'Information on <a href="${translation_contribution_url}">translating the plugin</a> to your language',
+    PROJECT_CONTRIBUTIONS:
+        'Raise an issue <a href="${issues_url}">here</a> if you have a feature request or a bug-report',
     FOLDERS_TO_IGNORE: "무시할 폴더들",
-    FOLDERS_TO_IGNORE_DESC:
-        "폴더 경로를 빈 줄로 구분해서 입력해주세요. 'Templates Meta/Scripts' 와 같이 입력하는 것은 유효하지 않습니다.",
+    FOLDERS_TO_IGNORE_DESC: `폴더 경로를 빈 줄로 구분해서 입력해주세요. 'Templates Meta/Scripts' 와 같이 입력하는 것은 유효하지 않습니다.
+Note that this setting is common to both Flashcards and Notes.`,
+    TAGS_TO_IGNORE: "Tags to ignore",
+    TAGS_TO_IGNORE_DESC: `Enter tags separated by newlines i.e. #excalidraw.
+Note that this setting is common to both Flashcards and Notes.`,
     FLASHCARDS: "플래시카드",
     FLASHCARD_EASY_LABEL: "Easy Button Text",
     FLASHCARD_GOOD_LABEL: "Good Button Text",
@@ -113,6 +135,7 @@ export default {
     INLINE_REVERSED_CARDS_SEPARATOR: "인라인 반전 플래시카드 구분자",
     MULTILINE_CARDS_SEPARATOR: "여러 줄 플래시카드 구분자",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "여러 줄 반전 플래시카드 구분자",
+    MULTILINE_CARDS_END_MARKER: "클로즈와 다중 행 플래시카드의 끝을 나타내는 문자",
     NOTES: "노트",
     REVIEW_PANE_ON_STARTUP: "Enable note review pane on startup",
     TAGS_TO_REVIEW: "리뷰에 사용할 태그",
@@ -151,7 +174,9 @@ export default {
     MAX_LINK_CONTRIB_DESC:
         "링크된 노트의 초기 ease에 대한 가중치가 적용된 ease의 최대 기여도입니다.",
     LOGGING: "로깅",
-    DISPLAY_DEBUG_INFO: "디버깅 정보를 개발자 콘솔에 표시하시겠습니까?",
+    DISPLAY_DEBUG_INFO: "디버깅 정보를 개발자 콘솔에 표시하시겠습니까",
+    DISPLAY_PARSER_DEBUG_INFO:
+        "Display debugging information for the parser on the developer console",
 
     DATA_LOC: "Data Location",
     DATA_LOC_DESC: "Where to store the data file for spaced repetition items.",
